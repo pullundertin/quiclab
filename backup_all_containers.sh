@@ -1,6 +1,6 @@
 #!/bin/bash
 
-version=$(date +%Y%m%d_%I%M%s)
+version=$(date +%Y%m%d_%I%M%S)
 
 echo "creating a copy of all containers..."
 docker tag pulltin/test_env:client pulltin/test_env_bak:client.$version 

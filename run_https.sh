@@ -28,7 +28,7 @@ fi
 docker exec server start_http_server 
 
 # run request
-docker exec client start_http_client
+docker exec client start_https_client
 
 # stop server
 wait
