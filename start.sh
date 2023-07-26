@@ -2,12 +2,8 @@
 
 WORKDIR="/root/test_env/shared"
 
-echo 'Overwrite all shared files [y/n]? '
-read answer
 
-if [[ $answer == 'y' || $answer == 'Y' || $answer == 'yes' ]]; then
 rm -r $WORKDIR/* && echo 'All files deleted.'
-fi
 
 docker-compose down
 docker-compose up -d
