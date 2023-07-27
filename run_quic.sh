@@ -22,6 +22,9 @@ fi
 
 
 docker exec client ./start_tcpdump.sh
+docker exec router_1 ./start_tcpdump.sh
+docker exec router_2 ./start_tcpdump.sh
+docker exec server ./start_tcpdump.sh
 
 # if no program has been declared (if string is zero)
 if [  -z "$2" ]; then
@@ -35,10 +38,6 @@ docker exec router_1 ./netsim.sh
 docker exec router_2 ./netsim.sh
 
 fi
-
-# start tcpdump router_1 & router_2 & client
-docker exec router_1 ./start_tcpdump.sh
-docker exec router_2 ./start_tcpdump.sh
 
 # set data size if argument not empty
 if [ ! -z "$1" ]; then
@@ -54,11 +53,11 @@ docker exec client ./start_quic_client.sh &&
 # stop server
 sleep 3
 docker exec server ./stop_quic_server.sh
-docker exec client ./stop_tcpdump.sh
 
-# stop tcpdump router_1 & router_2
+docker exec client ./stop_tcpdump.sh
 docker exec router_1 ./stop_tcpdump.sh
 docker exec router_2 ./stop_tcpdump.sh
+docker exec server ./stop_tcpdump.sh
 
 # rsync files with macbookair
 rsync -aP --delete $WORKDIR -e "ssh -i $PATH_SSH_PUB_KEY" $PATH_REMOTE_HOST
