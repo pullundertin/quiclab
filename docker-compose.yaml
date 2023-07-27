@@ -7,8 +7,9 @@ services:
     container_name: client
     volumes:
       - /root/test_env/shared:/shared
+      - /root/test_env/shared/keys:/shared/keys
       - /root/test_env/shared/pcap:/shared/pcap
-      - /root/test_env/shared/qlog_client:/shared/qlog_client
+      - /root/test_env/shared/qlog:/shared/qlog
     cap_add:
       - NET_ADMIN
     networks:
@@ -59,8 +60,9 @@ services:
     container_name: server
     volumes:
       - /root/test_env/shared:/shared
+      - /root/test_env/shared/keys:/shared/keys
       - /root/test_env/shared/pcap:/shared/pcap
-      - /root/test_env/shared/qlog_server:/shared/qlog_server
+      - /root/test_env/shared/qlog:/shared/qlog
     cap_add:
       - NET_ADMIN
     networks:

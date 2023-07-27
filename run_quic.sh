@@ -2,27 +2,43 @@
 
 # run_quic data_size program
 
+WORKDIR=/root/test_env/shared/
+PATH_SSH_PUB_KEY=/root/.ssh/mba
+PATH_REMOTE_HOST="marco@mba:/Users/Marco/shared/"
+
+
 # delete all files in shared folder
-rm -r /root/test_env/shared/pcap/*
-rm -r /root/test_env/shared/qlog_server/*
-rm -r /root/test_env/shared/qlog_client/*
+if [ "$(ls -A $WORKDIR/pcap/)" ]; then
+rm -r $WORKDIR/pcap/*
+fi
+
+if [ "$(ls -A $WORKDIR/qlog/)" ]; then
+rm -r $WORKDIR/qlog/*
+fi
+
+if [ "$(ls -A $WORKDIR/keys/)" ]; then
+rm -r $WORKDIR/keys/*
+fi
+
+
+docker exec client ./start_tcpdump.sh
 
 # if no program has been declared (if string is zero)
 if [  -z "$2" ]; then
 # initialize tc qdisc on router_1 & router_2
-docker exec router_1 tc_qdisc_default
-docker exec router_2 tc_qdisc_default
+docker exec router_1 ./tc_qdisc_default.sh
+docker exec router_2 ./tc_qdisc_default.sh
 
 else
 # set up tc qdisc program 1 on router_1 & router_2
-docker exec router_1 tc_qdisc_prog_$2
-docker exec router_2 tc_qdisc_prog_$2
+docker exec router_1 ./tc_qdisc_prog_$2.sh
+docker exec router_2 ./tc_qdisc_prog_$2.sh
 
 fi
 
-# start tcpdump router_1 & router_2
-docker exec router_1 start_tcpdump
-docker exec router_2 start_tcpdump
+# start tcpdump router_1 & router_2 & client
+docker exec router_1 ./start_tcpdump.sh
+docker exec router_2 ./start_tcpdump.sh
 
 # set data size if argument not empty
 if [ ! -z "$1" ]; then
@@ -30,21 +46,20 @@ docker exec server ./generate_data.sh $1
 fi
 
 # start server
-docker exec server stop_server &&
-docker exec server start_server 
+docker exec server ./start_quic_server.sh 
 
 # run request
-docker exec client start_client &&
+docker exec client ./start_quic_client.sh &&
 
 # stop server
 sleep 3
-docker exec server stop_server
+docker exec server ./stop_quic_server.sh
+docker exec client ./stop_tcpdump.sh
 
 # stop tcpdump router_1 & router_2
-docker exec router_1 stop_tcpdump
-docker exec router_2 stop_tcpdump
+docker exec router_1 ./stop_tcpdump.sh
+docker exec router_2 ./stop_tcpdump.sh
 
 # rsync files with macbookair
-rsync -aP --delete /root/test_env/shared/ -e "ssh -i /root/.ssh/mba" marco@mba:/Users/Marco/shared/
-
+rsync -aP --delete $WORKDIR -e "ssh -i $PATH_SSH_PUB_KEY" $PATH_REMOTE_HOST
 
