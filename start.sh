@@ -1,12 +1,15 @@
 #!/bin/bash
 
 WORKDIR="/root/test_env/shared"
-
+mkdir /root/test_env/shared
+mkdir $WORKDIR/pcap
+mkdir $WORKDIR/qlog_client
+mkdir $WORKDIR/qlog_server
 
 rm -r $WORKDIR/* && echo 'All files deleted.'
 
-docker-compose down
-docker-compose up -d
+docker compose down
+docker compose up -d
 
 file=$WORKDIR'/interfaces.log'
 

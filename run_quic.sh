@@ -45,6 +45,6 @@ docker exec router_1 stop_tcpdump
 docker exec router_2 stop_tcpdump
 
 # rsync files with macbookair
-rsync -aP --delete /root/test_env/shared/ -e "ssh -i /home/rspp2/.ssh/mba" marco@mba:/Users/Marco/shared/
+rsync -aP --delete /root/test_env/shared/ -e "ssh -i /root/.ssh/mba" marco@mba:/Users/Marco/shared/
 
 

@@ -1,5 +1,5 @@
 #!/bin/bash
 
-save_all_containers &&
-push_all_containers &&
-backup_all_containers
+bash save_all_containers.sh &&
+bash push_all_containers.sh &&
+bash backup_all_containers.sh
