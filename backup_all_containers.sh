@@ -12,4 +12,4 @@ echo "backing up all containers..."
 docker push pulltin/test_env_bak:client.$version &&
 docker push pulltin/test_env_bak:router_1.$version &&
 docker push pulltin/test_env_bak:router_2.$version &&
-docker push pulltin/test_env_bak:server.$version &&
+docker push pulltin/test_env_bak:server.$version

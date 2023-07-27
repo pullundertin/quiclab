@@ -26,13 +26,13 @@ docker exec client ./start_tcpdump.sh
 # if no program has been declared (if string is zero)
 if [  -z "$2" ]; then
 # initialize tc qdisc on router_1 & router_2
-docker exec router_1 ./tc_qdisc_default.sh
-docker exec router_2 ./tc_qdisc_default.sh
+docker exec router_1 ./netsim_reset.sh
+docker exec router_2 ./netsim_reset.sh
 
 else
 # set up tc qdisc program 1 on router_1 & router_2
-docker exec router_1 ./tc_qdisc_prog_$2.sh
-docker exec router_2 ./tc_qdisc_prog_$2.sh
+docker exec router_1 ./netsim.sh
+docker exec router_2 ./netsim.sh
 
 fi
 
