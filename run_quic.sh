@@ -4,7 +4,7 @@
 
 WORKDIR=/root/test_env/shared/
 PATH_SSH_PUB_KEY=/root/.ssh/mba
-PATH_REMOTE_HOST="marco@mba:/Users/Marco/shared/"
+PATH_REMOTE_HOST="marco@10.10.0.10:/Users/Marco/shared/"
 
 
 # delete all files in shared folder
@@ -26,18 +26,8 @@ docker exec router_1 ./start_tcpdump.sh
 docker exec router_2 ./start_tcpdump.sh
 docker exec server ./start_tcpdump.sh
 
-# if no program has been declared (if string is zero)
-if [  -z "$2" ]; then
-# initialize tc qdisc on router_1 & router_2
-docker exec router_1 ./netsim_reset.sh
-docker exec router_2 ./netsim_reset.sh
-
-else
-# set up tc qdisc program 1 on router_1 & router_2
-docker exec router_1 ./netsim.sh
-docker exec router_2 ./netsim.sh
-
-fi
+docker exec router_1 ./netsim.sh "${@:2}"
+docker exec router_2 ./netsim.sh "${@:2}"
 
 # set data size if argument not empty
 if [ ! -z "$1" ]; then
