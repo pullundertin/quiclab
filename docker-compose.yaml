@@ -21,6 +21,7 @@ services:
 
   router_1:
     image: pulltin/test_env:router_1
+    privileged: true  
     hostname: router_1
     container_name: router_1
     volumes:
@@ -38,6 +39,7 @@ services:
 
   router_2:
     image: pulltin/test_env:router_2
+    privileged: true  
     hostname: router_2
     container_name: router_2
     volumes:
