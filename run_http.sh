@@ -96,5 +96,4 @@ docker exec router_2 ./stop_tcpdump.sh | section_2
 docker exec server ./stop_tcpdump.sh | section_2
 
 # rsync files with macbookair
-rsync -aP --delete $WORKDIR -e "ssh -i $PATH_SSH_PUB_KEY" $PATH_REMOTE_HOST | section_4
-
+rsync -ahPvv --delete $WORKDIR  -e "ssh -i $PATH_SSH_PUB_KEY" $PATH_REMOTE_HOST >> $OUTPUT
