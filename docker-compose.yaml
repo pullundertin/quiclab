@@ -3,6 +3,7 @@ version: "3.3"
 services:
   client:
     image: pulltin/test_env:client
+    privileged: true  
     hostname: client
     container_name: client
     volumes:
@@ -58,6 +59,7 @@ services:
 
   server:
     image: pulltin/test_env:server
+    privileged: true  
     hostname: server
     container_name: server
     volumes:

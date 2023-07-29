@@ -4,7 +4,7 @@
 
 WORKDIR=/root/test_env/shared/
 PATH_SSH_PUB_KEY=/root/.ssh/mba
-PATH_REMOTE_HOST="marco@10.10.0.10:/Users/Marco/shared/"
+PATH_REMOTE_HOST="marco@mba:/Users/Marco/shared/"
 
 
 # delete all files in shared folder
@@ -20,18 +20,27 @@ if [ "$(ls -A $WORKDIR/keys/)" ]; then
 rm -r $WORKDIR/keys/*
 fi
 
+#set flags
+while getopts ":d:a:l:r:w:f:-:" option; do
+	case $option in
+	  f)
+	     FILE_SIZE="$OPTARG"
+ 	     ;;
+	   *)
+	     ;;														               esac														  done
 
 docker exec client ./start_tcpdump.sh
 docker exec router_1 ./start_tcpdump.sh
 docker exec router_2 ./start_tcpdump.sh
 docker exec server ./start_tcpdump.sh
 
-docker exec router_1 ./netsim.sh "${@:2}"
-docker exec router_2 ./netsim.sh "${@:2}"
+docker exec router_1 ./netsim.sh "$@"
+docker exec router_2 ./netsim.sh "$@"
+docker exec client ./receive_window.sh "$@"
 
 # set data size if argument not empty
-if [ ! -z "$1" ]; then
-docker exec server ./generate_data.sh $1
+if [ ! -z "$FILE_SIZE" ]; then
+docker exec server ./generate_data.sh $FILE_SIZE
 fi
 
 # start server

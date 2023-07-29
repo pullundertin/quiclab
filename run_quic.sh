@@ -4,7 +4,7 @@
 
 WORKDIR=/root/test_env/shared/
 PATH_SSH_PUB_KEY=/root/.ssh/mba
-PATH_REMOTE_HOST="marco@10.10.0.10:/Users/Marco/shared/"
+PATH_REMOTE_HOST="marco@mba:/Users/Marco/shared/"
 
 
 # delete all files in shared folder
