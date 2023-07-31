@@ -42,7 +42,7 @@ section_2() {
 }
 
 section_3() {
-	tee >(xargs -I {} sed -i "/$SECTION_3/a {}" $OUTPUT)
+	tee >(xargs -I {} sed -i "/$SECTION_4/i {}" $OUTPUT)
 }
 
 section_4() {
