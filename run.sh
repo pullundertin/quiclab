@@ -62,7 +62,7 @@ section_4() {
 function help() {
       echo "Usage: netsim"
       echo "	-i		FIREWALL		0 | From:To"
-      echo "	-p		PROTOCOL		http | https | quic"
+      echo "	-p		PROTOCOL		http | https | quic | iperf"
       echo "	-f		FILE SIZE		integer in bytes"
       echo "    -d              DELAY			integer in ms"
       echo "    -a              DELAY DEVIATION         integer in ms"
@@ -158,7 +158,8 @@ fi
 echo "File size: $FILE_SIZE" | section_3
 
 # start server
-docker exec server ./start_"$PROTO"_server.sh | section_2
+docker exec server ./start_"$PROTO"_server.sh | section_2 &
+sleep 1 &&
 
 # run request
 docker exec client ./start_"$PROTO"_client.sh | section_2 &&
