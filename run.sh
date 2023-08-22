@@ -159,7 +159,7 @@ echo "File size: $FILE_SIZE" | section_3
 
 # start server
 docker exec server ./start_"$PROTO"_server.sh | section_2 &
-sleep 1 &&
+sleep 3 &&
 
 # run request
 docker exec client ./start_"$PROTO"_client.sh | section_2 &&
