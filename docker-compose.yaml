@@ -11,6 +11,7 @@ services:
       - /root/test_env/shared/keys:/shared/keys
       - /root/test_env/shared/pcap:/shared/pcap
       - /root/test_env/shared/qlog:/shared/qlog
+      - /root/test_env/shared/tcpprobe:/shared/tcpprobe
     cap_add:
       - NET_ADMIN
     networks:
@@ -67,6 +68,7 @@ services:
       - /root/test_env/shared/keys:/shared/keys
       - /root/test_env/shared/pcap:/shared/pcap
       - /root/test_env/shared/qlog:/shared/qlog
+      - /root/test_env/shared/tcpprobe:/shared/tcpprobe
     cap_add:
       - NET_ADMIN
     networks:
