@@ -14,6 +14,7 @@ RMIN=4096
 RDEF=131072
 RMAX=6291456
 FILE_SIZE="1M"
+CLIENT="curl"
 FIREWALL=0
 SECTION_1="LOG"
 SECTION_2="SEQUENCE"
@@ -61,10 +62,11 @@ section_4() {
 
 function help() {
       echo "Usage: netsim"
-      echo "	-i		FIREWALL		0 | From:To"
-      echo "	-p		PROTOCOL		http | https | quic | iperf"
-      echo "	-f		FILE SIZE		integer in bytes"
-      echo "    -d              DELAY			integer in ms"
+      echo "	-c				CLIENT					curl | aioquic"
+      echo "	-i				FIREWALL				0 | From:To"
+      echo "	-p				PROTOCOL				http | https | quic | iperf"
+      echo "	-f				FILE SIZE				integer in bytes"
+      echo "    -d              DELAY					integer in ms"
       echo "    -a              DELAY DEVIATION         integer in ms"
       echo "    -l              LOSS                    integer in %"
       echo "    -r              RATE                    integer in Gbit"
@@ -78,8 +80,11 @@ function help() {
 
 
 #set flags
-while getopts ":i:p:f:d:a:l:r:w:-:" option; do
+while getopts ":c:i:p:f:d:a:l:r:w:-:" option; do
 	case $option in
+	c)
+		CLIENT="$OPTARG"
+		;;
 	i)
 		FIREWALL="$OPTARG"
 		;;
@@ -135,7 +140,12 @@ done
 
 
 date | section_1 
-docker exec client ./start_tcpdump.sh | section_2
+if [ $CLIENT == "curl" ]; then
+docker exec client_curl ./start_tcpdump.sh | section_2
+else
+docker exec client_aioquic ./start_tcpdump.sh | section_2
+fi
+
 docker exec router_1 ./start_tcpdump.sh | section_2
 docker exec router_2 ./start_tcpdump.sh | section_2
 docker exec server ./start_tcpdump.sh | section_2
@@ -143,11 +153,17 @@ docker exec server ./start_tcpdump.sh | section_2
 
 docker exec router_1 ./netsim.sh "$DELAY $DELAY_DEVIATION $LOSS $RATE" | section_3
 docker exec router_2 ./netsim.sh "$DELAY $DELAY_DEVIATION $LOSS $RATE" | section_3
-docker exec client ./receive_window.sh "$WINDOW_SCALING $RMIN $RDEF $RMAX" | section_3
+if [ $CLIENT == "curl" ]; then
+docker exec client_curl ./receive_window.sh "$WINDOW_SCALING $RMIN $RDEF $RMAX" | section_3
+else
+docker exec client_aioquic ./receive_window.sh "$WINDOW_SCALING $RMIN $RDEF $RMAX" | section_3
+fi
+
+# TODO: client_aioquic
 if [ $FIREWALL == "0" ]; then
-docker exec client ./firewall_disable.sh
+docker exec client_curl ./firewall_disable.sh
 else 
-docker exec client ./firewall_enable.sh "$FIREWALL"
+docker exec client_curl ./firewall_enable.sh "$FIREWALL"
 sleep 2
 fi
 
@@ -162,16 +178,25 @@ docker exec server ./start_"$PROTO"_server.sh | section_2 &
 sleep 3 &&
 
 # run request
-docker exec client ./start_"$PROTO"_client.sh | section_2 &&
+if [ $CLIENT == "curl" ]; then
+docker exec client_curl ./start_"$PROTO"_client.sh | section_2 
+else
+docker exec client_aioquic ./start_"$PROTO"_client.sh | section_2 
+fi
 
 # stop server
 sleep 3
 docker exec server ./stop_"$PROTO"_server.sh | section_2
 
 # reset firewall
-docker exec client ./firewall_disable.sh 
+docker exec client_curl ./firewall_disable.sh 
 
-docker exec client ./stop_tcpdump.sh | section_2
+if [ $CLIENT == "curl" ]; then
+docker exec client_curl ./stop_tcpdump.sh | section_2
+else
+docker exec client_aioquic ./stop_tcpdump.sh | section_2
+fi
+
 docker exec router_1 ./stop_tcpdump.sh | section_2
 docker exec router_2 ./stop_tcpdump.sh | section_2
 docker exec server ./stop_tcpdump.sh | section_2

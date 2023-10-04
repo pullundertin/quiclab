@@ -1,11 +1,11 @@
 version: "3.3"
 
 services:
-  client:
-    image: pulltin/test_env:client
+  client_curl:
+    image: pulltin/test_env:client_curl
     privileged: true  
-    hostname: client
-    container_name: client
+    hostname: client_curl
+    container_name: client_curl
     volumes:
       - /root/test_env/shared:/shared
       - /root/test_env/shared/keys:/shared/keys
@@ -17,6 +17,26 @@ services:
     networks:
       A_client_network:
         ipv4_address: 172.1.0.2 
+    tty: true 
+    command: "/setup.sh"
+    working_dir: /
+  
+  client_aioquic:
+    image: pulltin/test_env:client_aioquic
+    privileged: true  
+    hostname: client_aioquic
+    container_name: client_aioquic
+    volumes:
+      - /root/test_env/shared:/shared
+      - /root/test_env/shared/keys:/shared/keys
+      - /root/test_env/shared/pcap:/shared/pcap
+      - /root/test_env/shared/qlog:/shared/qlog
+      - /root/test_env/shared/tcpprobe:/shared/tcpprobe
+    cap_add:
+      - NET_ADMIN
+    networks:
+      A_client_network:
+        ipv4_address: 172.1.0.4 
     tty: true 
     command: "/setup.sh"
     working_dir: /
