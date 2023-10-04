@@ -1,9 +1,9 @@
 #!/bin/bash
 
-WORKDIR="/root/test_env/shared"
+WORKDIR="/Users/tonrausch/test_env/shared"
 
 if [ -d $WORKDIR ]; then
-rm -r $WORKDIR/* 
+sudo rm -r $WORKDIR/* 
 fi
 
 docker compose down

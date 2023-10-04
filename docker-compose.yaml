@@ -2,53 +2,56 @@ version: "3.3"
 
 services:
   client_curl:
-    image: pulltin/test_env:client_curl
+    image: pulltin/test_env:amd64
     privileged: true  
     hostname: client_curl
     container_name: client_curl
     volumes:
-      - /root/test_env/shared:/shared
-      - /root/test_env/shared/keys:/shared/keys
-      - /root/test_env/shared/pcap:/shared/pcap
-      - /root/test_env/shared/qlog:/shared/qlog
-      - /root/test_env/shared/tcpprobe:/shared/tcpprobe
+      - /Users/tonrausch/test_env/client_curl/scripts/:/scripts/
+      - /Users/tonrausch/test_env/shared:/shared
+      - /Users/tonrausch/test_env/shared/keys:/shared/keys
+      - /Users/tonrausch/test_env/shared/pcap:/shared/pcap
+      - /Users/tonrausch/test_env/shared/qlog:/shared/qlog
+      - /Users/tonrausch/test_env/shared/tcpprobe:/shared/tcpprobe
     cap_add:
       - NET_ADMIN
     networks:
       A_client_network:
         ipv4_address: 172.1.0.2 
     tty: true 
-    command: "/setup.sh"
+    command: "/scripts/setup.sh"
     working_dir: /
   
   client_aioquic:
-    image: pulltin/test_env:client_aioquic
+    image: pulltin/test_env:amd64
     privileged: true  
     hostname: client_aioquic
     container_name: client_aioquic
     volumes:
-      - /root/test_env/shared:/shared
-      - /root/test_env/shared/keys:/shared/keys
-      - /root/test_env/shared/pcap:/shared/pcap
-      - /root/test_env/shared/qlog:/shared/qlog
-      - /root/test_env/shared/tcpprobe:/shared/tcpprobe
+      - /Users/tonrausch/test_env/client_aioquic/scripts/:/scripts/
+      - /Users/tonrausch/test_env/shared:/shared
+      - /Users/tonrausch/test_env/shared/keys:/shared/keys
+      - /Users/tonrausch/test_env/shared/pcap:/shared/pcap
+      - /Users/tonrausch/test_env/shared/qlog:/shared/qlog
+      - /Users/tonrausch/test_env/shared/tcpprobe:/shared/tcpprobe
     cap_add:
       - NET_ADMIN
     networks:
       A_client_network:
         ipv4_address: 172.1.0.4 
     tty: true 
-    command: "/setup.sh"
+    command: "/scripts/setup.sh"
     working_dir: /
 
   router_1:
-    image: pulltin/test_env:router_1
+    image: pulltin/test_env:amd64
     privileged: true  
     hostname: router_1
     container_name: router_1
     volumes:
-      - /root/test_env/shared:/shared
-      - /root/test_env/shared/pcap:/shared/pcap
+      - /Users/tonrausch/test_env/router_1/scripts/:/scripts/
+      - /Users/tonrausch/test_env/shared:/shared
+      - /Users/tonrausch/test_env/shared/pcap:/shared/pcap
     cap_add:
       - NET_ADMIN
     networks:
@@ -56,17 +59,18 @@ services:
         ipv4_address: 172.1.0.3
       B_wan_network:
         ipv4_address: 172.2.0.3 
-    command: "/setup.sh"
+    command: "/scripts/setup.sh"
     tty: true
 
   router_2:
-    image: pulltin/test_env:router_2
+    image: pulltin/test_env:amd64
     privileged: true  
     hostname: router_2
     container_name: router_2
     volumes:
-      - /root/test_env/shared:/shared
-      - /root/test_env/shared/pcap:/shared/pcap
+      - /Users/tonrausch/test_env/router_2/scripts/:/scripts/
+      - /Users/tonrausch/test_env/shared:/shared
+      - /Users/tonrausch/test_env/shared/pcap:/shared/pcap
     cap_add:
       - NET_ADMIN
     networks:
@@ -74,27 +78,29 @@ services:
         ipv4_address: 172.2.0.4
       C_server_network:
         ipv4_address: 172.3.0.4 
-    command: "/setup.sh" 
+    command: "/scripts/setup.sh" 
     tty: true
 
 
   server:
-    image: pulltin/test_env:server
+    image: pulltin/test_env:amd64
     privileged: true  
     hostname: server
     container_name: server
     volumes:
-      - /root/test_env/shared:/shared
-      - /root/test_env/shared/keys:/shared/keys
-      - /root/test_env/shared/pcap:/shared/pcap
-      - /root/test_env/shared/qlog:/shared/qlog
-      - /root/test_env/shared/tcpprobe:/shared/tcpprobe
+      - /Users/tonrausch/test_env/server/scripts/:/scripts/
+      - /Users/tonrausch/test_env/server/data/:/data/
+      - /Users/tonrausch/test_env/shared:/shared
+      - /Users/tonrausch/test_env/shared/keys:/shared/keys
+      - /Users/tonrausch/test_env/shared/pcap:/shared/pcap
+      - /Users/tonrausch/test_env/shared/qlog:/shared/qlog
+      - /Users/tonrausch/test_env/shared/tcpprobe:/shared/tcpprobe
     cap_add:
       - NET_ADMIN
     networks:
       C_server_network:
         ipv4_address: 172.3.0.5 
-    command: "/setup.sh"
+    command: "/scripts/setup.sh"
     tty: true
 
 

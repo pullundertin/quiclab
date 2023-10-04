@@ -1,9 +1,9 @@
 #!/bin/bash
 
 
-WORKDIR=/root/test_env/shared/
-PATH_SSH_PUB_KEY=/root/.ssh/mba
-PATH_REMOTE_HOST="marco@mba:/Users/Marco/shared/"
+WORKDIR=/Users/tonrausch/test_env/shared/
+PATH_SSH_PUB_KEY=/Users/tonrausch/.ssh/mba
+PATH_REMOTE_HOST="marco@192.168.2.9:/Users/Marco/shared/"
 OUTPUT=$WORKDIR/output.log
 PROTO="http"
 DELAY=0
@@ -139,67 +139,67 @@ while getopts ":c:i:p:f:d:a:l:r:w:-:" option; do
 done
 
 
-date | section_1 
+#date | section_1 
 if [ $CLIENT == "curl" ]; then
-docker exec client_curl ./start_tcpdump.sh | section_2
+docker exec client_curl ./scripts/start_tcpdump.sh #| section_2
 else
-docker exec client_aioquic ./start_tcpdump.sh | section_2
+docker exec client_aioquic ./scripts/start_tcpdump.sh #| section_2
 fi
 
-docker exec router_1 ./start_tcpdump.sh | section_2
-docker exec router_2 ./start_tcpdump.sh | section_2
-docker exec server ./start_tcpdump.sh | section_2
+docker exec router_1 ./scripts/start_tcpdump.sh #| section_2
+docker exec router_2 ./scripts/start_tcpdump.sh #| section_2
+docker exec server ./scripts/start_tcpdump.sh #| section_2
 
 
-docker exec router_1 ./netsim.sh "$DELAY $DELAY_DEVIATION $LOSS $RATE" | section_3
-docker exec router_2 ./netsim.sh "$DELAY $DELAY_DEVIATION $LOSS $RATE" | section_3
+docker exec router_1 ./scripts/netsim.sh "$DELAY $DELAY_DEVIATION $LOSS $RATE" #| section_3
+docker exec router_2 ./scripts/netsim.sh "$DELAY $DELAY_DEVIATION $LOSS $RATE" #| section_3
 if [ $CLIENT == "curl" ]; then
-docker exec client_curl ./receive_window.sh "$WINDOW_SCALING $RMIN $RDEF $RMAX" | section_3
+docker exec client_curl ./scripts/receive_window.sh "$WINDOW_SCALING $RMIN $RDEF $RMAX" #| section_3
 else
-docker exec client_aioquic ./receive_window.sh "$WINDOW_SCALING $RMIN $RDEF $RMAX" | section_3
+docker exec client_aioquic ./scripts/receive_window.sh "$WINDOW_SCALING $RMIN $RDEF $RMAX" #| section_3
 fi
 
 # TODO: client_aioquic
 if [ $FIREWALL == "0" ]; then
-docker exec client_curl ./firewall_disable.sh
+docker exec client_curl ./scripts/firewall_disable.sh
 else 
-docker exec client_curl ./firewall_enable.sh "$FIREWALL"
+docker exec client_curl ./scripts/firewall_enable.sh "$FIREWALL"
 sleep 2
 fi
 
 # set data size if argument not empty
 if [ ! -z "$FILE_SIZE" ]; then
-docker exec server ./generate_data.sh $FILE_SIZE
+docker exec server ./scripts/generate_data.sh $FILE_SIZE
 fi
-echo "File size: $FILE_SIZE" | section_3
+echo "File size: $FILE_SIZE" #| section_3
 
 # start server
-docker exec server ./start_"$PROTO"_server.sh | section_2 &
+docker exec server ./scripts/start_"$PROTO"_server.sh #| section_2 &
 sleep 3 &&
 
 # run request
 if [ $CLIENT == "curl" ]; then
-docker exec client_curl ./start_"$PROTO"_client.sh | section_2 
+docker exec client_curl ./scripts/start_"$PROTO"_client.sh #| section_2 
 else
-docker exec client_aioquic ./start_"$PROTO"_client.sh | section_2 
+docker exec client_aioquic ./scripts/start_"$PROTO"_client.sh #| section_2 
 fi
 
 # stop server
 sleep 3
-docker exec server ./stop_"$PROTO"_server.sh | section_2
+docker exec server ./scripts/stop_"$PROTO"_server.sh #| section_2
 
 # reset firewall
-docker exec client_curl ./firewall_disable.sh 
+docker exec client_curl ./scripts/firewall_disable.sh 
 
 if [ $CLIENT == "curl" ]; then
-docker exec client_curl ./stop_tcpdump.sh | section_2
+docker exec client_curl ./scripts/stop_tcpdump.sh #| section_2
 else
-docker exec client_aioquic ./stop_tcpdump.sh | section_2
+docker exec client_aioquic ./scripts/stop_tcpdump.sh #| section_2
 fi
 
-docker exec router_1 ./stop_tcpdump.sh | section_2
-docker exec router_2 ./stop_tcpdump.sh | section_2
-docker exec server ./stop_tcpdump.sh | section_2
+docker exec router_1 ./scripts/stop_tcpdump.sh #| section_2
+docker exec router_2 ./scripts/stop_tcpdump.sh #| section_2
+docker exec server ./scripts/stop_tcpdump.sh #| section_2
 
 # rsync files with macbookair
 rsync -ahPvv --delete $WORKDIR  -e "ssh -i $PATH_SSH_PUB_KEY" $PATH_REMOTE_HOST >> $OUTPUT
