@@ -43,6 +43,27 @@ services:
     command: "/scripts/setup.sh"
     working_dir: /
 
+  client_aioquic_2:
+    image: pulltin/test_env:amd64
+    privileged: true  
+    hostname: client_aioquic_2
+    container_name: client_aioquic_2
+    volumes:
+      - /Users/tonrausch/test_env/client_aioquic_2/scripts/:/scripts/
+      - /Users/tonrausch/test_env/shared:/shared
+      - /Users/tonrausch/test_env/shared/keys:/shared/keys
+      - /Users/tonrausch/test_env/shared/pcap:/shared/pcap
+      - /Users/tonrausch/test_env/shared/qlog:/shared/qlog
+      - /Users/tonrausch/test_env/shared/tcpprobe:/shared/tcpprobe
+    cap_add:
+      - NET_ADMIN
+    networks:
+      A_client_network:
+        ipv4_address: 172.1.0.5 
+    tty: true 
+    command: "/scripts/setup.sh"
+    working_dir: /
+
   router_1:
     image: pulltin/test_env:amd64
     privileged: true  

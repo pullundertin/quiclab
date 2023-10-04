@@ -144,6 +144,7 @@ if [ $CLIENT == "curl" ]; then
 docker exec client_curl ./scripts/start_tcpdump.sh #| section_2
 else
 docker exec client_aioquic ./scripts/start_tcpdump.sh #| section_2
+docker exec client_aioquic_2 ./scripts/start_tcpdump.sh #| section_2
 fi
 
 docker exec router_1 ./scripts/start_tcpdump.sh #| section_2
@@ -157,6 +158,7 @@ if [ $CLIENT == "curl" ]; then
 docker exec client_curl ./scripts/receive_window.sh "$WINDOW_SCALING $RMIN $RDEF $RMAX" #| section_3
 else
 docker exec client_aioquic ./scripts/receive_window.sh "$WINDOW_SCALING $RMIN $RDEF $RMAX" #| section_3
+docker exec client_aioquic_2 ./scripts/receive_window.sh "$WINDOW_SCALING $RMIN $RDEF $RMAX" #| section_3
 fi
 
 # TODO: client_aioquic
@@ -182,6 +184,8 @@ if [ $CLIENT == "curl" ]; then
 docker exec client_curl ./scripts/start_"$PROTO"_client.sh #| section_2 
 else
 docker exec client_aioquic ./scripts/start_"$PROTO"_client.sh #| section_2 
+sleep 10
+docker exec client_aioquic_2 ./scripts/start_"$PROTO"_client.sh #| section_2 
 fi
 
 # stop server
@@ -195,6 +199,7 @@ if [ $CLIENT == "curl" ]; then
 docker exec client_curl ./scripts/stop_tcpdump.sh #| section_2
 else
 docker exec client_aioquic ./scripts/stop_tcpdump.sh #| section_2
+docker exec client_aioquic_2 ./scripts/stop_tcpdump.sh #| section_2
 fi
 
 docker exec router_1 ./scripts/stop_tcpdump.sh #| section_2
