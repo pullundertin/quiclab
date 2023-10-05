@@ -1,6 +1,6 @@
 #!/bin/bash
 
-PATH_QLOG=/shared/qlog
+PATH_QLOG=/shared/qlog_server
 PATH_KEYS=/shared/keys/server.key
 
 

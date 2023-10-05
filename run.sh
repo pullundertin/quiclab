@@ -26,8 +26,12 @@ if [ "$(ls -A $WORKDIR/pcap/)" ]; then
 rm -r $WORKDIR/pcap/*
 fi
 
-if [ "$(ls -A $WORKDIR/qlog/)" ]; then
-rm -r $WORKDIR/qlog/*
+if [ "$(ls -A $WORKDIR/qlog_client/)" ]; then
+rm -r $WORKDIR/qlog_client/*
+fi
+
+if [ "$(ls -A $WORKDIR/qlog_server/)" ]; then
+rm -r $WORKDIR/qlog_server/*
 fi
 
 if [ "$(ls -A $WORKDIR/keys/)" ]; then
@@ -143,7 +147,7 @@ done
 if [ $CLIENT == "curl" ]; then
 docker exec client_curl ./scripts/start_tcpdump.sh #| section_2
 else
-docker exec client_aioquic ./scripts/start_tcpdump.sh #| section_2
+docker exec client_aioquic_1 ./scripts/start_tcpdump.sh #| section_2
 docker exec client_aioquic_2 ./scripts/start_tcpdump.sh #| section_2
 fi
 
@@ -157,7 +161,7 @@ docker exec router_2 ./scripts/netsim.sh "$DELAY $DELAY_DEVIATION $LOSS $RATE" #
 if [ $CLIENT == "curl" ]; then
 docker exec client_curl ./scripts/receive_window.sh "$WINDOW_SCALING $RMIN $RDEF $RMAX" #| section_3
 else
-docker exec client_aioquic ./scripts/receive_window.sh "$WINDOW_SCALING $RMIN $RDEF $RMAX" #| section_3
+docker exec client_aioquic_1 ./scripts/receive_window.sh "$WINDOW_SCALING $RMIN $RDEF $RMAX" #| section_3
 docker exec client_aioquic_2 ./scripts/receive_window.sh "$WINDOW_SCALING $RMIN $RDEF $RMAX" #| section_3
 fi
 
@@ -183,7 +187,7 @@ sleep 3 &&
 if [ $CLIENT == "curl" ]; then
 docker exec client_curl ./scripts/start_"$PROTO"_client.sh #| section_2 
 else
-docker exec client_aioquic ./scripts/start_"$PROTO"_client.sh #| section_2 
+docker exec client_aioquic_1 ./scripts/start_"$PROTO"_client.sh #| section_2 
 sleep 10
 docker exec client_aioquic_2 ./scripts/start_"$PROTO"_client.sh #| section_2 
 fi
@@ -198,7 +202,7 @@ docker exec client_curl ./scripts/firewall_disable.sh
 if [ $CLIENT == "curl" ]; then
 docker exec client_curl ./scripts/stop_tcpdump.sh #| section_2
 else
-docker exec client_aioquic ./scripts/stop_tcpdump.sh #| section_2
+docker exec client_aioquic_1 ./scripts/stop_tcpdump.sh #| section_2
 docker exec client_aioquic_2 ./scripts/stop_tcpdump.sh #| section_2
 fi
 
