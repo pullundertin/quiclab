@@ -193,7 +193,7 @@ echo client_curl
 else
 docker exec client_aioquic_1 ./scripts/start_"$PROTO"_client.sh #| section_2 
 # 0-RTT !
-sleep 10
+sleep 5
 docker exec client_aioquic_2 ./scripts/start_"$PROTO"_client.sh #| section_2 
 fi
 
