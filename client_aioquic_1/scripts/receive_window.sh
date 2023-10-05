@@ -13,4 +13,4 @@ sysctl -w net.ipv4.tcp_rmem="$RMEM" &>/dev/null
 
 
 
-echo "client_aioquic: window scaling=$WINDOW_SCALING, receive window=$RMEM."
+echo "client_aioquic_1: window scaling=$WINDOW_SCALING, receive window=$RMEM."

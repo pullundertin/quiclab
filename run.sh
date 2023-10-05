@@ -159,7 +159,8 @@ docker exec server ./scripts/start_tcpdump.sh #| section_2
 docker exec router_1 ./scripts/netsim.sh "$DELAY $DELAY_DEVIATION $LOSS $RATE" #| section_3
 docker exec router_2 ./scripts/netsim.sh "$DELAY $DELAY_DEVIATION $LOSS $RATE" #| section_3
 if [ $CLIENT == "curl" ]; then
-docker exec client_curl ./scripts/receive_window.sh "$WINDOW_SCALING $RMIN $RDEF $RMAX" #| section_3
+echo client_curl
+#docker exec client_curl ./scripts/receive_window.sh "$WINDOW_SCALING $RMIN $RDEF $RMAX" #| section_3
 else
 docker exec client_aioquic_1 ./scripts/receive_window.sh "$WINDOW_SCALING $RMIN $RDEF $RMAX" #| section_3
 docker exec client_aioquic_2 ./scripts/receive_window.sh "$WINDOW_SCALING $RMIN $RDEF $RMAX" #| section_3
@@ -167,9 +168,11 @@ fi
 
 # TODO: client_aioquic
 if [ $FIREWALL == "0" ]; then
-docker exec client_curl ./scripts/firewall_disable.sh
+echo client_curl
+#docker exec client_curl ./scripts/firewall_disable.sh
 else 
-docker exec client_curl ./scripts/firewall_enable.sh "$FIREWALL"
+echo client_curl
+# docker exec client_curl ./scripts/firewall_enable.sh "$FIREWALL"
 sleep 2
 fi
 
@@ -185,9 +188,11 @@ sleep 3 &&
 
 # run request
 if [ $CLIENT == "curl" ]; then
-docker exec client_curl ./scripts/start_"$PROTO"_client.sh #| section_2 
+echo client_curl
+#docker exec client_curl ./scripts/start_"$PROTO"_client.sh #| section_2 
 else
 docker exec client_aioquic_1 ./scripts/start_"$PROTO"_client.sh #| section_2 
+# 0-RTT !
 sleep 10
 docker exec client_aioquic_2 ./scripts/start_"$PROTO"_client.sh #| section_2 
 fi
@@ -197,10 +202,12 @@ sleep 3
 docker exec server ./scripts/stop_"$PROTO"_server.sh #| section_2
 
 # reset firewall
-docker exec client_curl ./scripts/firewall_disable.sh 
+echo client_curl
+#docker exec client_curl ./scripts/firewall_disable.sh 
 
 if [ $CLIENT == "curl" ]; then
-docker exec client_curl ./scripts/stop_tcpdump.sh #| section_2
+echo client_curl
+#docker exec client_curl ./scripts/stop_tcpdump.sh #| section_2
 else
 docker exec client_aioquic_1 ./scripts/stop_tcpdump.sh #| section_2
 docker exec client_aioquic_2 ./scripts/stop_tcpdump.sh #| section_2
