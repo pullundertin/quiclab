@@ -7,6 +7,5 @@ sudo rm -r $WORKDIR/*
 fi
 
 docker compose down
-docker system prune -a
 docker compose up -d 
 
