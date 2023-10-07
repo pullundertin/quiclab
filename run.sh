@@ -188,7 +188,7 @@ echo "File size: $FILE_SIZE" #| section_3
 
 # start server
 docker exec server ./scripts/start_"$PROTO"_server.sh & #| section_2 &
-#sleep 3 &&
+sleep 3 &&
 
 # # run request
 # if [ $CLIENT == "curl" ]; then
@@ -203,7 +203,7 @@ docker exec client_aioquic_1 ./scripts/start_"$PROTO"_client.sh  #| section_2
 # fi
 
 # stop server
-#sleep 3
+sleep 3
 docker exec server ./scripts/stop_"$PROTO"_server.sh #| section_2
 
 # reset firewall
