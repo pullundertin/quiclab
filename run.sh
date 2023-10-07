@@ -1,8 +1,8 @@
 #!/bin/bash
+source ./.env
 
-
-WORKDIR=/Users/tonrausch/test_env/shared/
-PATH_SSH_PUB_KEY=/Users/tonrausch/.ssh/mba
+WORKDIR=$ROOT_DIR/test_env/shared/
+PATH_SSH_PUB_KEY=$ROOT_DIR/.ssh/mba
 PATH_REMOTE_HOST="marco@192.168.2.9:/Users/Marco/shared/"
 OUTPUT=$WORKDIR/output.log
 PROTO="http"
@@ -24,6 +24,10 @@ SECTION_4="RSYNC"
 # delete all files in shared folder
 if [ "$(ls -A $WORKDIR/pcap/)" ]; then
 rm -r $WORKDIR/pcap/*
+fi
+
+if [ "$(ls -A $WORKDIR/logs/)" ]; then
+rm -r $WORKDIR/logs/*
 fi
 
 if [ "$(ls -A $WORKDIR/qlog_client/)" ]; then
@@ -166,15 +170,15 @@ docker exec client_aioquic_1 ./scripts/receive_window.sh "$WINDOW_SCALING $RMIN 
 docker exec client_aioquic_2 ./scripts/receive_window.sh "$WINDOW_SCALING $RMIN $RDEF $RMAX" #| section_3
 fi
 
-# TODO: client_aioquic
-if [ $FIREWALL == "0" ]; then
-echo client_curl
-#docker exec client_curl ./scripts/firewall_disable.sh
-else 
-echo client_curl
-# docker exec client_curl ./scripts/firewall_enable.sh "$FIREWALL"
-sleep 2
-fi
+# # TODO: client_aioquic
+# if [ $FIREWALL == "0" ]; then
+# echo client_curl
+# #docker exec client_curl ./scripts/firewall_disable.sh
+# else 
+# echo client_curl
+# # docker exec client_curl ./scripts/firewall_enable.sh "$FIREWALL"
+# sleep 2
+# fi
 
 # set data size if argument not empty
 if [ ! -z "$FILE_SIZE" ]; then
@@ -183,35 +187,34 @@ fi
 echo "File size: $FILE_SIZE" #| section_3
 
 # start server
-docker exec server ./scripts/start_"$PROTO"_server.sh #| section_2 &
+docker exec server ./scripts/start_"$PROTO"_server.sh & #| section_2 &
 sleep 3 &&
 
-# run request
-if [ $CLIENT == "curl" ]; then
-echo client_curl
-#docker exec client_curl ./scripts/start_"$PROTO"_client.sh #| section_2 
-else
+# # run request
+# if [ $CLIENT == "curl" ]; then
+# echo client_curl
+# #docker exec client_curl ./scripts/start_"$PROTO"_client.sh #| section_2 
+# else
 docker exec client_aioquic_1 ./scripts/start_"$PROTO"_client.sh #| section_2 
 # 0-RTT !
 # sleep 5
 # docker exec client_aioquic_2 ./scripts/start_"$PROTO"_client.sh #| section_2 
-fi
+# fi
 
 # stop server
 sleep 3
 docker exec server ./scripts/stop_"$PROTO"_server.sh #| section_2
 
 # reset firewall
-echo client_curl
 #docker exec client_curl ./scripts/firewall_disable.sh 
 
-if [ $CLIENT == "curl" ]; then
-echo client_curl
-#docker exec client_curl ./scripts/stop_tcpdump.sh #| section_2
-else
+# if [ $CLIENT == "curl" ]; then
+# echo client_curl
+# #docker exec client_curl ./scripts/stop_tcpdump.sh #| section_2
+# else
 docker exec client_aioquic_1 ./scripts/stop_tcpdump.sh #| section_2
 docker exec client_aioquic_2 ./scripts/stop_tcpdump.sh #| section_2
-fi
+# fi
 
 docker exec router_1 ./scripts/stop_tcpdump.sh #| section_2
 docker exec router_2 ./scripts/stop_tcpdump.sh #| section_2
