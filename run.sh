@@ -1,10 +1,16 @@
-#!/bin/bash
+# #!/bin/bash
+
+# Get ENVIRONMENT VARIABLES
 source ./.env
 
+# Error handling
+set -e
+
+# Variable names
 WORKDIR=$ROOT_DIR/test_env/shared/
-PATH_SSH_PUB_KEY=$ROOT_DIR/.ssh/mba
-PATH_REMOTE_HOST="marco@192.168.2.9:/Users/Marco/shared/"
-OUTPUT=$WORKDIR/output.log
+SSH_PUBLIC_KEY_PATH="$ROOT_DIR/.ssh/mba"
+REMOTE_HOST="marco@192.168.2.9:/Users/Marco/shared"
+OUTPUT="$ROOT_DIR/test_env/shared/output.log"
 PROTO="http"
 DELAY=0
 DELAY_DEVIATION=0
@@ -21,30 +27,14 @@ SECTION_2="SEQUENCE"
 SECTION_3="SETTINGS"
 SECTION_4="RSYNC"
 
-# delete all files in shared folder
-if [ "$(ls -A $WORKDIR/pcap/)" ]; then
-rm -r $WORKDIR/pcap/*
-fi
+# Delete files
+folders=("$WORKDIR/pcap" "$WORKDIR/logs" "$WORKDIR/qlog_client" "$WORKDIR/qlog_server" "$WORKDIR/keys")
+for folder in "${folders[@]}"; do
+    rm -rf "$folder"/*
+done
 
-if [ "$(ls -A $WORKDIR/logs/)" ]; then
-rm -r $WORKDIR/logs/*
-fi
-
-if [ "$(ls -A $WORKDIR/qlog_client/)" ]; then
-rm -r $WORKDIR/qlog_client/*
-fi
-
-if [ "$(ls -A $WORKDIR/qlog_server/)" ]; then
-rm -r $WORKDIR/qlog_server/*
-fi
-
-if [ "$(ls -A $WORKDIR/keys/)" ]; then
-rm -r $WORKDIR/keys/*
-fi
-
-if [ -e "$OUTPUT" ]; then
-rm -r $OUTPUT
-fi
+# Delete output file
+[ -e "$OUTPUT" ] && rm -f "$OUTPUT"
 
 echo -e "[$SECTION_1]" > $OUTPUT
 echo -e "\n[$SECTION_2]" >> $OUTPUT
@@ -70,156 +60,134 @@ section_4() {
 
 function help() {
       echo "Usage: netsim"
-      echo "	-c				CLIENT					curl | aioquic"
-      echo "	-i				FIREWALL				0 | From:To"
-      echo "	-p				PROTOCOL				http | https | quic | iperf"
-      echo "	-f				FILE SIZE				integer in bytes"
-      echo "    -d              DELAY					integer in ms"
-      echo "    -a              DELAY DEVIATION         integer in ms"
-      echo "    -l              LOSS                    integer in %"
-      echo "    -r              RATE                    integer in Gbit"
-      echo "    -w              window scaling          0/1"
-      echo "    --rmin          recieve window minimum  integer in bytes"
-      echo "    --rdef          recieve window default  integer in bytes"
-      echo "    --rmax          recieve window maximum  integer in bytes"
+      echo -e "-c\t\tCLIENT\t\t\t\tcurl | aioquic"
+      echo -e "-i\t\tFIREWALL\t\t\t0 | From:To"
+      echo -e "-p\t\tPROTOCOL\t\t\thttp | https | quic | iperf"
+      echo -e "-f\t\tFILE SIZE\t\t\tinteger in bytes"
+      echo -e "-d\t\tDELAY\t\t\t\tinteger in ms"
+      echo -e "-a\t\tDELAY DEVIATION\t\t\tinteger in ms"
+      echo -e "-l\t\tLOSS\t\t\t\tinteger in %"
+      echo -e "-r\t\tRATE\t\t\t\tinteger in Gbit"
+      echo -e "-w\t\twindow scaling\t\t\t0/1"
+      echo -e "--rmin\t\trecieve window minimum\t\tinteger in bytes"
+      echo -e "--rdef\t\trecieve window default\t\tinteger in bytes"
+      echo -e "--rmax\t\trecieve window maximum\t\tinteger in bytes"
       exit 1
 
 }
 
 
 #set flags
-while getopts ":c:i:p:f:d:a:l:r:w:-:" option; do
-	case $option in
-	c)
-		CLIENT="$OPTARG"
-		;;
-	i)
-		FIREWALL="$OPTARG"
-		;;
-	p)
-	     	PROTO="$OPTARG"
-	     	;;
-	f)
-		FILE_SIZE="$OPTARG"
- 	    	;;
-        d)
-		DELAY="$OPTARG"
-		;;
-	a)
-		DELAY_DEVIATION="$OPTARG"
-		;;
-	l)
-		LOSS="$OPTARG"
-		;;
-	r)
-		RATE="$OPTARG"
-		;;
-	w)
-		WINDOW_SCALING="$OPTARG"
-		;;
-	-)
-              	case "${OPTARG}" in
-                rmin)
-                    RMIN="${!OPTIND}"; OPTIND=$(( $OPTIND + 1 ))
-                    ;;
-                rdef)
-                    RDEF="${!OPTIND}"; OPTIND=$(( $OPTIND + 1 ))
-                    ;;
-                rmax)
-                    RMAX="${!OPTIND}"; OPTIND=$(( $OPTIND + 1 ))
-                    ;;
-
-                *)
-		    if [ "$OPTERR" = 1 ] && [ "${optspec:0:1}" != ":" ]; then
-                                echo "Unknown option --${OPTARG}" >&2
-                    fi
-		    help
-                    ;;
-      		esac
-      		;;
-	*)
-  			if [ "$OPTERR" = 1 ] && [ "${optspec:0:1}" != ":" ]; then
-                        	echo "Unknown option --${OPTARG}" >&2
-                    	fi
-	     	help
-	     	;;										
-        esac	
+while [[ $# -gt 0 ]]; do
+    case "$1" in
+        -c|--client)
+            CLIENT="$2"
+            shift 2
+            ;;
+        -i|--firewall)
+            FIREWALL="$2"
+            shift 2
+            ;;
+        -p|--protocol)
+            PROTO="$2"
+            shift 2
+            ;;
+        -f|--file-size)
+            FILE_SIZE="$2"
+            shift 2
+            ;;
+        -d|--delay)
+            DELAY="$2"
+            shift 2
+            ;;
+        -a|--delay-deviation)
+            DELAY_DEVIATION="$2"
+            shift 2
+            ;;
+        -l|--loss)
+            LOSS="$2"
+            shift 2
+            ;;
+        -r|--rate)
+            RATE="$2"
+            shift 2
+            ;;
+        -w|--window-scaling)
+            WINDOW_SCALING="$2"
+            shift 2
+            ;;
+        --rmin)
+            RMIN="$2"
+            shift 2
+            ;;
+        --rdef)
+            RDEF="$2"
+            shift 2
+            ;;
+        --rmax)
+            RMAX="$2"
+            shift 2
+            ;;
+        *)
+            echo "Unknown option: $1"
+			help
+            exit 1
+            ;;
+    esac
 done
 
 
-#date | section_1 
-if [ $CLIENT == "curl" ]; then
-docker exec client_curl ./scripts/start_tcpdump.sh #| section_2
-else
-docker exec client_aioquic_1 ./scripts/start_tcpdump.sh #| section_2
-docker exec client_aioquic_2 ./scripts/start_tcpdump.sh #| section_2
-fi
 
-docker exec router_1 ./scripts/start_tcpdump.sh #| section_2
-docker exec router_2 ./scripts/start_tcpdump.sh #| section_2
-docker exec server ./scripts/start_tcpdump.sh #| section_2
+date | section_1 
 
+# List of container names
+containers=("client_aioquic_1" "client_aioquic_2" "router_1" "router_2" "server")
+routers=("router_1" "router_2")
+clients=("client_aioquic_1" "client_aioquic_2")
 
-docker exec router_1 ./scripts/netsim.sh "$DELAY $DELAY_DEVIATION $LOSS $RATE" #| section_3
-docker exec router_2 ./scripts/netsim.sh "$DELAY $DELAY_DEVIATION $LOSS $RATE" #| section_3
-if [ $CLIENT == "curl" ]; then
-echo client_curl
-#docker exec client_curl ./scripts/receive_window.sh "$WINDOW_SCALING $RMIN $RDEF $RMAX" #| section_3
-else
-docker exec client_aioquic_1 ./scripts/receive_window.sh "$WINDOW_SCALING $RMIN $RDEF $RMAX" #| section_3
-docker exec client_aioquic_2 ./scripts/receive_window.sh "$WINDOW_SCALING $RMIN $RDEF $RMAX" #| section_3
-fi
+# Iterate over containers and start tcpdump
+for container in "${containers[@]}"; do
+    docker exec "$container" ./scripts/start_tcpdump.sh | section_2
+done
 
-# # TODO: client_aioquic
-# if [ $FIREWALL == "0" ]; then
-# echo client_curl
-# #docker exec client_curl ./scripts/firewall_disable.sh
-# else 
-# echo client_curl
-# # docker exec client_curl ./scripts/firewall_enable.sh "$FIREWALL"
-# sleep 2
-# fi
+# Iterate over routers and set netsim parameters
+for router in "${routers[@]}"; do
+    docker exec "$router" ./scripts/netsim.sh "$DELAY $DELAY_DEVIATION $LOSS $RATE" | section_3
+done
+
+# Iterate over clients and set tcp parameters
+for client in "${clients[@]}"; do
+    docker exec "$client" ./scripts/receive_window.sh "$WINDOW_SCALING $RMIN $RDEF $RMAX" | section_3
+done
 
 # set data size if argument not empty
 if [ ! -z "$FILE_SIZE" ]; then
 docker exec server ./scripts/generate_data.sh $FILE_SIZE
 fi
-echo "File size: $FILE_SIZE" #| section_3
+echo "File size: $FILE_SIZE" | section_3
 
 # start server
-docker exec server ./scripts/start_"$PROTO"_server.sh & #| section_2 &
+docker exec server ./scripts/start_"$PROTO"_server.sh | section_2 &
 sleep 3 &&
 
-# # run request
-# if [ $CLIENT == "curl" ]; then
-# echo client_curl
-# #docker exec client_curl ./scripts/start_"$PROTO"_client.sh #| section_2 
-# else
-docker exec client_aioquic_1 ./scripts/start_"$PROTO"_client.sh  #| section_2 
+# run request
+docker exec client_aioquic_1 ./scripts/start_"$PROTO"_client.sh  | section_2 
 
 # 0-RTT !
 # sleep 5
-# docker exec client_aioquic_2 ./scripts/start_"$PROTO"_client.sh #| section_2 
+# docker exec client_aioquic_2 ./scripts/start_"$PROTO"_client.sh | section_2 
 # fi
 
 # stop server
 sleep 3
-docker exec server ./scripts/stop_"$PROTO"_server.sh #| section_2
+docker exec server ./scripts/stop_"$PROTO"_server.sh | section_2
 
-# reset firewall
-#docker exec client_curl ./scripts/firewall_disable.sh 
 
-# if [ $CLIENT == "curl" ]; then
-# echo client_curl
-# #docker exec client_curl ./scripts/stop_tcpdump.sh #| section_2
-# else
-docker exec client_aioquic_1 ./scripts/stop_tcpdump.sh #| section_2
-docker exec client_aioquic_2 ./scripts/stop_tcpdump.sh #| section_2
-# fi
+# Iterate over containers and stop tcpdump
+for container in "${containers[@]}"; do
+	docker exec "$container" ./scripts/stop_tcpdump.sh | section_2 &
+done
 
-docker exec router_1 ./scripts/stop_tcpdump.sh #| section_2
-docker exec router_2 ./scripts/stop_tcpdump.sh #| section_2
-docker exec server ./scripts/stop_tcpdump.sh #| section_2
-
-# rsync files with macbookair
-rsync -ahPvv --delete $WORKDIR  -e "ssh -i $PATH_SSH_PUB_KEY" $PATH_REMOTE_HOST >> $OUTPUT
+sleep 3
+# Rsync files with remote host
+rsync -ahP --delete "$WORKDIR" -e "ssh -i $SSH_PUBLIC_KEY_PATH" "$REMOTE_HOST" >> "$OUTPUT"

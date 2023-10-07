@@ -42,12 +42,12 @@ rm -r /shared/ticket.txt
 # # run multiple streams
 #python /aioquic/examples/http3_client.py -k https://172.3.0.5:4433/echo https://172.3.0.5:4433/echo --secrets-log $PATH_KEYS --quic-log $PATH_QLOG --zero-rtt --session-ticket /shared/ticket.txt 
 
-ip a s dev eth0
+#ip a s dev eth0
 python /aioquic/examples/http3_client.py -k https://172.3.0.5:4433/echo --quic-log $PATH_QLOG --zero-rtt --output-dir /shared/ --session-ticket /shared/ticket.txt >> /shared/logs/client.log 2>&1 &
 
 change_ip & 
 wait  
-ip a s dev eth0
+#ip a s dev eth0
 
 #reset_ip 
 # sleep 5
