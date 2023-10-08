@@ -1,6 +1,6 @@
 #!/bin/bash
 
-echo "server: stopping quic server..."
-pkill python >> /shared/logs/server.log 2>&1
+echo "$HOST: stopping quic server..."
+pkill python >> $LOG_PATH 2>&1
 
 

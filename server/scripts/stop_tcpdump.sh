@@ -4,7 +4,7 @@
 cat /sys/kernel/debug/tracing/trace > /shared/tcpprobe/server.log
 echo 0 > /sys/kernel/debug/tracing/events/tcp/enable
 
-echo "server: stopping server tcpdump..."
-pkill tcpdump
+echo "$HOST: stopping server tcpdump..."
+pkill tcpdump >> $LOG_PATH 2>&1
 
 

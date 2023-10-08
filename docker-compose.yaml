@@ -1,13 +1,13 @@
 version: "3.3"
 
 services:
-  client_aioquic_1:
+  client_1:
     image: pulltin/test_env:${ARCH}
     privileged: true  
-    hostname: client_aioquic_1
-    container_name: client_aioquic_1
+    hostname: client_1
+    container_name: client_1
     volumes:
-      - ${ROOT_DIR}/test_env/client_aioquic_1/scripts/:/scripts/
+      - ${ROOT_DIR}/test_env/client/scripts/:/scripts/
       - ${ROOT_DIR}/test_env/shared:/shared
       - ${ROOT_DIR}/test_env/shared/logs:/shared/logs
       - ${ROOT_DIR}/test_env/shared/keys:/shared/keys
@@ -21,17 +21,25 @@ services:
         ipv4_address: 172.1.0.101 
     environment:
       - TZ=Europe/Berlin
+      - HOST=client_1
+      - LOG_PATH=/shared/logs/client_1.log
+      - KEYS_PATH=/shared/keys/client.key
+      - TICKET_PATH=/shared/keys/ticket.txt
+      - QLOG_PATH=/shared/qlog_client      
+      - PCAP_PATH=/shared/pcap/client_1.pcap
+
+
     tty: true 
     command: "/scripts/setup.sh"
     working_dir: /
 
-  client_aioquic_2:
+  client_2:
     image: pulltin/test_env:${ARCH}
     privileged: true  
-    hostname: client_aioquic_2
-    container_name: client_aioquic_2
+    hostname: client_2
+    container_name: client_2
     volumes:
-      - ${ROOT_DIR}/test_env/client_aioquic_2/scripts/:/scripts/
+      - ${ROOT_DIR}/test_env/client/scripts/:/scripts/
       - ${ROOT_DIR}/test_env/shared:/shared
       - ${ROOT_DIR}/test_env/shared/logs:/shared/logs
       - ${ROOT_DIR}/test_env/shared/keys:/shared/keys
@@ -45,6 +53,15 @@ services:
         ipv4_address: 172.1.0.102
     environment:
       - TZ=Europe/Berlin
+      - HOST=client_2
+      - LOG_PATH=/shared/logs/client_2.log
+      - KEYS_PATH=/shared/keys/client.key
+      - TICKET_PATH=/shared/keys/ticket.txt
+      - QLOG_PATH=/shared/qlog_client
+      - PCAP_PATH=/shared/pcap/client_2.pcap
+
+
+
     tty: true 
     command: "/scripts/setup.sh"
     working_dir: /
@@ -55,7 +72,7 @@ services:
     hostname: router_1
     container_name: router_1
     volumes:
-      - ${ROOT_DIR}/test_env/router_1/scripts/:/scripts/
+      - ${ROOT_DIR}/test_env/router/scripts/:/scripts/
       - ${ROOT_DIR}/test_env/shared:/shared
       - ${ROOT_DIR}/test_env/shared/logs:/shared/logs
       - ${ROOT_DIR}/test_env/shared/pcap:/shared/pcap
@@ -68,6 +85,16 @@ services:
         ipv4_address: 172.2.0.3 
     environment:
       - TZ=Europe/Berlin
+      - HOST=router_1
+      - LOG_PATH=/shared/logs/router_1.log
+      - PCAP_PATH_1=/shared/pcap/router_1_eth0.pcap
+      - PCAP_PATH_2=/shared/pcap/router_1_eth1.pcap
+      - SUBNET_1=172.2.0.0/24
+      - SUBNET_2=172.3.0.0/24
+      - GW_1=172.2.0.3
+      - GW_2=172.2.0.4
+      - IFACE=eth1
+
     command: "/scripts/setup.sh"
     tty: true
 
@@ -77,7 +104,7 @@ services:
     hostname: router_2
     container_name: router_2
     volumes:
-      - ${ROOT_DIR}/test_env/router_2/scripts/:/scripts/
+      - ${ROOT_DIR}/test_env/router/scripts/:/scripts/
       - ${ROOT_DIR}/test_env/shared:/shared
       - ${ROOT_DIR}/test_env/shared/logs:/shared/logs
       - ${ROOT_DIR}/test_env/shared/pcap:/shared/pcap
@@ -90,6 +117,16 @@ services:
         ipv4_address: 172.3.0.4 
     environment:
       - TZ=Europe/Berlin
+      - HOST=router_2
+      - LOG_PATH=/shared/logs/router_2.log
+      - PCAP_PATH_1=/shared/pcap/router_2_eth0.pcap
+      - PCAP_PATH_2=/shared/pcap/router_2_eth1.pcap
+      - SUBNET_1=172.1.0.0/24
+      - SUBNET_2=172.2.0.0/24
+      - GW_1=172.2.0.3
+      - GW_2=172.2.0.4
+      - IFACE=eth0
+
     command: "/scripts/setup.sh" 
     tty: true
 
@@ -115,6 +152,11 @@ services:
         ipv4_address: 172.3.0.5 
     environment:
       - TZ=Europe/Berlin
+      - HOST=server
+      - LOG_PATH=/shared/logs/server.log
+      - QLOG_PATH=/shared/qlog_server
+      - PCAP_PATH=/shared/pcap/server.pcap
+
     command: "/scripts/setup.sh"
     tty: true
 

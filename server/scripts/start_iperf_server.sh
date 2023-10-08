@@ -1,7 +1,7 @@
 #!/bin/bash
 
 
-echo "server: starting iperf server..."
-iperf3 -s &> /dev/null
+echo "$HOST: starting iperf server..."
+iperf3 -s >> $LOG_PATH 2>&1
 
 
