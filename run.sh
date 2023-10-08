@@ -70,10 +70,6 @@ docker exec server ./scripts/generate_data.sh $FILE_SIZE
 fi
 echo "File size: $FILE_SIZE" | section_3
 
-# if [ -e $TICKET_PATH ]; then
-#     rm -r $TICKET_PATH
-# fi
-
 # Iterate over peers and start communication
 for peer in "${peers[@]}"; do
     docker exec "$peer" ./scripts/start_"$PROTO".sh | section_2 
