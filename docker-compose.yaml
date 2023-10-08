@@ -2,7 +2,7 @@ version: "3.3"
 
 services:
   client_aioquic_1:
-    image: pulltin/test_env:amd64
+    image: pulltin/test_env:${ARCH}
     privileged: true  
     hostname: client_aioquic_1
     container_name: client_aioquic_1
@@ -26,7 +26,7 @@ services:
     working_dir: /
 
   client_aioquic_2:
-    image: pulltin/test_env:amd64
+    image: pulltin/test_env:${ARCH}
     privileged: true  
     hostname: client_aioquic_2
     container_name: client_aioquic_2
@@ -50,7 +50,7 @@ services:
     working_dir: /
 
   router_1:
-    image: pulltin/test_env:amd64
+    image: pulltin/test_env:${ARCH}
     privileged: true  
     hostname: router_1
     container_name: router_1
@@ -72,7 +72,7 @@ services:
     tty: true
 
   router_2:
-    image: pulltin/test_env:amd64
+    image: pulltin/test_env:${ARCH}
     privileged: true  
     hostname: router_2
     container_name: router_2
@@ -95,7 +95,7 @@ services:
 
 
   server:
-    image: pulltin/test_env:amd64
+    image: pulltin/test_env:${ARCH}
     privileged: true  
     hostname: server
     container_name: server
