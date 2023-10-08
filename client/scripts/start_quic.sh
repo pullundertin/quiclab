@@ -44,6 +44,7 @@ python /aioquic/examples/http3_client.py -k https://172.3.0.5:4433/echo --secret
 
 change_ip & 
 wait  
+sleep 3
 #ip a s dev eth0
 
 #reset_ip 
