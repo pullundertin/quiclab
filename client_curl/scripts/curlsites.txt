@@ -1,4 +1,0 @@
-url=https://172.3.0.5:4433/echo
-output=/dev/null
-url=https://172.3.0.5:4433/echo_2
-output=/dev/null
