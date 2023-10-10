@@ -3,18 +3,18 @@ version: "3.3"
 services:
 
   client_1:
-    image: pulltin/test_env:${ARCH}
+    image: pulltin/quiclab:latest
     privileged: true  
     hostname: client_1
     container_name: client_1
     volumes:
-      - ${ROOT_DIR}/test_env/client/scripts/:/scripts/
-      - ${ROOT_DIR}/test_env/shared:/shared
-      - ${ROOT_DIR}/test_env/shared/logs:/shared/logs
-      - ${ROOT_DIR}/test_env/shared/keys:/shared/keys
-      - ${ROOT_DIR}/test_env/shared/pcap:/shared/pcap
-      - ${ROOT_DIR}/test_env/shared/qlog_client:/shared/qlog_client
-      - ${ROOT_DIR}/test_env/shared/tcpprobe:/shared/tcpprobe
+      - ./client/scripts/:/scripts/
+      - ./shared:/shared
+      - ./shared/logs:/shared/logs
+      - ./shared/keys:/shared/keys
+      - ./shared/pcap:/shared/pcap
+      - ./shared/qlog_client:/shared/qlog_client
+      - ./shared/tcpprobe:/shared/tcpprobe
     cap_add:
       - NET_ADMIN
     networks:
@@ -34,18 +34,18 @@ services:
     working_dir: /
 
   client_2:
-    image: pulltin/test_env:${ARCH}
+    image: pulltin/quiclab:latest
     privileged: true  
     hostname: client_2
     container_name: client_2
     volumes:
-      - ${ROOT_DIR}/test_env/client/scripts/:/scripts/
-      - ${ROOT_DIR}/test_env/shared:/shared
-      - ${ROOT_DIR}/test_env/shared/logs:/shared/logs
-      - ${ROOT_DIR}/test_env/shared/keys:/shared/keys
-      - ${ROOT_DIR}/test_env/shared/pcap:/shared/pcap
-      - ${ROOT_DIR}/test_env/shared/qlog_client:/shared/qlog_client
-      - ${ROOT_DIR}/test_env/shared/tcpprobe:/shared/tcpprobe
+      - ./client/scripts/:/scripts/
+      - ./shared:/shared
+      - ./shared/logs:/shared/logs
+      - ./shared/keys:/shared/keys
+      - ./shared/pcap:/shared/pcap
+      - ./shared/qlog_client:/shared/qlog_client
+      - ./shared/tcpprobe:/shared/tcpprobe
     cap_add:
       - NET_ADMIN
     networks:
@@ -65,15 +65,15 @@ services:
     working_dir: /
 
   router_1:
-    image: pulltin/test_env:${ARCH}
+    image: pulltin/quiclab:latest
     privileged: true  
     hostname: router_1
     container_name: router_1
     volumes:
-      - ${ROOT_DIR}/test_env/router/scripts/:/scripts/
-      - ${ROOT_DIR}/test_env/shared:/shared
-      - ${ROOT_DIR}/test_env/shared/logs:/shared/logs
-      - ${ROOT_DIR}/test_env/shared/pcap:/shared/pcap
+      - ./router/scripts/:/scripts/
+      - ./shared:/shared
+      - ./shared/logs:/shared/logs
+      - ./shared/pcap:/shared/pcap
     cap_add:
       - NET_ADMIN
     networks:
@@ -98,15 +98,15 @@ services:
     tty: true
 
   router_2:
-    image: pulltin/test_env:${ARCH}
+    image: pulltin/quiclab:latest
     privileged: true  
     hostname: router_2
     container_name: router_2
     volumes:
-      - ${ROOT_DIR}/test_env/router/scripts/:/scripts/
-      - ${ROOT_DIR}/test_env/shared:/shared
-      - ${ROOT_DIR}/test_env/shared/logs:/shared/logs
-      - ${ROOT_DIR}/test_env/shared/pcap:/shared/pcap
+      - ./router/scripts/:/scripts/
+      - ./shared:/shared
+      - ./shared/logs:/shared/logs
+      - ./shared/pcap:/shared/pcap
     cap_add:
       - NET_ADMIN
     networks:
@@ -132,19 +132,19 @@ services:
 
 
   server:
-    image: pulltin/test_env:${ARCH}
+    image: pulltin/quiclab:latest
     privileged: true  
     hostname: server
     container_name: server
     volumes:
-      - ${ROOT_DIR}/test_env/server/scripts/:/scripts/
-      - ${ROOT_DIR}/test_env/server/data/:/data/
-      - ${ROOT_DIR}/test_env/shared:/shared
-      - ${ROOT_DIR}/test_env/shared/logs:/shared/logs
-      - ${ROOT_DIR}/test_env/shared/keys:/shared/keys
-      - ${ROOT_DIR}/test_env/shared/pcap:/shared/pcap
-      - ${ROOT_DIR}/test_env/shared/qlog_server:/shared/qlog_server
-      - ${ROOT_DIR}/test_env/shared/tcpprobe:/shared/tcpprobe
+      - ./server/scripts/:/scripts/
+      - ./server/data/:/data/
+      - ./shared:/shared
+      - ./shared/logs:/shared/logs
+      - ./shared/keys:/shared/keys
+      - ./shared/pcap:/shared/pcap
+      - ./shared/qlog_server:/shared/qlog_server
+      - ./shared/tcpprobe:/shared/tcpprobe
     cap_add:
       - NET_ADMIN
     networks:
@@ -165,7 +165,7 @@ services:
     image: "grafana/grafana-oss:latest"
     container_name: grafana
     # volumes:
-    #   - ${ROOT_DIR}/test_env/grafana/data:/var/lib/grafana
+    #   - ./grafana/data:/var/lib/grafana
     networks:
       A_client_network:
         ipv4_address: 172.1.0.52
@@ -182,7 +182,7 @@ services:
     ports:
       - "80:80"
     volumes: 
-      - ${ROOT_DIR}/test_env/shared:/shared
+      - ./shared:/shared
     command:
       - "/setup.sh"
     stdin_open: true

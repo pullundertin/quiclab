@@ -1,17 +1,11 @@
 #!/bin/bash
 
-# Get ENVIRONMENT VARIABLES
-source ./.env
-
-# Error handling
-set -e
-
 # Variable names
-WORKDIR=$ROOT_DIR/test_env/shared/
-TICKET_PATH=$ROOT_DIR/test_env/shared/keys/ticket.txt
-SSH_PUBLIC_KEY_PATH="$ROOT_DIR/.ssh/mba"
+WORKDIR=./shared/
+TICKET_PATH=./shared/keys/ticket.txt
+SSH_PUBLIC_KEY_PATH="../.ssh/mba"
 REMOTE_HOST="marco@192.168.2.9:/Users/Marco/shared"
-OUTPUT="$ROOT_DIR/test_env/shared/logs/output.log"
+OUTPUT="./shared/logs/output.log"
 PROTO="http"
 DELAY=0
 DELAY_DEVIATION=0
@@ -70,6 +64,15 @@ docker exec server ./scripts/generate_data.sh $FILE_SIZE
 fi
 echo "File size: $FILE_SIZE" | section_3
 
+# set firewall rules
+if [ $FIREWALL != "0" ]; then
+    # Iterate over clients and set firewall
+    for client in "${clients[@]}"; do
+        docker exec "$client" ./scripts/firewall_enable.sh "$FIREWALL"
+        sleep 2
+    done
+fi
+
 # Iterate over peers and start communication
 for peer in "${peers[@]}"; do
     docker exec "$peer" ./scripts/start_"$PROTO".sh | section_2 
@@ -80,6 +83,11 @@ done
 sleep 3
 docker exec server ./scripts/stop_"$PROTO".sh | section_2
 
+
+# Iterate over clients and reset firewall
+for client in "${clients[@]}"; do
+    docker exec "$client" ./scripts/firewall_disable.sh 
+done
 
 # Iterate over containers and stop tcpdump
 for container in "${containers[@]}"; do
