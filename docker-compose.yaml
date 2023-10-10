@@ -1,6 +1,7 @@
 version: "3.3"
 
 services:
+
   client_1:
     image: pulltin/test_env:${ARCH}
     privileged: true  
@@ -27,8 +28,7 @@ services:
       - TICKET_PATH=/shared/keys/ticket.txt
       - QLOG_PATH=/shared/qlog_client      
       - PCAP_PATH=/shared/pcap/client_1.pcap
-
-
+    stdin_open: true
     tty: true 
     command: "/scripts/setup.sh"
     working_dir: /
@@ -59,10 +59,8 @@ services:
       - TICKET_PATH=/shared/keys/ticket.txt
       - QLOG_PATH=/shared/qlog_client
       - PCAP_PATH=/shared/pcap/client_2.pcap
-
-
-
-    tty: true 
+    stdin_open: true
+    tty: true
     command: "/scripts/setup.sh"
     working_dir: /
 
@@ -96,6 +94,7 @@ services:
       - IFACE=eth1
 
     command: "/scripts/setup.sh"
+    stdin_open: true
     tty: true
 
   router_2:
@@ -128,6 +127,7 @@ services:
       - IFACE=eth0
 
     command: "/scripts/setup.sh" 
+    stdin_open: true
     tty: true
 
 
@@ -158,6 +158,34 @@ services:
       - PCAP_PATH=/shared/pcap/server.pcap
 
     command: "/scripts/setup.sh"
+    stdin_open: true
+    tty: true
+
+  grafana:
+    image: "grafana/grafana-oss:latest"
+    container_name: grafana
+    # volumes:
+    #   - ${ROOT_DIR}/test_env/grafana/data:/var/lib/grafana
+    networks:
+      A_client_network:
+        ipv4_address: 172.1.0.52
+    ports:
+      - "3000:3000"
+    environment:
+      - GF_SECURITY_ADMIN_USER=tcpprobe
+      - GF_SECURITY_ADMIN_PASSWORD=tcpprobe 
+
+  file_server:
+    image: pulltin/test_env:file_server
+    container_name: file_server
+    hostname: file_server
+    ports:
+      - "80:80"
+    volumes: 
+      - ${ROOT_DIR}/test_env/shared:/shared
+    command:
+      - "/setup.sh"
+    stdin_open: true
     tty: true
 
 

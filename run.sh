@@ -51,7 +51,7 @@ peers=("server" "client_1" "client_2")
 
 # Iterate over containers and start tcpdump
 for container in "${containers[@]}"; do
-    docker exec "$container" ./scripts/start_tcpdump.sh | section_2 &
+    docker exec "$container" ./scripts/start_tcpdump.sh $PROTO | section_2 &
 done
 
 # Iterate over routers and set netsim parameters
@@ -83,9 +83,10 @@ docker exec server ./scripts/stop_"$PROTO".sh | section_2
 
 # Iterate over containers and stop tcpdump
 for container in "${containers[@]}"; do
-	docker exec "$container" ./scripts/stop_tcpdump.sh | section_2 &
+	docker exec "$container" ./scripts/stop_tcpdump.sh $PROTO | section_2 &
 done
 
-sleep 3
+wait
+
 # Rsync files with remote host
 rsync -ahP --delete "$WORKDIR" -e "ssh -i $SSH_PUBLIC_KEY_PATH" "$REMOTE_HOST" >> "$OUTPUT"
