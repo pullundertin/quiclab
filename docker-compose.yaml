@@ -4,7 +4,7 @@ services:
 
   client_1:
     image: pulltin/quiclab:latest
-    privileged: true  
+    privileged: true
     hostname: client_1
     container_name: client_1
     volumes:
@@ -19,23 +19,23 @@ services:
       - NET_ADMIN
     networks:
       A_client_network:
-        ipv4_address: 172.1.0.101 
+        ipv4_address: 172.1.0.101
     environment:
       - TZ=Europe/Berlin
       - HOST=client_1
       - LOG_PATH=/shared/logs/client_1.log
       - KEYS_PATH=/shared/keys/client.key
       - TICKET_PATH=/shared/keys/ticket.txt
-      - QLOG_PATH=/shared/qlog_client      
+      - QLOG_PATH=/shared/qlog_client
       - PCAP_PATH=/shared/pcap/client_1.pcap
     stdin_open: true
-    tty: true 
+    tty: true
     command: "/scripts/setup.sh"
     working_dir: /
 
   client_2:
     image: pulltin/quiclab:latest
-    privileged: true  
+    privileged: true
     hostname: client_2
     container_name: client_2
     volumes:
@@ -66,7 +66,7 @@ services:
 
   router_1:
     image: pulltin/quiclab:latest
-    privileged: true  
+    privileged: true
     hostname: router_1
     container_name: router_1
     volumes:
@@ -80,7 +80,7 @@ services:
       A_client_network:
         ipv4_address: 172.1.0.3
       B_wan_network:
-        ipv4_address: 172.2.0.3 
+        ipv4_address: 172.2.0.3
     environment:
       - TZ=Europe/Berlin
       - HOST=router_1
@@ -99,7 +99,7 @@ services:
 
   router_2:
     image: pulltin/quiclab:latest
-    privileged: true  
+    privileged: true
     hostname: router_2
     container_name: router_2
     volumes:
@@ -113,7 +113,7 @@ services:
       B_wan_network:
         ipv4_address: 172.2.0.4
       C_server_network:
-        ipv4_address: 172.3.0.4 
+        ipv4_address: 172.3.0.4
     environment:
       - TZ=Europe/Berlin
       - HOST=router_2
@@ -126,14 +126,13 @@ services:
       - GW_2=172.2.0.4
       - IFACE=eth0
 
-    command: "/scripts/setup.sh" 
+    command: "/scripts/setup.sh"
     stdin_open: true
     tty: true
 
-
   server:
     image: pulltin/quiclab:latest
-    privileged: true  
+    privileged: true
     hostname: server
     container_name: server
     volumes:
@@ -149,7 +148,7 @@ services:
       - NET_ADMIN
     networks:
       C_server_network:
-        ipv4_address: 172.3.0.5 
+        ipv4_address: 172.3.0.5
     environment:
       - TZ=Europe/Berlin
       - HOST=server
@@ -173,21 +172,20 @@ services:
       - "3000:3000"
     environment:
       - GF_SECURITY_ADMIN_USER=tcpprobe
-      - GF_SECURITY_ADMIN_PASSWORD=tcpprobe 
+      - GF_SECURITY_ADMIN_PASSWORD=tcpprobe
 
   file_server:
-    image: pulltin/test_env:file_server
+    image: pulltin/quiclab:latest
     container_name: file_server
     hostname: file_server
     ports:
       - "80:80"
-    volumes: 
+    volumes:
       - ./shared:/shared
     command:
-      - "/setup.sh"
+      - "/scripts/setup.sh"
     stdin_open: true
     tty: true
-
 
 networks:
   A_client_network:
@@ -205,4 +203,3 @@ networks:
     ipam:
       config:
         - subnet: 172.3.0.0/24
-

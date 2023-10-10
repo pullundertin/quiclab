@@ -16,7 +16,7 @@ pip install -e . &&
 pip install asgiref dnslib "flask<2.2" httpbin starlette "werkzeug<2.1" wsproto &&
 
 # Prepare nginx
-openssl req -x509 -nodes -days 365 -newkey rsa:2048 -keyout example.key -out example.crt -subj "/C=DE/ST=Berlin/L=GERMANY/O=Dis/CN=ww
+openssl req -x509 -nodes -days 365 -newkey rsa:2048 -keyout /example.key -out /example.crt -subj "/C=DE/ST=Berlin/L=GERMANY/O=Dis/CN=ww
 w.example.com" &&
 ln -s /data/data.log /var/www/html/data.log
 
