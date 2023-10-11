@@ -37,6 +37,7 @@ with open(input_file, 'r') as file:
             srtt_values.append(int(match[7]))  
             rcv_wnd_values.append(int(match[8]))
 
+
 # Create a DataFrame from the extracted values
 data = {
     'time': time_values,
@@ -58,6 +59,9 @@ filtered_df = df[df['src'].str.contains('172.3.') | df['dest'].str.contains('172
 # Normalize the 'time' column to zero
 min_time = min(filtered_df['time'])
 filtered_df['time'] -= min_time
+
+# Group by 'src' and 'dest', then calculate cumulative sum of 'data_len'
+filtered_df['cum_data_len'] = filtered_df.groupby(['src', 'dest'])['data_len'].cumsum()
 
 # Save the filtered DataFrame to a CSV file
 filtered_df.to_csv(output_file, index=False)
