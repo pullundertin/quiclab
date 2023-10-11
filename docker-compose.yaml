@@ -181,9 +181,10 @@ services:
     ports:
       - "80:80"
     volumes:
+      - ./server/scripts/:/scripts/
       - ./shared:/shared
     command:
-      - "/scripts/setup.sh"
+      - "/scripts/setup_file_server.sh"
     stdin_open: true
     tty: true
 

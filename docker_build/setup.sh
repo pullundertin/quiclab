@@ -21,3 +21,7 @@ w.example.com" &&
 ln -s /data/data.log /var/www/html/data.log
 
 
+# Install pandas
+pip install pandas
+
+
