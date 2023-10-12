@@ -65,8 +65,13 @@ filtered_df = df[df['src'].str.contains('172.3.') | df['dest'].str.contains('172
 min_time = min(filtered_df['time'])
 filtered_df['time'] -= min_time
 
+# TODO: combine the right value pairs from client and server
 # Calculate the difference between 'snd_nxt' and 'snd_una' and add it as a new column
-filtered_df['ackd_data'] = filtered_df['snd_nxt'] - filtered_df['snd_una']
+filtered_df['ackd_data'] = filtered_df['snd_nxt'] - filtered_df['snd_una'] 
+
+# Calculate the difference between 'snd_nxt' and 'snd_una' and add it as a new column
+filtered_df['cum_rcv'] = filtered_df['ackd_data'] + filtered_df['rcv_wnd'] 
+
 # Group by 'src' and 'dest', then calculate cumulative sum of 'ackd_data'
 filtered_df['cum_ackd_data'] = filtered_df.groupby(['src', 'dest'])['ackd_data'].cumsum()
 

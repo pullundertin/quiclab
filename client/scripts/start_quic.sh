@@ -32,7 +32,7 @@ function reset_ip() {
     echo "$HOST: reset is done."
 }
 
-# reset_ip
+
 echo "$HOST: sending quic request..."
 
 
@@ -40,11 +40,11 @@ echo "$HOST: sending quic request..."
 #python /aioquic/examples/http3_client.py -k https://172.3.0.5:4433/echo https://172.3.0.5:4433/echo --secrets-log $KEYS_PATH --quic-log $QLOG_PATH --zero-rtt --session-ticket /shared/ticket.txt 
 
 #ip a s dev eth0
-python /aioquic/examples/http3_client.py -k https://172.3.0.5:4433/echo --secrets-log $KEYS_PATH --quic-log $QLOG_PATH --zero-rtt --session-ticket $TICKET_PATH >> $LOG_PATH 2>&1 &
+python /aioquic/examples/http3_client.py -k https://172.3.0.5:4433/echo  --secrets-log $KEYS_PATH --quic-log $QLOG_PATH --zero-rtt --session-ticket $TICKET_PATH >> $LOG_PATH 2>&1 &
 
-change_ip & 
-wait  
-sleep 3
+# change_ip & 
+# wait  
+# sleep 3
 #ip a s dev eth0
 
 #reset_ip 
