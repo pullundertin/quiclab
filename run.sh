@@ -38,14 +38,14 @@ source options.sh
 set_options $@
 
 # List of container names
-# containers=("client_1" "client_2" "router_1" "router_2" "server")
+# containers=("client_1" "client_2" "router_1" "router_2" "server_1")
 # routers=("router_1" "router_2")
 # clients=("client_1" "client_2")
-# peers=("server" "client_1" "client_2")
-containers=("client_1" "router_1" "router_2" "server")
+# peers=("server_1" "client_1" "client_2")
+containers=("client_1" "router_1" "router_2" "server_1")
 routers=("router_1" "router_2")
 clients=("client_1" )
-peers=("server" "client_1" )
+peers=("server_1" "client_1" )
 
 # Iterate over containers and start tcpdump
 for container in "${containers[@]}"; do
@@ -64,7 +64,7 @@ done
 
 # set data size if argument not empty
 if [ ! -z "$FILE_SIZE" ]; then
-docker exec server ./scripts/generate_data.sh $FILE_SIZE
+docker exec server_1 ./scripts/generate_data.sh $FILE_SIZE
 fi
 echo "File size: $FILE_SIZE" | section_3
 
@@ -81,7 +81,7 @@ echo "File size: $FILE_SIZE" | section_3
 # for peer in "${peers[@]}"; do
 #     docker exec "$peer" ./scripts/start_"$PROTO".sh | section_2 
 # done
-docker exec server bash /scripts/start_http.sh
+docker exec server_1 bash /scripts/start_http.sh
 docker exec client_1 python /scripts/start_http2.py
 # docker exec client_1 bash /scripts/start_http.sh
 
@@ -91,7 +91,7 @@ docker exec client_1 python /scripts/start_http2.py
 
 # stop server
 sleep 3
-docker exec server ./scripts/stop_"$PROTO".sh | section_2
+docker exec server_1 ./scripts/stop_"$PROTO".sh | section_2
 
 
 # # Iterate over clients and reset firewall
