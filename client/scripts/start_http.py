@@ -30,7 +30,7 @@ def client():
 
     with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
         s.connect((IP, PORT))
-        request = f'GET /data.log HTTP/2\r\nHost: {IP}\r\nConnection: close\r\n\r\n'
+        request = f'GET /data.log HTTP/1.1\r\nHost: {IP}\r\nConnection: close\r\n\r\n'
         s.sendall(request.encode())
 
         tcp_receive_buffer_size = s.getsockopt(

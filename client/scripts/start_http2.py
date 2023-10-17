@@ -29,7 +29,7 @@ def client_request():
         "-k",
         "https://172.3.0.5:443/data.log",
         "-o",
-        "/dev/null"
+        "/dev/null",
         "https://172.3.0.5:443/data.log",
         "-o",
         "/dev/null"
