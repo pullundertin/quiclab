@@ -8,7 +8,7 @@ services:
     hostname: client_1
     container_name: client_1
     volumes:
-      - ./client/scripts/:/scripts/
+      - ./client/scripts/:/scripts
       - ./shared:/shared
       - ./shared/logs:/shared/logs
       - ./shared/keys:/shared/keys
@@ -39,7 +39,7 @@ services:
     hostname: client_2
     container_name: client_2
     volumes:
-      - ./client/scripts/:/scripts/
+      - ./client/scripts/:/scripts
       - ./shared:/shared
       - ./shared/logs:/shared/logs
       - ./shared/keys:/shared/keys
@@ -70,13 +70,12 @@ services:
     hostname: client_3
     container_name: client_3
     volumes:
-      - ./client/scripts/:/scripts/
+      - ./client/scripts/:/scripts
       - ./shared:/shared
       - ./shared/logs:/shared/logs
       - ./shared/keys:/shared/keys
       - ./shared/pcap:/shared/pcap
       - ./shared/qlog_client:/shared/qlog_client
-      - ./shared/tcpprobe:/shared/tcpprobe
     cap_add:
       - NET_ADMIN
     networks:
@@ -101,7 +100,7 @@ services:
     hostname: router_1
     container_name: router_1
     volumes:
-      - ./router/scripts/:/scripts/
+      - ./router/scripts/:/scripts
       - ./shared:/shared
       - ./shared/logs:/shared/logs
       - ./shared/pcap:/shared/pcap
@@ -134,7 +133,7 @@ services:
     hostname: router_2
     container_name: router_2
     volumes:
-      - ./router/scripts/:/scripts/
+      - ./router/scripts/:/scripts
       - ./shared:/shared
       - ./shared/logs:/shared/logs
       - ./shared/pcap:/shared/pcap
@@ -167,8 +166,8 @@ services:
     hostname: server_1
     container_name: server_1
     volumes:
-      - ./server/scripts/:/scripts/
-      - ./server/data/:/data/
+      - ./server/scripts/:/scripts
+      - ./server/data/:/data
       - ./shared:/shared
       - ./shared/logs:/shared/logs
       - ./shared/keys:/shared/keys
@@ -197,14 +196,13 @@ services:
     hostname: server_2
     container_name: server_2
     volumes:
-      - ./server/scripts/:/scripts/
-      - ./server/data/:/data/
+      - ./server/scripts/:/scripts
+      - ./server/data/:/data
       - ./shared:/shared
       - ./shared/logs:/shared/logs
       - ./shared/keys:/shared/keys
       - ./shared/pcap:/shared/pcap
       - ./shared/qlog_server:/shared/qlog_server
-      - ./shared/tcpprobe:/shared/tcpprobe
     cap_add:
       - NET_ADMIN
     networks:
@@ -226,7 +224,7 @@ services:
     image: "grafana/grafana-oss:latest"
     container_name: grafana
     volumes:
-      - ./grafana/data:/var/lib/grafana
+      - grafana-storage:/var/lib/grafana
     networks:
       A_client_network:
         ipv4_address: 172.1.0.52
@@ -244,13 +242,15 @@ services:
     ports:
       - "80:80"
     volumes:
-      - ./server/scripts/:/scripts/
+      - ./server/scripts/:/scripts
       - ./shared:/shared
     command:
       - "/scripts/setup_file_server.sh"
     stdin_open: true
     tty: true
 
+volumes:
+  grafana-storage: {}
 networks:
   A_client_network:
     driver: bridge
