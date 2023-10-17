@@ -38,10 +38,14 @@ source options.sh
 set_options $@
 
 # List of container names
-containers=("client_1" "client_2" "router_1" "router_2" "server")
+# containers=("client_1" "client_2" "router_1" "router_2" "server")
+# routers=("router_1" "router_2")
+# clients=("client_1" "client_2")
+# peers=("server" "client_1" "client_2")
+containers=("client_1" "router_1" "router_2" "server")
 routers=("router_1" "router_2")
-clients=("client_1" "client_2")
-peers=("server" "client_1" "client_2")
+clients=("client_1" )
+peers=("server" "client_1" )
 
 # Iterate over containers and start tcpdump
 for container in "${containers[@]}"; do
@@ -64,19 +68,25 @@ docker exec server ./scripts/generate_data.sh $FILE_SIZE
 fi
 echo "File size: $FILE_SIZE" | section_3
 
-# set firewall rules
-if [ $FIREWALL != "0" ]; then
-    # Iterate over clients and set firewall
-    for client in "${clients[@]}"; do
-        docker exec "$client" ./scripts/firewall_enable.sh "$FIREWALL"
-        sleep 2
-    done
-fi
+# # set firewall rules
+# if [ $FIREWALL != "0" ]; then
+#     # Iterate over clients and set firewall
+#     for client in "${clients[@]}"; do
+#         docker exec "$client" ./scripts/firewall_enable.sh "$FIREWALL"
+#         sleep 2
+#     done
+# fi
 
 # Iterate over peers and start communication
-for peer in "${peers[@]}"; do
-    docker exec "$peer" ./scripts/start_"$PROTO".sh | section_2 
-done
+# for peer in "${peers[@]}"; do
+#     docker exec "$peer" ./scripts/start_"$PROTO".sh | section_2 
+# done
+docker exec server bash /scripts/start_http.sh
+docker exec client_1 python /scripts/start_http2.py
+# docker exec client_1 bash /scripts/start_http.sh
+
+# docker exec server bash /scripts/start_quic.sh
+# docker exec client_1 python /scripts/start_quic.py
 
 
 # stop server
@@ -84,10 +94,10 @@ sleep 3
 docker exec server ./scripts/stop_"$PROTO".sh | section_2
 
 
-# Iterate over clients and reset firewall
-for client in "${clients[@]}"; do
-    docker exec "$client" ./scripts/firewall_disable.sh 
-done
+# # Iterate over clients and reset firewall
+# for client in "${clients[@]}"; do
+#     docker exec "$client" ./scripts/firewall_disable.sh 
+# done
 
 # Iterate over containers and stop tcpdump
 for container in "${containers[@]}"; do

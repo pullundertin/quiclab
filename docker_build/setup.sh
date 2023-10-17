@@ -5,7 +5,7 @@ apt update &&
 apt upgrade -y &&
 
 # Install dependencies
-apt install git vim python-is-python3 pip curl iputils-ping net-tools bc iproute2 libssl-dev python3-dev nginx tcpdump -y &&
+apt install git vim python-is-python3 pip curl iputils-ping net-tools bc iproute2 libssl-dev python3-dev nginx tcpdump iptables -y &&
 
 # Install aioquic
 git clone https://github.com/aiortc/aioquic.git &&
@@ -23,5 +23,6 @@ ln -s /data/data.log /var/www/html/data.log
 
 # Install pandas
 pip install pandas
+
 
 
