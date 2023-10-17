@@ -12,7 +12,7 @@ SERVER_PATH = '/data.log'
 
 
 def client_request():
-    print(f"{os.getenv('HOST')}: sending http request...")
+    print(f"{os.getenv('HOST')}: sending http/2 request...")
 
     IP = "172.3.0.5"  # The server's hostname or IP address
     PORT = 443  # The port used by the server
@@ -38,7 +38,7 @@ def client_request():
     # Run the command
     try:
         subprocess.run(command, check=True)
-        print(f"{os.getenv('HOST')}: http connection closed.")
+        print(f"{os.getenv('HOST')}: http/2 connection closed.")
     except subprocess.CalledProcessError as e:
         print(f"Error: {e}")
 

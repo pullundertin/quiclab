@@ -7,10 +7,10 @@ import subprocess
 
 
 def client_request():
-    print(f"{os.getenv('HOST')}: sending http request...")
+    print(f"{os.getenv('HOST')}: sending aioquic request...")
 
     IP = "172.3.0.5"  # The server's hostname or IP address
-    PORT = 80  # The port used by the server
+    PORT = 4433  # The port used by the server
 
     # Get environment variables
     KEYS_PATH = os.getenv("KEYS_PATH")
@@ -22,8 +22,8 @@ def client_request():
         "python",
         "/aioquic/examples/http3_client.py",
         "-k",
-        "https://172.3.0.5:4433/echo",
-        "https://172.3.0.5:4433/echo",
+        f"https://{IP}:{PORT}/data.log",
+        f"https://{IP}:{PORT}/data.log",
         "--secrets-log",
         KEYS_PATH,
         "--quic-log",
