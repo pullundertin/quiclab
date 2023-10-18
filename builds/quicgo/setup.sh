@@ -10,5 +10,8 @@ apt install git vim python-is-python3 pip curl iputils-ping net-tools bc iproute
 # Install quic-go
 git clone https://github.com/quic-go/quic-go.git
 
+# Install pandas
+pip install pandas
 
-
+# Install psutil
+pip install psutil

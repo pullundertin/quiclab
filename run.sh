@@ -42,10 +42,10 @@ set_options $@
 # routers=("router_1" "router_2")
 # clients=("client_1" "client_2")
 # peers=("server_1" "client_1" "client_2")
-containers=("client_1" "router_1" "router_2" "server_1")
+containers=("client_1" "client_2" "client_3" "router_1" "router_2" "server_1" "server_2")
 routers=("router_1" "router_2")
-clients=("client_1" )
-peers=("server_1" "client_1" )
+clients=("client_1" "client_2" "client_3")
+peers=("server_1" "server_2" "client_1" "client_2" "client_3")
 
 # # Iterate over containers and start tcpdump
 # for container in "${containers[@]}"; do
@@ -61,34 +61,8 @@ peers=("server_1" "client_1" )
 # for client in "${clients[@]}"; do
 #     docker exec "$client" ./scripts/receive_window.sh "$WINDOW_SCALING $RMIN $RDEF $RMAX" | section_3
 # done
-
-# # set data size if argument not empty
-# if [ ! -z "$FILE_SIZE" ]; then
-# docker exec server_1 ./scripts/generate_data.sh $FILE_SIZE
-# fi
-# echo "File size: $FILE_SIZE" | section_3
-
-# # # set firewall rules
-# # if [ $FIREWALL != "0" ]; then
-# #     # Iterate over clients and set firewall
-# #     for client in "${clients[@]}"; do
-# #         docker exec "$client" ./scripts/firewall_enable.sh "$FIREWALL"
-# #         sleep 2
-# #     done
-# # fi
-
-# # Iterate over peers and start communication
-# # for peer in "${peers[@]}"; do
-# #     docker exec "$peer" ./scripts/start_"$PROTO".sh | section_2 
-# # done
-# docker cp ./server_code/demo.py server_1:/aioquic/examples
-# docker cp ./some_file CONTAINER:/work
-
-docker exec server_1 bash /scripts/start_http.sh
-docker exec client_1 python /scripts/start_client.py
-
-# docker cp ./server_code/main.go server_2:/quic-go/example
-# docker exec client_1 python /scripts/start_aioquic.py
+docker exec server_2 bash /scripts/start_quicgo.sh
+docker exec client_3 bash /scripts/start_quicgo.sh
 # docker exec client_1 bash /scripts/start_http.sh
 
 # docker exec server bash /scripts/start_aioquic.sh
@@ -97,9 +71,9 @@ docker exec client_1 python /scripts/start_client.py
 
 # stop server
 sleep 3
-docker exec server_1 ./scripts/stop_http.sh | section_2
+docker exec server_2 ./scripts/stop_quicgo.sh | section_2
 # docker exec server_1 ./scripts/stop_"$PROTO".sh | section_2
-docker exec server_1 ./scripts/stop_tcpdump.sh
+
 
 # # Iterate over clients and reset firewall
 # for client in "${clients[@]}"; do
