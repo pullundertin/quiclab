@@ -3,7 +3,7 @@ version: "3.3"
 services:
 
   client_1:
-    image: pulltin/aioquic:latest
+    image: pulltin/aioquic:1.1
     privileged: true
     hostname: client_1
     container_name: client_1
@@ -34,7 +34,7 @@ services:
     working_dir: /
 
   client_2:
-    image: pulltin/aioquic:latest
+    image: pulltin/aioquic:1.1
     privileged: true
     hostname: client_2
     container_name: client_2
@@ -65,7 +65,7 @@ services:
     working_dir: /
 
   client_3:
-    image: pulltin/quicgo:latest
+    image: pulltin/quicgo:1.1
     privileged: true
     hostname: client_3
     container_name: client_3
@@ -95,7 +95,7 @@ services:
     working_dir: /
 
   router_1:
-    image: pulltin/aioquic:latest
+    image: pulltin/aioquic:1.1
     privileged: true
     hostname: router_1
     container_name: router_1
@@ -128,7 +128,7 @@ services:
     tty: true
 
   router_2:
-    image: pulltin/aioquic:latest
+    image: pulltin/aioquic:1.1
     privileged: true
     hostname: router_2
     container_name: router_2
@@ -161,7 +161,7 @@ services:
     tty: true
 
   server_1:
-    image: pulltin/aioquic:latest
+    image: pulltin/aioquic:1.1
     privileged: true
     hostname: server_1
     container_name: server_1
@@ -191,7 +191,7 @@ services:
     tty: true
 
   server_2:
-    image: pulltin/quicgo:latest
+    image: pulltin/quicgo:1.1
     privileged: true
     hostname: server_2
     container_name: server_2
@@ -236,7 +236,7 @@ services:
     restart: unless-stopped
 
   file_server:
-    image: pulltin/aioquic:latest
+    image: pulltin/aioquic:1.1
     container_name: file_server
     hostname: file_server
     ports:
