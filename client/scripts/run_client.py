@@ -23,15 +23,12 @@ logging.basicConfig(filename='/shared/logs/output.log', level=logging.INFO,
 
 def run_command(command):
     try:
-        process = subprocess.Popen(
-            command, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-        # Wait for the external script to finish
-        stdout, stderr = process.communicate()
-
-        return (process.pid)
+        process = subprocess.run(
+            command, check=True, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        logging.info(f"{os.getenv('HOST')}: {process.stdout.decode()}")
     except subprocess.CalledProcessError as e:
-        logging.info(f"Error: {e}")
-        logging.info(f"Error output: {e.stderr.decode()}")
+        logging.info(f"Error on {os.getenv('HOST')}: {e}")
+        logging.info(f"Error {os.getenv('HOST')} output: {e.stderr.decode()}")
 
 
 def tcpdump():
@@ -159,42 +156,9 @@ def kill(process_name):
                 pass
 
 
-def prog_1():
-
-    command = [
-        '/prog_1.sh'
-    ]
-
-    logging.info(f'client tcpdump {os.getpid()}')
-    return run_command(command)
-
-
-def prog_2():
-
-    command = [
-        '/prog_2.sh'
-    ]
-    logging.info(f'client request {os.getpid()}')
-    return run_command(command)
-
 
 if __name__ == "__main__":
 
-    # pid_1 = tcpdump()
-    # logging.info('client tcpdump started.')
-    # time.sleep(2)
-    # pid_2 = http2()
-    # logging.info('client request started.')
-    # # logging.info(f'client.pid: {pid}')
-
-    # os.waitpid(pid_2, 0)
-    # logging.info('client request done.')
-
-    # kill(pid_1)
-    # logging.info('client tcpdump stopped.')
-    # # kill(pid_2)
-
-    # Create a ThreadPoolExecutor with 2 threads
     with ThreadPoolExecutor() as executor:
 
         thread_1 = executor.submit(tcpdump)
@@ -208,4 +172,3 @@ if __name__ == "__main__":
         kill("tcpdump")
         wait([thread_1])
         logging.info('client_1: tcpdump has been shut down')
-    # http2()

@@ -22,13 +22,12 @@ logging.basicConfig(filename='/shared/logs/output.log', level=logging.INFO,
 
 def run_command(command):
     try:
-        process = subprocess.Popen(
-            command, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-        return (process.pid)
-
+        process = subprocess.run(
+            command, check=True, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        logging.info(f"{os.getenv('HOST')}: {process.stdout.decode()}")
     except subprocess.CalledProcessError as e:
-        logging.info(f"Error: {e}")
-        logging.info(f"Error output: {e.stderr.decode()}")
+        logging.info(f"Error on {os.getenv('HOST')}: {e}")
+        logging.info(f"Error {os.getenv('HOST')} output: {e.stderr.decode()}")
 
 
 def tcpdump():
@@ -87,36 +86,8 @@ def http2():
     return run_command(command)
 
 
-def prog_1():
-
-    command = [
-        '/prog_1.sh'
-    ]
-
-    logging.info(f"{os.getenv('HOST')}: tcpdump started.")
-    return run_command(command)
-
-
-def prog_2():
-
-    command = [
-        '/prog_2.sh'
-    ]
-
-    logging.info(f"{os.getenv('HOST')}: server started.")
-    return run_command(command)
-
-
 if __name__ == "__main__":
 
-    # pid_tcpdump = tcpdump()
-    # pid_http = http2()
-
-    # os.waitpid(pid_tcpdump, 0)
-    # os.waitpid(pid_http, 0)
-    # logging.info('server has been shut down.')
-
-    # Create a ThreadPoolExecutor with 2 threads
     with ThreadPoolExecutor() as executor:
 
         thread_1 = executor.submit(tcpdump)

@@ -56,21 +56,17 @@ def initialize():
 
 def run_command(command):
     try:
-        subprocess.run(command, check=True)
+        process = subprocess.run(
+            command, check=True, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        logging.info(process.stdout.decode())
     except subprocess.CalledProcessError as e:
-        logging.info(f"Error: {e}")
-        logging.info(f"Error output: {e.stderr.decode()}")
+        logging.info(f"Error on Docker Host: {e}")
+        logging.info(f"Error Docker Host output: {e.stderr.decode()}")
 
 
 def rsync():
-    # Command components
-    options = ["-ahP", "--delete"]
-    ssh_options = ["ssh", "-i", f"{SSH_PUBLIC_KEY_PATH}"]
 
-    # Construct the command array
-    command = ["rsync"] + options + [WORKDIR, "-e"] + \
-        [" ".join(ssh_options)] + [REMOTE_HOST]
-
+    command = f"rsync -ahP --delete {WORKDIR} -e ssh -i {SSH_PUBLIC_KEY_PATH} {REMOTE_HOST}"
     run_command(command)
 
 

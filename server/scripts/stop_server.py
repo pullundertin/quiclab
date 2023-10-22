@@ -13,32 +13,12 @@ logging.basicConfig(filename='/shared/logs/output.log', level=logging.INFO,
 
 def run_command(command):
     try:
-        subprocess.run(command, check=True)
+        process = subprocess.run(
+            command, check=True, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        logging.info(f"{os.getenv('HOST')}: {process.stdout.decode()}")
     except subprocess.CalledProcessError as e:
-        logging.info(f"Error: {e}")
-        logging.info(f"Error output: {e.stderr.decode()}")
-
-
-def kill(process_name):
-
-    for process in psutil.process_iter(attrs=['pid', 'ppid', 'name']):
-        if process.info['pid'] == process_name:
-            parent_pid = process.info['ppid']
-            child_pid = process.info['pid']
-
-            # Kill child processes
-            try:
-                parent = psutil.Process(child_pid)
-                for child in parent.children(recursive=True):
-                    child.terminate()
-                psutil.wait_procs(
-                    [child for child in parent.children(recursive=True)], timeout=5)
-
-                # Kill the parent process
-                parent.terminate()
-                parent.wait(timeout=5)
-            except (psutil.NoSuchProcess, psutil.AccessDenied, psutil.TimeoutExpired):
-                pass
+        logging.info(f"Error on {os.getenv('HOST')}: {e}")
+        logging.info(f"Error {os.getenv('HOST')} output: {e.stderr.decode()}")
 
 
 def tcpdump():
@@ -65,30 +45,13 @@ def aioquic():
 
     logging.info(f"{os.getenv('HOST')}: server stopped.")
     run_command(command)
-    # run_command(command)
 
 
-def prog_1():
-
-    # Command to run
-    command = [
-        "pkill",
-        "prog_1.sh",
-    ]
-
-    logging.info(f"{os.getenv('HOST')}: tcpdump stopped.")
-    run_command(command)
-
-
-def prog_2():
+def test():
 
     # Command to run
-    command = [
-        "pkill",
-        "prog_2.sh",
-    ]
+    command = "ls -lah /test"
 
-    logging.info(f"{os.getenv('HOST')}: server stopped.")
     run_command(command)
 
 
@@ -101,7 +64,6 @@ def kill(process_name):
 
             # Kill child processes
             try:
-                logging.info(f"{os.getenv('HOST')}: {process_name} stopped.")
                 parent = psutil.Process(child_pid)
                 for child in parent.children(recursive=True):
                     child.terminate()
@@ -111,13 +73,14 @@ def kill(process_name):
                 # Kill the parent process
                 parent.terminate()
                 parent.wait(timeout=5)
+                logging.info(f"{os.getenv('HOST')}: {process_name} stopped.")
             except (psutil.NoSuchProcess, psutil.AccessDenied, psutil.TimeoutExpired):
                 pass
 
 
 if __name__ == "__main__":
 
-    # # Create a ThreadPoolExecutor with 2 threads
+    # test()
     with ThreadPoolExecutor() as executor:
 
         thread_1 = executor.submit(kill, 'python')
