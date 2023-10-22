@@ -9,6 +9,8 @@ from concurrent.futures import ThreadPoolExecutor
 import docker
 import signal
 import logging
+import argparse
+
 
 # Variable names
 WORKDIR = "./shared/"
@@ -16,7 +18,9 @@ TICKET_PATH = "./shared/keys/ticket.txt"
 SSH_PUBLIC_KEY_PATH = "../.ssh/mba"
 REMOTE_HOST = "marco@192.168.2.9:/Users/Marco/shared"
 OUTPUT = "./shared/logs/output.log"
+mode = 'http'
 
+args = None
 
 # Create a Docker client
 host = docker.from_env()
@@ -25,10 +29,18 @@ client_1 = host.containers.get("client_1")
 server_1 = host.containers.get("server_1")
 
 
-def initialize():
+def log_config():
+    # clear logs
+    if os.path.exists(OUTPUT):
+        os.remove(OUTPUT)
+    # Configure logging
+    logging.basicConfig(filename=OUTPUT, level=logging.INFO,
+                        format='%(asctime)s - %(levelname)s - %(message)s')
+
+
+def reset_workdir():
     # Define folders to delete files from
     folders = [f'{WORKDIR}/pcap',
-               f'{WORKDIR}/logs',
                f'{WORKDIR}/qlog_client',
                f'{WORKDIR}/qlog_server',
                f'{WORKDIR}/keys',
@@ -44,14 +56,39 @@ def initialize():
                 try:
                     if os.path.isfile(file_path):
                         os.remove(file_path)
+                        logging.info(f"File '{file_path}' deleted.")
                 except Exception as e:
                     logging.info(f"Error: {e}")
+
         else:
             logging.info(f"Folder '{folder}' not found.")
 
-    # Configure logging
-    logging.basicConfig(filename='./shared/logs/output.log', level=logging.INFO,
-                        format='%(asctime)s - %(levelname)s - %(message)s')
+
+def arguments():
+
+    # Create an ArgumentParser object
+    parser = argparse.ArgumentParser(description='QuicLab Test Environment')
+
+    parser.add_argument('-m', '--mode', type=str,
+                        help='modes: http, aioquic, quicgo')
+
+    # Parse the command-line arguments
+    args = parser.parse_args()
+
+    # Access the flag value in your script
+    if args.mode:
+        global mode
+        mode = f'{args.mode}'
+        logging.info(f'{args.mode} mode enabled')
+    else:
+        logging.info('http mode enabled')
+
+
+def initialize():
+    log_config()
+    reset_workdir()
+    arguments()
+    logging.info('program initialized.')
 
 
 def run_command(command):
@@ -72,11 +109,8 @@ def rsync():
 
 def run_client():
 
-    # Command to run
-    command = [
-        "python",
-        "/scripts/run_client.py",
-    ]
+    command = f"python /scripts/run_client.py --mode {mode}"
+
     client_1.exec_run(command)
 
 
@@ -92,11 +126,8 @@ def check_file_for_string(file_path, target_string):
 
 def run_server():
 
-    # Command to run
-    command = [
-        "python",
-        "/scripts/run_server.py",
-    ]
+    command = f'python /scripts/run_server.py --mode {mode}'
+
     server_1.exec_run(command)
 
 
@@ -136,7 +167,6 @@ if __name__ == "__main__":
 
     initialize()
 
-    # Create a ThreadPoolExecutor with 2 threads
     with ThreadPoolExecutor() as executor:
         # Submit the functions for execution
         server = executor.submit(run_server)

@@ -9,26 +9,71 @@ from concurrent.futures import ThreadPoolExecutor
 from concurrent.futures import wait
 import sys
 import logging
+import argparse
 
 # Get environment variables
 KEYS_PATH = os.getenv("KEYS_PATH")
 QLOG_PATH = os.getenv("QLOG_PATH")
 TICKET_PATH = os.getenv("TICKET_PATH")
 PCAP_PATH = os.getenv("PCAP_PATH")
+HOST = os.getenv('HOST')
+mode = 'http'
+args = None
 
 # Configure logging
 logging.basicConfig(filename='/shared/logs/output.log', level=logging.INFO,
                     format='%(asctime)s - %(levelname)s - %(message)s')
 
 
+def arguments():
+
+    # Create an ArgumentParser object
+    parser = argparse.ArgumentParser(description='QuicLab Test Environment')
+
+    parser.add_argument('-m', '--mode', type=str,
+                        help='modes: http, aioquic, quicgo')
+
+    # Parse the command-line arguments
+    args = parser.parse_args()
+
+    # Access the flag value in your script
+    if args.mode:
+        global mode
+        mode = args.mode
+        logging.info(f'{HOST}: {args.mode} mode enabled')
+    else:
+        logging.info('http mode enabled')
+
+
+def map_function():
+    # Create a dictionary that maps string keys to functions
+    function_mapping = {
+        "http2": http2,
+        "aioquic": aioquic,
+        "quicgo": quicgo
+    }
+
+    # Call the chosen function based on the string variable
+    if mode in function_mapping:
+        function_call = function_mapping[mode]
+        function_call()
+    else:
+        print("Function not found.")
+
+
+def initialize():
+    arguments()
+    map_function()
+
+
 def run_command(command):
     try:
         process = subprocess.run(
             command, check=True, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-        logging.info(f"{os.getenv('HOST')}: {process.stdout.decode()}")
+        logging.info(f"{HOST}: {process.stdout.decode()}")
     except subprocess.CalledProcessError as e:
-        logging.info(f"Error on {os.getenv('HOST')}: {e}")
-        logging.info(f"Error {os.getenv('HOST')} output: {e.stderr.decode()}")
+        logging.info(f"Error on {HOST}: {e}")
+        logging.info(f"Error {HOST} output: {e.stderr.decode()}")
 
 
 def tcpdump():
@@ -37,13 +82,13 @@ def tcpdump():
     command = "tcpdump -i eth0 -w $PCAP_PATH"
 
     logging.info(
-        f"{os.getenv('HOST')}: tcpdump started and stored to {os.getenv('PCAP_PATH')}")
+        f"{HOST}: tcpdump started and stored to {os.getenv('PCAP_PATH')}")
 
     return run_command(command)
 
 
 def aioquic():
-    logging.info(f"{os.getenv('HOST')}: sending aioquic request...")
+    logging.info(f"{HOST}: sending aioquic request...")
 
     IP = "172.3.0.5"
     PORT = 4433
@@ -55,7 +100,7 @@ def aioquic():
 
 
 def quicgo():
-    logging.info(f"{os.getenv('HOST')}: sending quic-go request...")
+    logging.info(f"{HOST}: sending quic-go request...")
 
     IP = "172.3.0.6"
     PORT = 6121
@@ -95,7 +140,7 @@ def receive_data(socket_obj, buffer_size=None):
 
 
 def http():
-    logging.info(f"{os.getenv('HOST')}: sending http request...")
+    logging.info(f"{HOST}: sending http request...")
     logging.info(f'http request pid: {os.getpid()}')
     IP = "172.3.0.5"
     PORT = 80
@@ -116,11 +161,11 @@ def http():
         # logging.info(f"Local Port Number: {local_address[1]}")
         logging.info(received_data)
 
-    logging.info(f"{os.getenv('HOST')}: http connection closed.")
+    logging.info(f"{HOST}: http connection closed.")
 
 
 def http2():
-    logging.info(f"{os.getenv('HOST')}: sending http/2 request...")
+    logging.info(f"{HOST}: sending http/2 request...")
 
     IP = '172.3.0.5'
     PORT = 443
@@ -156,14 +201,15 @@ def kill(process_name):
                 pass
 
 
-
 if __name__ == "__main__":
+
+    initialize()
 
     with ThreadPoolExecutor() as executor:
 
         thread_1 = executor.submit(tcpdump)
         time.sleep(2)
-        thread_2 = executor.submit(aioquic)
+        thread_2 = executor.submit(map_function)
 
         wait([thread_2])
         logging.info('client_1: request has been ended')
