@@ -59,22 +59,14 @@ def kill(process_name):
 
     for process in psutil.process_iter(attrs=['pid', 'ppid', 'name']):
         if process.info['name'] == process_name:
-            parent_pid = process.info['ppid']
-            child_pid = process.info['pid']
 
-            # Kill child processes
             try:
-                parent = psutil.Process(child_pid)
-                for child in parent.children(recursive=True):
-                    child.terminate()
-                psutil.wait_procs(
-                    [child for child in parent.children(recursive=True)], timeout=5)
-
-                # Kill the parent process
-                parent.terminate()
-                parent.wait(timeout=5)
+                pid = process.info['pid']
+                p = psutil.Process(pid)
+                p.terminate()
                 logging.info(f"{os.getenv('HOST')}: {process_name} stopped.")
             except (psutil.NoSuchProcess, psutil.AccessDenied, psutil.TimeoutExpired):
+                logging.info(f"{os.getenv('HOST')} Error: {process_name}")
                 pass
 
 

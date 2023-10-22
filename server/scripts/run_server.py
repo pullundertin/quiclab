@@ -109,22 +109,18 @@ def quicgo():
     return run_command(command)
 
 
-def http():
+# def http():
 
-    command = [
-        "nginx",
-    ]
+#     command = "nginx"
 
-    logging.info(f"{os.getenv('HOST')}: starting http server...")
-    return run_command(command)
+#     logging.info(f"{os.getenv('HOST')}: starting http server...")
+#     return run_command(command)
 
 
 def http2():
     logging.info(f"{os.getenv('HOST')}: starting http/2 server...")
 
-    command = [
-        "nginx",
-    ]
+    command = 'nginx'
 
     return run_command(command)
 
