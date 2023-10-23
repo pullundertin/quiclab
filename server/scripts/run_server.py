@@ -45,7 +45,7 @@ def arguments():
 def map_function():
     # Create a dictionary that maps string keys to functions
     function_mapping = {
-        "http2": http2,
+        "http": http,
         "aioquic": aioquic,
         "quicgo": quicgo
     }
@@ -60,7 +60,6 @@ def map_function():
 
 def initialize():
     arguments()
-    map_function()
 
 
 def run_command(command):
@@ -73,56 +72,59 @@ def run_command(command):
         logging.info(f"Error {os.getenv('HOST')} output: {e.stderr.decode()}")
 
 
+def tcpprobe():
+
+    # Check if the trace file exists
+    trace_file_path = "/sys/kernel/debug/tracing/trace"
+    if os.path.exists(trace_file_path):
+        # Clear the trace file
+        with open(trace_file_path, "w") as trace_file:
+            trace_file.write("")
+        logging.info(f"{HOST}: tcpprobe trace resetted.")
+
+    # Enable tcp events in tcpprobe
+    tcp_probe_path = "/sys/kernel/debug/tracing/events/tcp/enable"
+    if os.path.exists(tcp_probe_path):
+        with open(tcp_probe_path, "w") as enable_file:
+            enable_file.write("1")
+        logging.info(f"{HOST}: tcpprobe enabled.")
+
+
 def tcpdump():
 
     # Command to run
-    command = [
-        "tcpdump -i eth0 -w $PCAP_PATH"
-    ]
+    command = "tcpdump -i eth0 -w $PCAP_PATH"
     logging.info(f"{os.getenv('HOST')}: tcpdump started.")
-    return run_command(command)
+    run_command(command)
 
 
 def aioquic():
-    logging.info(f"{os.getenv('HOST')}: starting aioquic server...")
 
     # Command to run
     command = "python /aioquic/examples/http3_server.py --certificate /aioquic/tests/ssl_cert.pem --private-key /aioquic/tests/ssl_key.pem --quic-log $QLOG_PATH"
 
-    return run_command(command)
+    logging.info(f"{os.getenv('HOST')}: starting aioquic server...")
+    run_command(command)
 
 
 def quicgo():
-    logging.info(f"{os.getenv('HOST')}: starting quic-go server..")
 
     # Change current working directory
     os.chdir("/quic-go/example")
 
     # Command to run
-    command = [
-        "go",
-        "run",
-        "main.go",
-        "--qlog",
-    ]
+    command = "go run main.go --qlog"
 
-    return run_command(command)
+    logging.info(f"{os.getenv('HOST')}: starting quic-go server..")
+    run_command(command)
 
 
-# def http():
+def http():
+    tcpprobe()
+    command = "nginx"
 
-#     command = "nginx"
-
-#     logging.info(f"{os.getenv('HOST')}: starting http server...")
-#     return run_command(command)
-
-
-def http2():
-    logging.info(f"{os.getenv('HOST')}: starting http/2 server...")
-
-    command = 'nginx'
-
-    return run_command(command)
+    logging.info(f"{os.getenv('HOST')}: starting http server...")
+    run_command(command)
 
 
 if __name__ == "__main__":
@@ -132,7 +134,7 @@ if __name__ == "__main__":
     with ThreadPoolExecutor() as executor:
 
         thread_1 = executor.submit(tcpdump)
-        time.sleep(2)
+        time.sleep(3)
         thread_2 = executor.submit(map_function)
 
         concurrent.futures.wait([thread_1, thread_2])

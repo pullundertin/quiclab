@@ -48,7 +48,7 @@ def arguments():
 def map_function():
     # Create a dictionary that maps string keys to functions
     function_mapping = {
-        "http2": http2,
+        "http": http,
         "aioquic": aioquic,
         "quicgo": quicgo
     }
@@ -63,7 +63,6 @@ def map_function():
 
 def initialize():
     arguments()
-    map_function()
 
 
 def run_command(command):
@@ -82,13 +81,11 @@ def tcpdump():
     command = "tcpdump -i eth0 -w $PCAP_PATH"
 
     logging.info(
-        f"{HOST}: tcpdump started and stored to {os.getenv('PCAP_PATH')}")
-
-    return run_command(command)
+        f"{HOST}: tcpdump started.")
+    run_command(command)
 
 
 def aioquic():
-    logging.info(f"{HOST}: sending aioquic request...")
 
     IP = "172.3.0.5"
     PORT = 4433
@@ -96,11 +93,11 @@ def aioquic():
     # Command to run
     command = "python /aioquic/examples/http3_client.py -k https://172.3.0.5:4433/data.log https://172.3.0.5:4433/data.log --secrets-log $KEYS_PATH --quic-log $QLOG_PATH --zero-rtt --session-ticket $TICKET_PATH"
 
-    return run_command(command)
+    logging.info(f"{HOST}: sending aioquic request...")
+    run_command(command)
 
 
 def quicgo():
-    logging.info(f"{HOST}: sending quic-go request...")
 
     IP = "172.3.0.6"
     PORT = 6121
@@ -120,52 +117,11 @@ def quicgo():
         f"https://{IP}:{PORT}/demo/tiles",
         # QLOG_PATH,
     ]
-    return run_command(command)
-
-
-def receive_data(socket_obj, buffer_size=None):
-    if buffer_size is None:
-        buffer_size = socket_obj.getsockopt(
-            socket.SOL_SOCKET, socket.SO_RCVBUF)
-
-    data = b''
-
-    while True:
-        chunk = socket_obj.recv(buffer_size)
-        if not chunk:
-            break
-        data += chunk
-
-    return data
+    logging.info(f"{HOST}: sending quic-go request...")
+    run_command(command)
 
 
 def http():
-    logging.info(f"{HOST}: sending http request...")
-    logging.info(f'http request pid: {os.getpid()}')
-    IP = "172.3.0.5"
-    PORT = 80
-
-    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
-        s.connect((IP, PORT))
-        request = f'GET /data.log HTTP/1.1\r\nHost: {IP}\r\nConnection: close\r\n\r\n'
-        s.sendall(request.encode())
-
-        tcp_receive_buffer_size = s.getsockopt(
-            socket.SOL_SOCKET, socket.SO_RCVBUF)
-
-        received_data = receive_data(s, buffer_size=tcp_receive_buffer_size)
-        # # Get the local address (including the port number) of the client socket
-        # local_address = s.getsockname()
-
-        # # logging.info the local port number
-        # logging.info(f"Local Port Number: {local_address[1]}")
-        logging.info(received_data)
-
-    logging.info(f"{HOST}: http connection closed.")
-
-
-def http2():
-    logging.info(f"{HOST}: sending http/2 request...")
 
     IP = '172.3.0.5'
     PORT = 443
@@ -176,7 +132,8 @@ def http2():
     # Command to run
     command = "curl -k https://172.3.0.5:443/data.log -o /dev/null https://172.3.0.5:443/data.log -o/dev/null"
 
-    return run_command(command)
+    logging.info(f"{HOST}: sending http request...")
+    run_command(command)
 
 
 def kill(process_name):
@@ -201,13 +158,13 @@ if __name__ == "__main__":
     with ThreadPoolExecutor() as executor:
 
         thread_1 = executor.submit(tcpdump)
-        time.sleep(2)
+        time.sleep(3)
         thread_2 = executor.submit(map_function)
 
         wait([thread_2])
-        logging.info('client_1: request has been ended')
+        logging.info('client_1: request completed.')
 
         time.sleep(3)
         kill("tcpdump")
         wait([thread_1])
-        logging.info('client_1: tcpdump has been shut down')
+        logging.info('client_1: tcpdump has been shut down.')

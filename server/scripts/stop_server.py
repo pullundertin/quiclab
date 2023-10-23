@@ -1,14 +1,56 @@
 import os
 import subprocess
 import logging
-import time
+import argparse
 import psutil
 import concurrent.futures
 from concurrent.futures import ThreadPoolExecutor
 
+HOST = os.getenv("HOST")
+mode = 'http'
+args = None
+
 # Configure logging
 logging.basicConfig(filename='/shared/logs/output.log', level=logging.INFO,
                     format='%(asctime)s - %(levelname)s - %(message)s')
+
+
+def arguments():
+
+    # Create an ArgumentParser object
+    parser = argparse.ArgumentParser(description='QuicLab Test Environment')
+
+    parser.add_argument('-m', '--mode', type=str,
+                        help='modes: http, aioquic, quicgo')
+
+    # Parse the command-line arguments
+    args = parser.parse_args()
+
+    # Access the flag value in your script
+    if args.mode:
+        global mode
+        logging.info('stop server mode enabled')
+        mode = args.mode
+
+
+def map_function():
+    # Create a dictionary that maps string keys to functions
+    function_mapping = {
+        "http": http,
+        "aioquic": aioquic,
+        "quicgo": quicgo
+    }
+
+    # Call the chosen function based on the string variable
+    if mode in function_mapping:
+        function_call = function_mapping[mode]
+        function_call()
+    else:
+        print("Function not found.")
+
+
+def initialize():
+    arguments()
 
 
 def run_command(command):
@@ -21,38 +63,43 @@ def run_command(command):
         logging.info(f"Error {os.getenv('HOST')} output: {e.stderr.decode()}")
 
 
-def tcpdump():
-    # Command to run
-    command = "pkill -e tcpdump"
+def tcpprobe():
+    # Save tcpprobe to file
+    trace_file_path = "/sys/kernel/debug/tracing/trace"
+    output_file_path = "/shared/tcpprobe/server.log"
 
-    logging.info(f"{os.getenv('HOST')}: tcpdump stopped.")
+    with open(output_file_path, "w") as output_file:
+        # Use subprocess to run cat command and redirect its output to the file
+        subprocess.run(["cat", trace_file_path],
+                       stdout=output_file, stderr=output_file, check=True)
+    logging.info(f"{HOST}: tcpprobe written to file.")
+
+    # Run the converter.py script
+    command = "python /scripts/converter.py"
     run_command(command)
+    logging.info(f"{HOST}: tcpprobe converted.")
+
+    # Disable tcp events in tcpprobe
+    tcp_probe_enable_path = "/sys/kernel/debug/tracing/events/tcp/enable"
+    with open(tcp_probe_enable_path, "w") as enable_file:
+        enable_file.write("0")
+        logging.info(f"{HOST}: tcpprobe disabled.")
 
 
 def http():
-
-    # Command to run
-    command = "pkill nginx"
-
-    logging.info(f"{os.getenv('HOST')}: server stopped.")
-    run_command(command)
+    tcpprobe()
+    kill('nginx')
+    kill('tcpdump')
 
 
 def aioquic():
-
-    # Command to run
-    command = "pkill -e python /aioquic/examples/http3_server.py"
-
-    logging.info(f"{os.getenv('HOST')}: server stopped.")
-    run_command(command)
+    kill('tcpdump')
+    kill('python')
 
 
-def test():
-
-    # Command to run
-    command = "ls -lah /test"
-
-    run_command(command)
+def quicgo():
+    kill('tcpdump')
+    kill('python')
 
 
 def kill(process_name):
@@ -71,12 +118,5 @@ def kill(process_name):
 
 
 if __name__ == "__main__":
-
-    # test()
-    with ThreadPoolExecutor() as executor:
-
-        thread_1 = executor.submit(kill, 'python')
-        thread_2 = executor.submit(kill, 'nginx')
-        thread_3 = executor.submit(kill, 'tcpdump')
-
-        concurrent.futures.wait([thread_1, thread_2, thread_3])
+    initialize()
+    map_function()
