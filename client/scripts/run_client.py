@@ -17,8 +17,6 @@ QLOG_PATH = os.getenv("QLOG_PATH")
 TICKET_PATH = os.getenv("TICKET_PATH")
 PCAP_PATH = os.getenv("PCAP_PATH")
 HOST = os.getenv('HOST')
-mode = 'http'
-args = None
 
 # Configure logging
 logging.basicConfig(filename='/shared/logs/output.log', level=logging.INFO,
@@ -26,23 +24,29 @@ logging.basicConfig(filename='/shared/logs/output.log', level=logging.INFO,
 
 
 def arguments():
-
+    # python /scripts/run_client.py --mode http --window_scaling 1 --rmin 4096 --rdef 131072 --rmax 6291456
     # Create an ArgumentParser object
     parser = argparse.ArgumentParser(description='QuicLab Test Environment')
 
     parser.add_argument('-m', '--mode', type=str,
                         help='modes: http, aioquic, quicgo')
 
+    parser.add_argument('-w', '--window_scaling', type=str,
+                        help='enable/disable receiver window scaling')
+    parser.add_argument('--rmin', type=str,
+                        help='minimum recieve window in bytes')
+    parser.add_argument('--rdef', type=str,
+                        help='default recieve window in bytes')
+    parser.add_argument('--rmax', type=str,
+                        help='maximum recieve window in bytes')
+
     # Parse the command-line arguments
+    global args
     args = parser.parse_args()
 
     # Access the flag value in your script
-    if args.mode:
-        global mode
-        mode = args.mode
-        logging.info(f'{HOST}: {args.mode} mode enabled')
-    else:
-        logging.info('http mode enabled')
+
+    logging.info(f'{HOST}: {args.mode} mode enabled')
 
 
 def map_function():
@@ -54,8 +58,8 @@ def map_function():
     }
 
     # Call the chosen function based on the string variable
-    if mode in function_mapping:
-        function_call = function_mapping[mode]
+    if args.mode in function_mapping:
+        function_call = function_mapping[args.mode]
         function_call()
     else:
         logging.info("Function not found.")
@@ -73,6 +77,13 @@ def run_command(command):
     except subprocess.CalledProcessError as e:
         logging.info(f"Error on {HOST}: {e}")
         logging.info(f"Error {HOST} output: {e.stderr.decode()}")
+
+
+def tcp_settings():
+    command = f'sysctl -w net.ipv4.tcp_window_scaling={args.window_scaling}'
+    run_command(command)
+    command = f'sysctl -w net.ipv4.tcp_rmem="{args.rmin} {args.rdef} {args.rmax}"'
+    run_command(command)
 
 
 def tcpdump():
@@ -106,13 +117,15 @@ def quicgo():
     os.chdir("/quic-go/example/client")
 
     # Command to run
-    command = f'go run main.go --insecure --keylog {KEYS_PATH} --qlog https://{IP}:{PORT}/data.log'
+    command = f'go run main.go --insecure --keylog {KEYS_PATH} --qlog https://{IP}:{PORT}/data.log https://{IP}:{PORT}/data.log'
 
     logging.info(f"{HOST}: sending quic-go request...")
     run_command(command)
 
 
 def http():
+
+    tcp_settings()
 
     IP = '172.3.0.5'
     PORT = 443

@@ -17,6 +17,15 @@ SSH_PUBLIC_KEY_PATH = "../.ssh/mba"
 REMOTE_HOST = "marco@192.168.2.9:/Users/Marco/shared"
 OUTPUT = "./shared/logs/output.log"
 mode = 'http'
+window_scaling = 1
+rmin = 4096
+rdef = 131072
+rmax = 6291456
+delay = 0
+delay_deviation = 0
+loss = 0
+rate = 1000
+size = '1M'
 
 args = None
 
@@ -24,6 +33,7 @@ args = None
 host = docker.from_env()
 
 client_1 = host.containers.get("client_1")
+router_2 = host.containers.get("router_2")
 server = host.containers.get("server")
 
 
@@ -71,13 +81,61 @@ def arguments():
     parser.add_argument('-m', '--mode', choices=modes, type=str,
                         help='modes: http, aioquic, quicgo')
 
+    parser.add_argument('-s', '--size', type=str,
+                        help='size of the file to download')
+
+    parser.add_argument('-d', '--delay', type=str,
+                        help='network latency in ms')
+    parser.add_argument('-a', '--delay_deviation', type=str,
+                        help='network latency deviation in ms')
+    parser.add_argument('-l', '--loss', type=str,
+                        help='network loss in %')
+    parser.add_argument('-r', '--rate', type=str,
+                        help='network rate in Mbit')
+
+    parser.add_argument('-w', '--window_scaling', type=str,
+                        help='enable/disable receiver window scaling')
+    parser.add_argument('--rmin', type=str,
+                        help='minimum recieve window in bytes')
+    parser.add_argument('--rdef', type=str,
+                        help='default recieve window in bytes')
+    parser.add_argument('--rmax', type=str,
+                        help='maximum recieve window in bytes')
+
     # Parse the command-line arguments
     args = parser.parse_args()
 
     # Access the flag value in your script
     if args.mode:
         global mode
-        mode = f'{args.mode}'
+        mode = args.mode
+    if args.size:
+        global size
+        size = args.size
+    if args.window_scaling:
+        global window_scaling
+        window_scaling = args.window_scaling
+    if args.rmin:
+        global rmin
+        rmin = args.rmin
+    if args.rdef:
+        global rdef
+        rdef = args.rdef
+    if args.rmax:
+        global rmax
+        rmax = args.rmax
+    if args.delay:
+        global delay
+        delay = args.delay
+    if args.delay_deviation:
+        global delay_deviation
+        delay_deviation = args.delay_deviation
+    if args.loss:
+        global loss
+        loss = args.loss
+    if args.rate:
+        global rate
+        rate = args.rate
 
 
 def initialize():
@@ -104,14 +162,21 @@ def rsync():
 
 def run_client():
 
-    command = f'python /scripts/run_client.py --mode {mode}'
+    command = f'python /scripts/run_client.py --mode {mode} --window_scaling {window_scaling} --rmin {rmin} --rdef {rdef} --rmax {rmax}'
 
     client_1.exec_run(command)
 
 
+def traffic_control():
+
+    command = f'python /scripts/traffic_control.py --delay {delay} --delay_deviation {delay_deviation} --loss {loss} --rate {rate}'
+
+    router_2.exec_run(command)
+
+
 def run_server():
 
-    command = f'python /scripts/run_server.py --mode {mode}'
+    command = f'python /scripts/run_server.py --mode {mode} --size {size}'
 
     server.exec_run(command)
 
@@ -130,14 +195,15 @@ if __name__ == "__main__":
     with ThreadPoolExecutor() as executor:
 
         thread_1 = executor.submit(run_server)
+        thread_2 = executor.submit(traffic_control)
         time.sleep(3)
-        thread_2 = executor.submit(run_client)
+        thread_3 = executor.submit(run_client)
 
         # Wait for client request to complete
-        concurrent.futures.wait([thread_2])
+        concurrent.futures.wait([thread_3])
 
         shutdown_server()
-        concurrent.futures.wait([thread_1])
+        # concurrent.futures.wait([thread_1])
 
         rsync()
 

@@ -16,7 +16,6 @@ TICKET_PATH = os.getenv("TICKET_PATH")
 PCAP_PATH = os.getenv("PCAP_PATH")
 HOST = os.getenv("HOST")
 
-
 # Configure logging
 logging.basicConfig(filename='/shared/logs/output.log', level=logging.INFO,
                     format='%(asctime)s - %(levelname)s - %(message)s')
@@ -30,16 +29,14 @@ def arguments():
     parser.add_argument('-m', '--mode', type=str,
                         help='modes: http, aioquic, quicgo')
 
+    parser.add_argument('-s', '--size', type=str,
+                        help='size of the file to download')
+
     # Parse the command-line arguments
+    global args
     args = parser.parse_args()
 
-    # Access the flag value in your script
-    if args.mode:
-        global mode
-        mode = args.mode
-        logging.info(f'{HOST}: {args.mode} mode enabled')
-    else:
-        logging.info('http mode enabled')
+    logging.info(f'{HOST}: {args.mode} mode enabled')
 
 
 def map_function():
@@ -51,8 +48,8 @@ def map_function():
     }
 
     # Call the chosen function based on the string variable
-    if mode in function_mapping:
-        function_call = function_mapping[mode]
+    if args.mode in function_mapping:
+        function_call = function_mapping[args.mode]
         function_call()
     else:
         logging.info("Function not found.")
@@ -70,6 +67,12 @@ def run_command(command):
     except subprocess.CalledProcessError as e:
         logging.info(f"Error on {os.getenv('HOST')}: {e}")
         logging.info(f"Error {os.getenv('HOST')} output: {e.stderr.decode()}")
+
+
+def generate_data():
+    command = f'dd if=/dev/zero of=/data/data.log bs=1 count=0 seek={args.size} status=none'
+    logging.info(f"{os.getenv('HOST')}: Download size {args.size}.")
+    run_command(command)
 
 
 def tcpprobe():
@@ -134,7 +137,8 @@ if __name__ == "__main__":
     with ThreadPoolExecutor() as executor:
 
         thread_1 = executor.submit(tcpdump)
+        thread_2 = executor.submit(generate_data)
         time.sleep(3)
-        thread_2 = executor.submit(map_function)
+        thread_3 = executor.submit(map_function)
 
-        concurrent.futures.wait([thread_1, thread_2])
+        concurrent.futures.wait([thread_1, thread_2, thread_3])
