@@ -15,8 +15,8 @@ data_len_values = []
 snd_cwnd_values = []
 ssthresh_values = []
 snd_wnd_values = []
-snd_nxt_values = []  
-snd_una_values = []  
+snd_nxt_values = []
+snd_una_values = []
 srtt_values = []
 rcv_wnd_values = []
 
@@ -33,8 +33,8 @@ with open(input_file, 'r') as file:
             src_values.append(match[1])
             dest_values.append(match[2])
             data_len_values.append(int(match[3]))
-            snd_nxt_values.append(int(match[4],16))  
-            snd_una_values.append(int(match[5],16))  
+            snd_nxt_values.append(int(match[4], 16))
+            snd_una_values.append(int(match[5], 16))
             snd_cwnd_values.append(int(match[6]))
             ssthresh_values.append(int(match[7]))
             snd_wnd_values.append(int(match[8]))
@@ -47,8 +47,8 @@ data = {
     'src': src_values,
     'dest': dest_values,
     'data_len': data_len_values,
-    'snd_nxt': snd_nxt_values,  
-    'snd_una': snd_una_values,  
+    'snd_nxt': snd_nxt_values,
+    'snd_una': snd_una_values,
     'snd_cwnd': snd_cwnd_values,
     'ssthresh': ssthresh_values,
     'snd_wnd': snd_wnd_values,
@@ -59,29 +59,35 @@ df = pd.DataFrame(data)
 
 
 # Filter communication to server 172.3.0.0/24 only
-filtered_df = df[df['src'].str.contains('172.3.') | df['dest'].str.contains('172.3.')]
+combined_df = df[df['src'].str.contains(
+    '172.3.') | df['dest'].str.contains('172.3.')]
+client_df = df[df['dest'].str.contains('172.3.')]
+server_df = df[df['src'].str.contains('172.3.')]
 
 # Normalize the 'time' column to zero
-min_time = min(filtered_df['time'])
-filtered_df['time'] -= min_time
+min_time = min(client_df['time'])
+client_df['time'] -= min_time
 
-# TODO: combine the right value pairs from client and server
-# Calculate the difference between 'snd_nxt' and 'snd_una' and add it as a new column
-filtered_df['ackd_data'] = filtered_df['snd_nxt'] - filtered_df['snd_una'] 
-
-# Calculate the difference between 'snd_nxt' and 'snd_una' and add it as a new column
-filtered_df['cum_rcv'] = filtered_df['ackd_data'] + filtered_df['rcv_wnd'] 
+# data acknowledged by the client can be found in 'data_len'
+client_df['ackd_data'] = client_df['data_len']
 
 # Group by 'src' and 'dest', then calculate cumulative sum of 'ackd_data'
-filtered_df['cum_ackd_data'] = filtered_df.groupby(['src', 'dest'])['ackd_data'].cumsum()
+client_df['cum_ackd_data'] = client_df.groupby(['src', 'dest'])[
+    'ackd_data'].cumsum()
+
+
+# Calculate the difference between 'snd_nxt' and 'snd_una' and add it as a new column
+client_df['cum_rcv'] = client_df['cum_ackd_data'] + client_df['rcv_wnd']
+
 
 # Group by 'src' and 'dest', then calculate cumulative sum of 'data_len'
-filtered_df['cum_data_len'] = filtered_df.groupby(['src', 'dest'])['data_len'].cumsum()
+client_df['cum_data_len'] = client_df.groupby(['src', 'dest'])[
+    'data_len'].cumsum()
 
 
 # Save filtered and normalized DataFrame to CSV files with ascending numbers
 file_counter = 1
-for _, group_df in filtered_df.groupby(['src', 'dest']):
+for _, group_df in client_df.groupby(['src', 'dest']):
     src_output_file = f"{output_directory}results_{file_counter}.csv"
     group_df.to_csv(src_output_file, index=False)
     file_counter += 1
