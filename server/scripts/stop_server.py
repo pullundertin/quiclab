@@ -29,7 +29,6 @@ def arguments():
     # Access the flag value in your script
     if args.mode:
         global mode
-        logging.info('stop server mode enabled')
         mode = args.mode
 
 
@@ -46,7 +45,7 @@ def map_function():
         function_call = function_mapping[mode]
         function_call()
     else:
-        print("Function not found.")
+        logging.info("Function not found.")
 
 
 def initialize():
@@ -87,25 +86,30 @@ def tcpprobe():
 
 
 def http():
+
     tcpprobe()
     kill('nginx')
     kill('tcpdump')
 
 
 def aioquic():
+
     kill('tcpdump')
     kill('python')
 
 
 def quicgo():
+
     kill('tcpdump')
-    kill('python')
+    kill('go')
+    kill('/tmp/go-build')
 
 
 def kill(process_name):
 
-    for process in psutil.process_iter(attrs=['pid', 'ppid', 'name']):
-        if process.info['name'] == process_name:
+    for process in psutil.process_iter(attrs=['pid', 'ppid', 'name', 'cmdline']):
+        # also check by pattern
+        if process.info['name'] == process_name or process_name in process.info['cmdline'][0]:
 
             try:
                 pid = process.info['pid']

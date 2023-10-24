@@ -24,7 +24,7 @@ args = None
 host = docker.from_env()
 
 client_1 = host.containers.get("client_1")
-server_1 = host.containers.get("server_1")
+server = host.containers.get("server")
 
 
 def log_config():
@@ -113,15 +113,14 @@ def run_server():
 
     command = f'python /scripts/run_server.py --mode {mode}'
 
-    server_1.exec_run(command)
+    server.exec_run(command)
 
 
 def shutdown_server():
 
-    # Command to run
     command = f'python /scripts/stop_server.py --mode {mode}'
 
-    server_1.exec_run(command)
+    server.exec_run(command)
 
 
 if __name__ == "__main__":
@@ -130,15 +129,15 @@ if __name__ == "__main__":
 
     with ThreadPoolExecutor() as executor:
 
-        server = executor.submit(run_server)
+        thread_1 = executor.submit(run_server)
         time.sleep(3)
-        client = executor.submit(run_client)
+        thread_2 = executor.submit(run_client)
 
         # Wait for client request to complete
-        concurrent.futures.wait([client])
+        concurrent.futures.wait([thread_2])
 
         shutdown_server()
-        concurrent.futures.wait([server])
+        concurrent.futures.wait([thread_1])
 
         rsync()
 

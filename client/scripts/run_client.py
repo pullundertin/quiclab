@@ -58,7 +58,7 @@ def map_function():
         function_call = function_mapping[mode]
         function_call()
     else:
-        print("Function not found.")
+        logging.info("Function not found.")
 
 
 def initialize():
@@ -99,24 +99,15 @@ def aioquic():
 
 def quicgo():
 
-    IP = "172.3.0.6"
+    IP = "172.3.0.5"
     PORT = 6121
 
     # Change current working directory
     os.chdir("/quic-go/example/client")
 
     # Command to run
-    command = [
-        "go",
-        "run",
-        "main.go",
-        "--insecure",
-        "--keylog",
-        KEYS_PATH,
-        "--qlog",
-        f"https://{IP}:{PORT}/demo/tiles",
-        # QLOG_PATH,
-    ]
+    command = f'go run main.go --insecure --keylog {KEYS_PATH} --qlog https://{IP}:{PORT}/data.log'
+
     logging.info(f"{HOST}: sending quic-go request...")
     run_command(command)
 
@@ -162,9 +153,8 @@ if __name__ == "__main__":
         thread_2 = executor.submit(map_function)
 
         wait([thread_2])
-        logging.info('client_1: request completed.')
+        logging.info(f'{HOST}: request completed.')
 
         time.sleep(3)
         kill("tcpdump")
         wait([thread_1])
-        logging.info('client_1: tcpdump has been shut down.')

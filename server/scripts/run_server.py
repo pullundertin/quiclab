@@ -55,7 +55,7 @@ def map_function():
         function_call = function_mapping[mode]
         function_call()
     else:
-        print("Function not found.")
+        logging.info("Function not found.")
 
 
 def initialize():
