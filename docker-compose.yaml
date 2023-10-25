@@ -233,6 +233,7 @@ services:
     environment:
       - GF_SECURITY_ADMIN_USER=quiclab
       - GF_SECURITY_ADMIN_PASSWORD=quiclab
+      - GF_DATE_FORMATS_FULL_DATE=YYYY-MM-DD HH:mm:ss.SSS
     restart: unless-stopped
 
   file_server:

@@ -69,28 +69,46 @@ combined_df = df[df['src'].str.contains(
 def get_cwnd():
 
     client_cwnd_values = []
-    client_cwnd = None
+    client_cwnd = 0
 
     for host, server_cwnd in zip(combined_df['src'], combined_df['snd_cwnd']):
         if '172.3.0.5' in host:
             client_cwnd = server_cwnd * MSS
-            client_cwnd_values.append(None)
+            client_cwnd_values.append(0)
         elif '172.1.0.101' in host:
             client_cwnd_values.append(client_cwnd)
 
     # Add 'cwnd' column to the DataFrame
     combined_df['cwnd'] = client_cwnd_values
+    # combined_df['cwnd'] = combined_df['cwnd'].astype(int)
+    # print(combined_df)
+
+
+def convert_timestamp():
+    # Convert the 'timestamp' column to pandas datetime object
+    combined_df['time'] = pd.to_datetime(combined_df['time'], unit='s')
+
+    # Extract milliseconds part from the timestamp
+    combined_df['milliseconds'] = combined_df['time'].apply(
+        lambda x: int((x.microsecond / 1000)))
+
+    # Create a timedelta object with milliseconds
+    combined_df['milliseconds_delta'] = combined_df['milliseconds'].apply(
+        lambda x: pd.Timedelta(milliseconds=x))
+
+    # Get the current time
+    current_time = pd.to_datetime('now')
+
+    # Add milliseconds to the current time
+    combined_df['timestamp'] = current_time + combined_df['milliseconds_delta']
 
 
 get_cwnd()
+convert_timestamp()
 
 client_df = combined_df[combined_df['dest'].str.contains('172.3.')]
 server_df = combined_df[combined_df['src'].str.contains('172.3.')]
 
-# Normalize the 'time' column to zero
-min_time = min(client_df['time'])
-client_df['time'] -= min_time
-client_df['time'] *= 1000
 
 # data acknowledged by the client can be found in 'data_len'
 client_df['ackd_data'] = client_df['data_len']
@@ -108,10 +126,8 @@ client_df['cum_rcv'] = client_df['cum_ackd_data'] + client_df['rcv_wnd']
 client_df['cum_data_len'] = client_df.groupby(['src', 'dest'])[
     'data_len'].cumsum()
 
+# get minimum of rcv_wnd and cwnd
+client_df['min_wnd'] = client_df[['rcv_wnd', 'cwnd']].min(axis=1)
 
-# Save filtered and normalized DataFrame to CSV files with ascending numbers
-file_counter = 1
-for _, group_df in client_df.groupby(['src', 'dest']):
-    src_output_file = f"{output_directory}results_{file_counter}.csv"
-    group_df.to_csv(src_output_file, index=False)
-    file_counter += 1
+# export dataframe to csv
+client_df.to_csv(output_file, index=False)
