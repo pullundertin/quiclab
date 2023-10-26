@@ -1,6 +1,6 @@
 import pandas as pd
 import re
-import numpy as np
+
 
 pd.options.mode.chained_assignment = None
 
@@ -40,8 +40,6 @@ def filter_communication_with_device_under_test(dataframe):
 
 
 def convert_microseconds_to_timestamp(dataframe):
-    # Convert the 'time' column to pandas datetime object
-    # dataframe['time'] = dataframe['time']
     dataframe['time'] = dataframe['time'] * 2000
     dataframe['time'] = pd.to_datetime(dataframe['time'], unit='s')
 
@@ -96,29 +94,6 @@ def create_cumulated_receive_window_column(client_dataframe):
     return client_dataframe
 
 
-def create_cumulated_bytes_in_flight_column(dataframe):
-    bytes_in_flight = {ip_pattern: 0}
-
-    def calculate_bytes_in_flight_by_server(row):
-        nonlocal bytes_in_flight
-        if ip_pattern in row['src']:
-            bytes_in_flight[ip_pattern] = row['snd_nxt'] - row['snd_una']
-            return 0
-        else:
-            return bytes_in_flight[ip_pattern]
-
-    dataframe['bytes_in_flight'] = dataframe.apply(
-        calculate_bytes_in_flight_by_server, axis=1)
-
-    # # Remove temporary columns
-    # dataframe.drop(
-    #     columns=['snd_cwnd'], inplace=True)
-
-    dataframe['cum_bytes_in_flight'] = dataframe.groupby(['src', 'host'])[
-        'bytes_in_flight'].cumsum()
-    return dataframe
-
-
 def create_minimum_of_cwnd_and_rcv_wnd_column(dataframe):
     dataframe['min_wnd'] = dataframe[['rcv_wnd', 'cwnd']].min(axis=1)
     return dataframe
@@ -164,18 +139,19 @@ if __name__ == "__main__":
     dataframe = filter_communication_with_device_under_test(dataframe)
     dataframe = update_rcv_wnd_values_for_server(dataframe)
     dataframe = create_congestion_window_column(dataframe)
-    export_to_csv(
-        dataframe[['src', 'rcv_wnd', 'cwnd']], '/shared/tcpprobe/test.csv')
     server_dataframe = filter_data_sent_by_server(dataframe)
     client_dataframe = filter_data_sent_by_client(dataframe)
     server_dataframe = data_sent_by_server(server_dataframe)
     client_dataframe = acks_sent_by_client(client_dataframe)
     client_dataframe = create_cumulated_receive_window_column(
         client_dataframe)
+    server_dataframe = create_minimum_of_cwnd_and_rcv_wnd_column(
+        server_dataframe)
 
     server_selection = server_dataframe[[
-        'time', 'data_sent', 'cum_data_sent', 'cwnd']]
+        'time', 'data_sent', 'cum_data_sent', 'cwnd', 'min_wnd']]
     client_selection = client_dataframe[[
-        'time', 'src', 'snd_una', 'snd_nxt', 'ack_sent', 'cum_ack_sent', 'rcv_wnd', 'cum_rcv_wnd']]
+        'time', 'ack_sent', 'cum_ack_sent', 'rcv_wnd', 'cum_rcv_wnd']]
+
     export_to_csv(server_selection, '/shared/tcpprobe/server.csv')
     export_to_csv(client_selection, '/shared/tcpprobe/client.csv')
