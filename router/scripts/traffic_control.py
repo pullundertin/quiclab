@@ -60,7 +60,6 @@ def run_command(command):
 
 def tcpdump():
 
-    # Command to run
     command = "tcpdump -i eth0 -w $PCAP_PATH"
 
     logging.info(
@@ -132,19 +131,6 @@ def log_settings():
     log_rate = rate_match.group(1) if rate_match else None
     log_burst = burst_match.group(1)
 
-    # # Convert log_delay, rate, and burst values to milliseconds if needed
-    # if 'ms' not in log_delay:
-    #     # Convert log_delay to milliseconds if the unit is not already in milliseconds
-    #     delay_value, delay_unit = re.match(r'(\d+)(\w+)', log_delay).groups()
-    #     if delay_unit == 's':
-    #         log_delay = str(int(delay_value) * 1000) + 'ms'
-
-    # if 'ms' not in rate:
-    #     # Convert rate to Mbps if the unit is not already in Mbps
-    #     rate_value, rate_unit = re.match(r'(\d+)(\w+)', rate).groups()
-    #     if rate_unit == 'Mbit':
-    #         rate = rate_value + 'Mbps'
-
     # Log extracted values
     logging.info(f'{HOST}: Limit: {log_limit}')
     logging.info(f'{HOST}: Delay: {log_delay}')
@@ -160,17 +146,4 @@ if __name__ == "__main__":
     netem_settings()
     tbf_settings()
     log_settings()
-    # tcpdump()
-
-    # with ThreadPoolExecutor() as executor:
-
-    #     thread_1 = executor.submit(tcpdump)
-    #     time.sleep(3)
-    #     thread_2 = executor.submit(map_function)
-
-    #     wait([thread_2])
-    #     logging.info(f'{HOST}: request completed.')
-
-    #     time.sleep(3)
-    #     kill("tcpdump")
-    #     wait([thread_1])
+ 

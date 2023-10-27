@@ -30,7 +30,7 @@ services:
       - PCAP_PATH=/shared/pcap/client_1.pcap
     stdin_open: true
     tty: true
-    command: sh -c "bash /scripts/setup.sh && tail -f /dev/null"
+    command: sh -c "/scripts/setup.sh && tail -f /dev/null"
     working_dir: /
 
   client_2:
@@ -61,7 +61,7 @@ services:
       - PCAP_PATH=/shared/pcap/client_2.pcap
     stdin_open: true
     tty: true
-    command: sh -c "bash /scripts/setup.sh && tail -f /dev/null"
+    command: sh -c "/scripts/setup.sh && tail -f /dev/null"
     working_dir: /
 
   router_1:
@@ -93,7 +93,7 @@ services:
       - GW_2=172.2.0.4
       - IFACE=eth1
 
-    command: sh -c "bash /scripts/setup.sh && tail -f /dev/null"
+    command: sh -c "/scripts/setup.sh && tail -f /dev/null"
     stdin_open: true
     tty: true
 
@@ -126,7 +126,7 @@ services:
       - GW_2=172.2.0.4
       - IFACE=eth0
 
-    command: sh -c "bash /scripts/setup.sh && tail -f /dev/null"
+    command: sh -c "/scripts/setup.sh && tail -f /dev/null"
     stdin_open: true
     tty: true
 
@@ -156,7 +156,7 @@ services:
       - QLOG_PATH=/shared/qlog_server
       - PCAP_PATH=/shared/pcap/server.pcap
 
-    command: sh -c "bash /scripts/setup.sh && tail -f /dev/null"
+    command: sh -c "/scripts/setup.sh && tail -f /dev/null"
     stdin_open: true
     tty: true
 
