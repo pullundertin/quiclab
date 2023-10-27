@@ -3,7 +3,7 @@ version: "3.3"
 services:
 
   client_1:
-    image: pulltin/quiclab:2.0
+    image: pulltin/quiclab:2.1
     privileged: true
     hostname: client_1
     container_name: client_1
@@ -30,11 +30,11 @@ services:
       - PCAP_PATH=/shared/pcap/client_1.pcap
     stdin_open: true
     tty: true
-    command: "/scripts/setup.sh"
+    command: sh -c "bash /scripts/setup.sh && tail -f /dev/null"
     working_dir: /
 
   client_2:
-    image: pulltin/quiclab:2.0
+    image: pulltin/quiclab:2.1
     privileged: true
     hostname: client_2
     container_name: client_2
@@ -61,41 +61,11 @@ services:
       - PCAP_PATH=/shared/pcap/client_2.pcap
     stdin_open: true
     tty: true
-    command: "/scripts/setup.sh"
+    command: sh -c "bash /scripts/setup.sh && tail -f /dev/null"
     working_dir: /
 
-  # client_3:
-  #   image: pulltin/quiclab:2.0
-  #   privileged: true
-  #   hostname: client_3
-  #   container_name: client_3
-  #   volumes:
-  #     - ./client/scripts/:/scripts
-  #     - ./shared:/shared
-  #     - ./shared/logs:/shared/logs
-  #     - ./shared/keys:/shared/keys
-  #     - ./shared/pcap:/shared/pcap
-  #     - ./shared/qlog_client:/shared/qlog_client
-  #   cap_add:
-  #     - NET_ADMIN
-  #   networks:
-  #     A_client_network:
-  #       ipv4_address: 172.1.0.103
-  #   environment:
-  #     - TZ=Europe/Berlin
-  #     - HOST=client_3
-  #     - LOG_PATH=/shared/logs/client_3.log
-  #     - KEYS_PATH=/shared/keys/client.key
-  #     - TICKET_PATH=/shared/keys/ticket.txt
-  #     - QLOG_PATH=/shared/qlog_client
-  #     - PCAP_PATH=/shared/pcap/client_3.pcap
-  #   stdin_open: true
-  #   tty: true
-  #   command: "/scripts/setup.sh"
-  #   working_dir: /
-
   router_1:
-    image: pulltin/quiclab:2.0
+    image: pulltin/quiclab:2.1
     privileged: true
     hostname: router_1
     container_name: router_1
@@ -123,12 +93,12 @@ services:
       - GW_2=172.2.0.4
       - IFACE=eth1
 
-    command: "/scripts/setup.sh"
+    command: sh -c "bash /scripts/setup.sh && tail -f /dev/null"
     stdin_open: true
     tty: true
 
   router_2:
-    image: pulltin/quiclab:2.0
+    image: pulltin/quiclab:2.1
     privileged: true
     hostname: router_2
     container_name: router_2
@@ -156,12 +126,12 @@ services:
       - GW_2=172.2.0.4
       - IFACE=eth0
 
-    command: "/scripts/setup.sh"
+    command: sh -c "bash /scripts/setup.sh && tail -f /dev/null"
     stdin_open: true
     tty: true
 
   server:
-    image: pulltin/quiclab:2.0
+    image: pulltin/quiclab:2.1
     privileged: true
     hostname: server
     container_name: server
@@ -186,39 +156,9 @@ services:
       - QLOG_PATH=/shared/qlog_server
       - PCAP_PATH=/shared/pcap/server.pcap
 
-    command: "/scripts/setup.sh"
+    command: sh -c "bash /scripts/setup.sh && tail -f /dev/null"
     stdin_open: true
     tty: true
-
-  # server_2:
-  #   image: pulltin/quiclab:2.0
-  #   privileged: true
-  #   hostname: server_2
-  #   container_name: server_2
-  #   volumes:
-  #     - ./server/scripts/:/scripts
-  #     - ./server/data/:/data
-  #     - ./shared:/shared
-  #     - ./shared/logs:/shared/logs
-  #     - ./shared/keys:/shared/keys
-  #     - ./shared/pcap:/shared/pcap
-  #     - ./shared/qlog_server:/shared/qlog_server
-  #   cap_add:
-  #     - NET_ADMIN
-  #   networks:
-  #     C_server_network:
-  #       ipv4_address: 172.3.0.6
-  #   ports:
-  #     - 6121:6121
-  #   environment:
-  #     - TZ=Europe/Berlin
-  #     - HOST=server_2
-  #     - LOG_PATH=/shared/logs/server.log
-  #     - QLOG_PATH=/shared/qlog_server
-  #     - PCAP_PATH=/shared/pcap/server_2.pcap
-  #   command: "/scripts/setup.sh"
-  #   stdin_open: true
-  #   tty: true
 
   grafana:
     image: "grafana/grafana-oss:latest"
@@ -237,7 +177,7 @@ services:
     restart: unless-stopped
 
   file_server:
-    image: pulltin/quiclab:2.0
+    image: pulltin/quiclab:2.1
     container_name: file_server
     hostname: file_server
     ports:
@@ -245,8 +185,7 @@ services:
     volumes:
       - ./server/scripts/:/scripts
       - ./shared:/shared
-    command:
-      - "/scripts/setup_file_server.sh"
+    command: sh -c "/scripts/setup_file_server.sh && tail -f /dev/null"
     stdin_open: true
     tty: true
 

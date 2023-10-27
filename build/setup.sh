@@ -41,11 +41,14 @@ fi
 
 ln -s /usr/local/go/bin/go /usr/bin/go &&
 
-cd quic-go &&
+cd /quic-go &&
 go get -d ./... &&
 
 # Install pandas
 pip install pandas &&
+
+# Install docker
+pip install docker &&
 
 # Install psutil
 apt install python3-psutil
