@@ -36,7 +36,7 @@ run_and_log_command "pip install aioquic"
 run_and_log_command "cd /aioquic"
 run_and_log_command "pip install --upgrade pip setuptools"
 run_and_log_command "pip install -e ."
-run_and_log_command "pip install asgiref dnslib "flask<2.2" httpbin starlette "werkzeug<2.1" wsproto"
+run_and_log_command "pip install asgiref dnslib 'flask<2.2' httpbin starlette 'werkzeug<2.1' wsproto"
 log_message "aioquic installation complete."
 
 # Prepare nginx
