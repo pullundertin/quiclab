@@ -32,7 +32,11 @@ log_message "Dependency installation complete."
 
 # Install aioquic
 run_and_log_command "git clone https://github.com/aiortc/aioquic.git"
-run_and_log_command "pip install -e ./aioquic"
+run_and_log_command "pip install aioquic"
+run_and_log_command "cd /aioquic"
+run_and_log_command "pip install --upgrade pip setuptools"
+run_and_log_command "pip install -e ."
+run_and_log_command "pip install asgiref dnslib "flask<2.2" httpbin starlette "werkzeug<2.1" wsproto"
 log_message "aioquic installation complete."
 
 # Prepare nginx
@@ -41,13 +45,13 @@ run_and_log_command "ln -s /data/data.log /var/www/html/data.log"
 log_message "Nginx preparation complete."
 
 # Install quic-go
-run_and_log_command "git clone https://github.com/quic-go/quic-go.git"
+run_and_log_command "cd / && git clone https://github.com/quic-go/quic-go.git"
 architecture=$(uname -m)
 if [ "$architecture" == "x86_64" ]; then
-    run_and_log_command "wget https://go.dev/dl/go1.21.3.linux-amd64.tar.gz"
+    run_and_log_command "cd / && wget https://go.dev/dl/go1.21.3.linux-amd64.tar.gz"
     run_and_log_command "rm -rf /usr/local/go && tar -C /usr/local -xzf go1.21.3.linux-amd64.tar.gz"
 elif [ "$architecture" == "aarch64" ]; then
-    run_and_log_command "wget https://go.dev/dl/go1.21.3.linux-arm64.tar.gz"
+    run_and_log_command "cd / && wget https://go.dev/dl/go1.21.3.linux-arm64.tar.gz"
     run_and_log_command "rm -rf /usr/local/go && tar -C /usr/local -xzf go1.21.3.linux-arm64.tar.gz"
 else
     log_message "The architecture is not recognized: $architecture"
