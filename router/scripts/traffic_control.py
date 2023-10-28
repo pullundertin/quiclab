@@ -1,25 +1,9 @@
-
-
-import psutil
-import time
-import socket
 import os
 import subprocess
-import concurrent.futures
-from concurrent.futures import ThreadPoolExecutor
-from concurrent.futures import wait
 import re
 import logging
 import argparse
 
-# Get environment variables
-KEYS_PATH = os.getenv("KEYS_PATH")
-QLOG_PATH = os.getenv("QLOG_PATH")
-TICKET_PATH = os.getenv("TICKET_PATH")
-PCAP_PATH = os.getenv("PCAP_PATH")
-HOST = os.getenv('HOST')
-global burst
-global limit
 
 # Configure logging
 logging.basicConfig(filename='/shared/logs/output.log', level=logging.INFO,
@@ -39,47 +23,27 @@ def arguments():
     parser.add_argument('-r', '--rate', type=str,
                         help='network rate in Mbit')
 
-    global args
     args = parser.parse_args()
 
-
-def initialize():
-    arguments()
-    reset_settings()
+    return args
 
 
 def run_command(command):
     try:
         process = subprocess.run(
             command, check=True, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-        logging.info(f"{HOST}: {process.stdout.decode()}")
+        logging.info(f"{os.getenv('HOST')}: {process.stdout.decode()}")
     except subprocess.CalledProcessError as e:
-        logging.info(f"Error on {HOST}: {e}")
-        logging.info(f"Error {HOST} output: {e.stderr.decode()}")
+        logging.info(f"Error on {os.getenv('HOST')}: {e}")
+        logging.info(f"Error {os.getenv('HOST')} output: {e.stderr.decode()}")
 
 
 def tcpdump():
 
-    command = "tcpdump -i eth0 -w $PCAP_PATH"
-
+    command = "tcpdump -i eth0 -w $PCAP_PATH -n"
     logging.info(
-        f"{HOST}: tcpdump started.")
+        f"{os.getenv('HOST')}: tcpdump started.")
     run_command(command)
-
-
-def kill(process_name):
-
-    for process in psutil.process_iter(attrs=['pid', 'ppid', 'name']):
-        if process.info['name'] == process_name:
-
-            try:
-                pid = process.info['pid']
-                p = psutil.Process(pid)
-                p.terminate()
-                logging.info(f"{os.getenv('HOST')}: {process_name} stopped.")
-            except (psutil.NoSuchProcess, psutil.AccessDenied, psutil.TimeoutExpired):
-                logging.info(f"{os.getenv('HOST')} Error: {process_name}")
-                pass
 
 
 def reset_settings():
@@ -88,19 +52,19 @@ def reset_settings():
     run_command(command)
 
 
-def netem_settings():
+def netem_settings(delay, delay_deviation, loss):
     # TODO change eth0/eth1 on router_1
-    command = f'tc qdisc add dev eth0 root handle 1: netem delay {args.delay} {args.delay_deviation} loss {args.loss}'
+    command = f"tc qdisc add dev eth0 root handle 1: netem delay {delay} {delay_deviation} loss {loss}"
     run_command(command)
 
 
-def tbf_settings():
+def tbf_settings(rate):
     # convert rate from Mbits to bits
-    rate_in_bits = int(args.rate) * 1000000
+    rate_in_bits = int(rate) * 1000000
     burst = int(rate_in_bits/2)
     limit = rate_in_bits + burst/2
 
-    command = f'tc qdisc add dev eth0 parent 1: handle 2: tbf rate {rate_in_bits} burst {burst} limit {limit}'
+    command = f"tc qdisc add dev eth0 parent 1: handle 2: tbf rate {rate_in_bits} burst {burst} limit {limit}"
     run_command(command)
 
 
@@ -112,7 +76,7 @@ def log_settings():
     # Regular expressions for extracting values
     limit_pattern = r'limit (\d+)'
     delay_pattern = r'delay (\d+\w+)\s+(\d+\w+)?'
-    loss_pattern = r'loss (\d+%)'
+    loss_pattern = r'loss (\d+\.\d+|\d+)%'
     rate_pattern = r'rate (\d+\w+)'
     burst_pattern = r'burst (\d+)'
 
@@ -132,18 +96,19 @@ def log_settings():
     log_burst = burst_match.group(1)
 
     # Log extracted values
-    logging.info(f'{HOST}: Limit: {log_limit}')
-    logging.info(f'{HOST}: Delay: {log_delay}')
-    logging.info(f'{HOST}: Delay Deviation: {log_delay_deviation}')
-    logging.info(f'{HOST}: Loss: {log_loss}')
-    logging.info(f'{HOST}: Rate: {log_rate}')
-    logging.info(f'{HOST}: Burst: {int(log_burst)/1000000} Mbps')
+    logging.info(f"{os.getenv('HOST')}: Limit: {log_limit}")
+    logging.info(f"{os.getenv('HOST')}: Delay: {log_delay}")
+    logging.info(
+        f"{os.getenv('HOST')}: Delay Deviation: {log_delay_deviation}")
+    logging.info(f"{os.getenv('HOST')}: Loss: {log_loss}%")
+    logging.info(f"{os.getenv('HOST')}: Rate: {log_rate}")
+    logging.info(f"{os.getenv('HOST')}: Burst: {int(log_burst)/1000000} Mbps")
 
 
 if __name__ == "__main__":
 
-    initialize()
-    netem_settings()
-    tbf_settings()
+    args = arguments()
+    reset_settings()
+    netem_settings(args.delay, args.delay_deviation, args.loss)
+    tbf_settings(args.rate)
     log_settings()
- 
