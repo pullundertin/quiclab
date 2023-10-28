@@ -2,27 +2,18 @@ import pandas as pd
 import re
 
 
-pd.options.mode.chained_assignment = None
-
-input_file = "/shared/tcpprobe/server.log"
-output_file = "/shared/tcpprobe/results.csv"
-output_directory = "/shared/tcpprobe/"
-ip_pattern = '172.3.'
-MSS = 1460
-
-
 def extract_values_from_log(input_file):
     with open(input_file, 'r') as file:
         log_data = file.read()
 
-    pattern = r'(\d+\.\d+): tcp_probe: family=AF_INET src=([^ ]+) dest=([^ ]+) .* data_len=([^ ]+) snd_nxt=([^ ]+) snd_una=([^ ]+) snd_cwnd=([^ ]+) ssthresh=([^ ]+) .* srtt=([^ ]+) rcv_wnd=([^ ]+)'
-
-    matches = re.findall(pattern, log_data)
+    pattern = re.compile(
+        r'(\d+\.\d+): tcp_probe: family=AF_INET src=([^ ]+) dest=([^ ]+) .* data_len=([^ ]+) snd_nxt=([^ ]+) snd_una=([^ ]+) snd_cwnd=([^ ]+) ssthresh=([^ ]+) .* srtt=([^ ]+) rcv_wnd=([^ ]+)')
+    matches = pattern.findall(log_data)
 
     extracted_data = {
         'time': [float(match[0]) for match in matches],
         'src': [match[1] for match in matches],
-        'host': [match[2] for match in matches],
+        'dest': [match[2] for match in matches],
         'data_len': [int(match[3]) for match in matches],
         'snd_nxt': [int(match[4], 16) for match in matches],
         'snd_una': [int(match[5], 16) for match in matches],
@@ -36,7 +27,7 @@ def extract_values_from_log(input_file):
 
 
 def filter_communication_with_device_under_test(dataframe):
-    return dataframe[dataframe['src'].str.contains(ip_pattern) | dataframe['host'].str.contains(ip_pattern)]
+    return dataframe[dataframe['src'].str.contains(ip_pattern) | dataframe['dest'].str.contains(ip_pattern)]
 
 
 def convert_microseconds_to_timestamp(dataframe):
@@ -51,21 +42,17 @@ def filter_data_sent_by_client(dataframe):
 
 
 def filter_data_sent_by_server(dataframe):
-    return dataframe[dataframe['host'].str.contains(ip_pattern)]
+    return dataframe[dataframe['dest'].str.contains(ip_pattern)]
 
 
 def create_congestion_window_column(dataframe):
     client_cwnd = {ip_pattern: 0}
-
-    def calculate_client_cwnd(row):
-        nonlocal client_cwnd
+    for index, row in dataframe.iterrows():
         if ip_pattern in row['src']:
             client_cwnd[ip_pattern] = row['snd_cwnd'] * MSS
-            return 0
+            dataframe.at[index, 'cwnd'] = 0
         else:
-            return client_cwnd[ip_pattern]
-
-    dataframe['cwnd'] = dataframe.apply(calculate_client_cwnd, axis=1)
+            dataframe.at[index, 'cwnd'] = client_cwnd[ip_pattern]
 
     # Remove temporary columns
     dataframe.drop(
@@ -110,7 +97,7 @@ def data_sent_by_server(dataframe):
     dataframe = dataframe[dataframe['data_sent'] != 0]
 
     # Calculate cumulated data sent
-    dataframe['cum_data_sent'] = dataframe.groupby(['src', 'host'])[
+    dataframe['cum_data_sent'] = dataframe.groupby(['src', 'dest'])[
         'data_sent'].cumsum()
     return dataframe
 
@@ -128,12 +115,20 @@ def acks_sent_by_client(dataframe):
     dataframe = dataframe[dataframe['ack_sent'] != 0]
 
     # Calculate cumulated acknowledgements
-    dataframe['cum_ack_sent'] = dataframe.groupby(['src', 'host'])[
+    dataframe['cum_ack_sent'] = dataframe.groupby(['src', 'dest'])[
         'ack_sent'].cumsum()
     return dataframe
 
 
 if __name__ == "__main__":
+
+    pd.options.mode.chained_assignment = None
+    input_file = "/shared/tcpprobe/server.log"
+    output_file = "/shared/tcpprobe/results.csv"
+    output_directory = "/shared/tcpprobe/"
+    ip_pattern = '172.3.'
+    MSS = 1460
+
     dataframe = extract_values_from_log(input_file)
     dataframe = convert_microseconds_to_timestamp(dataframe)
     dataframe = filter_communication_with_device_under_test(dataframe)
