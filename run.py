@@ -14,7 +14,7 @@ import argparse
 WORKDIR = "./shared/"
 TICKET_PATH = "./shared/keys/ticket.txt"
 SSH_PUBLIC_KEY_PATH = "../.ssh/mba"
-REMOTE_HOST = "marco@192.168.2.9:/Users/Marco/shared"
+REMOTE_HOST = "marco@mba:/Users/Marco/shared"
 OUTPUT = "./shared/logs/output.log"
 mode = 'http'
 window_scaling = 1

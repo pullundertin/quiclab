@@ -190,7 +190,7 @@ services:
     tty: true
 
   qvis_server:
-    image: pulltin/qvis_server:1.0
+    image: pulltin/qvis_server:1.1
     container_name: qvis_server
     hostname: qvis_server
     ports:

@@ -1,0 +1,211 @@
+{
+  "annotations": {
+    "list": [
+      {
+        "builtIn": 1,
+        "datasource": {
+          "type": "grafana",
+          "uid": "-- Grafana --"
+        },
+        "enable": true,
+        "hide": true,
+        "iconColor": "rgba(0, 211, 255, 1)",
+        "name": "Annotations & Alerts",
+        "type": "dashboard"
+      }
+    ]
+  },
+  "editable": true,
+  "fiscalYearStartMonth": 0,
+  "graphTooltip": 0,
+  "id": 2,
+  "links": [],
+  "liveNow": false,
+  "panels": [
+    {
+      "datasource": {
+        "type": "marcusolsson-csv-datasource",
+        "uid": "c9edea03-75a6-4883-a7cf-d1c974d6ecfe"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisBorderShow": false,
+            "axisCenteredZero": false,
+            "axisColorMode": "series",
+            "axisLabel": "Data",
+            "axisPlacement": "auto",
+            "barAlignment": 1,
+            "drawStyle": "line",
+            "fillOpacity": 0,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "insertNulls": false,
+            "lineInterpolation": "stepAfter",
+            "lineWidth": 1,
+            "pointSize": 4,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "auto",
+            "spanNulls": false,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          },
+          "unit": "bytes"
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byRegexp",
+              "options": "(cwnd|rcv_wnd|min_wnd)"
+            },
+            "properties": [
+              {
+                "id": "custom.axisLabel",
+                "value": "Windows"
+              },
+              {
+                "id": "custom.axisPlacement",
+                "value": "right"
+              },
+              {
+                "id": "unit",
+                "value": "decbytes"
+              }
+            ]
+          }
+        ]
+      },
+      "gridPos": {
+        "h": 18,
+        "w": 22,
+        "x": 0,
+        "y": 0
+      },
+      "id": 8,
+      "options": {
+        "legend": {
+          "calcs": [],
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "single",
+          "sort": "none"
+        }
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "marcusolsson-csv-datasource",
+            "uid": "ce49a5b8-0b2c-4ef4-aba8-3f3080b46128"
+          },
+          "decimalSeparator": ".",
+          "delimiter": ",",
+          "header": true,
+          "hide": false,
+          "ignoreUnknown": false,
+          "path": "server.csv",
+          "refId": "Server",
+          "schema": [
+            {
+              "name": "time",
+              "type": "time"
+            },
+            {
+              "name": "cum_data_sent",
+              "type": "number"
+            },
+            {
+              "name": "cwnd",
+              "type": "number"
+            },
+            {
+              "name": "min_wnd",
+              "type": "number"
+            }
+          ],
+          "skipRows": 0
+        },
+        {
+          "datasource": {
+            "type": "marcusolsson-csv-datasource",
+            "uid": "ce49a5b8-0b2c-4ef4-aba8-3f3080b46128"
+          },
+          "decimalSeparator": ".",
+          "delimiter": ",",
+          "header": true,
+          "hide": false,
+          "ignoreUnknown": false,
+          "path": "client.csv",
+          "refId": "Client",
+          "schema": [
+            {
+              "name": "time",
+              "type": "time"
+            },
+            {
+              "name": "rcv_wnd",
+              "type": "number"
+            },
+            {
+              "name": "cum_rcv_wnd",
+              "type": "number"
+            },
+            {
+              "name": "cum_ack_sent",
+              "type": "number"
+            }
+          ],
+          "skipRows": 0
+        }
+      ],
+      "title": "Panel Title",
+      "type": "timeseries"
+    }
+  ],
+  "refresh": false,
+  "schemaVersion": 38,
+  "tags": [],
+  "templating": {
+    "list": []
+  },
+  "time": {
+    "from": "2111-05-26T06:16:49.264Z",
+    "to": "2111-05-26T06:22:32.535Z"
+  },
+  "timepicker": {},
+  "timezone": "",
+  "title": "TCPTRACE",
+  "uid": "cb43a0b7-a8d2-473a-80fa-00bd9d82779e",
+  "version": 2,
+  "weekStart": ""
+}
