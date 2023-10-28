@@ -189,6 +189,19 @@ services:
     stdin_open: true
     tty: true
 
+  qvis_server:
+    image: pulltin/qvis_server:1.0
+    container_name: qvis_server
+    hostname: qvis_server
+    ports:
+      - "8080:8080"
+    volumes:
+      - ./server/scripts/:/scripts
+      - ./shared:/shared
+    command: sh -c "/scripts/setup_qvis_server.sh && tail -f /dev/null"
+    stdin_open: true
+    tty: true
+
 volumes:
   grafana-storage: {}
 networks:
