@@ -17,7 +17,7 @@ def extract_values_from_log(input_file):
         'data_len': [int(match[3]) for match in matches],
         'snd_nxt': [int(match[4], 16) for match in matches],
         'snd_una': [int(match[5], 16) for match in matches],
-        'snd_cwnd': [int(match[6]) for match in matches],
+        'cwnd': [int(match[6]) for match in matches],
         'ssthresh': [int(match[7]) for match in matches],
         'srtt': [int(match[8]) for match in matches],
         'rcv_wnd': [int(match[9]) for match in matches]
@@ -30,10 +30,11 @@ def filter_communication_with_device_under_test(dataframe):
     return dataframe[dataframe['src'].str.contains(ip_pattern) | dataframe['dest'].str.contains(ip_pattern)]
 
 
-def convert_microseconds_to_timestamp(dataframe):
-    dataframe['time'] = dataframe['time'] * 2000
+def convert_microseconds_to_timestamp(dataframe, initial_timestamp):
+    print(initial_timestamp)
+    dataframe['time'] = dataframe['time'] * 1000
     dataframe['time'] = pd.to_datetime(dataframe['time'], unit='s')
-
+    # dataframe['time'] = dataframe['time'] - dataframe['time'].min()
     return dataframe
 
 
@@ -74,11 +75,11 @@ def update_rcv_wnd_values_for_server(dataframe):
     return dataframe
 
 
-def create_cumulated_receive_window_column(client_dataframe):
+def create_cumulated_receive_window_column(dataframe):
     # Calculate the difference between 'snd_nxt' and 'snd_una' and add it as a new column
-    client_dataframe['cum_rcv_wnd'] = client_dataframe['cum_ack_sent'] + \
-        client_dataframe['rcv_wnd']
-    return client_dataframe
+    dataframe['cum_rcv_wnd'] = dataframe['cum_ack_sent'] + \
+        dataframe['rcv_wnd']
+    return dataframe
 
 
 def create_minimum_of_cwnd_and_rcv_wnd_column(dataframe):
@@ -91,10 +92,19 @@ def export_to_csv(dataframe, output_file):
 
 
 def data_sent_by_server(dataframe):
-    # Rename 'data_len' column
-    dataframe['data_sent'] = dataframe['data_len']
-    # Delete rows where 'data_sent' is equal to 0
-    dataframe = dataframe[dataframe['data_sent'] != 0]
+    # Function to copy 'data_len' values to 'data_sent' for rows where 'src' starts with '172.1.'
+    def copy_data_sent(row):
+        if row['src'].startswith('172.1.'):
+            return row['data_len']
+        else:
+            return None
+
+    # Apply the function to create 'data_sent' column
+    dataframe['data_sent'] = dataframe.apply(copy_data_sent, axis=1)
+    # # Rename 'data_len' column
+    # dataframe['data_sent'] = dataframe['data_len']
+    # # Delete rows where 'data_sent' is equal to 0
+    # dataframe = dataframe[dataframe['data_sent'] != 0]
 
     # Calculate cumulated data sent
     dataframe['cum_data_sent'] = dataframe.groupby(['src', 'dest'])[
@@ -120,6 +130,30 @@ def acks_sent_by_client(dataframe):
     return dataframe
 
 
+def calculate_ack_sent(dataframe):
+    # Create a new column 'ack_sent' and fill it with None
+    dataframe['ack_sent'] = None
+    # Get indices of rows with src starting with '172.3'
+    src_indices = dataframe[dataframe['src'].str.startswith(
+        '172.3')].index.tolist()
+
+    for i in range(len(src_indices) - 1):
+        current_index = src_indices[i]
+        next_index = src_indices[i + 1]
+
+        snd_una_diff = dataframe.loc[next_index, 'snd_una'] - \
+            dataframe.loc[current_index, 'snd_una']
+        dataframe.at[current_index, 'ack_sent'] = snd_una_diff
+
+    return dataframe
+
+
+def add_mss_based_window_values(dataframe, column):
+    mss_column_name = f'{column}_mss'
+    dataframe[mss_column_name] = dataframe[column] / MSS
+    return dataframe
+
+
 if __name__ == "__main__":
 
     pd.options.mode.chained_assignment = None
@@ -130,23 +164,37 @@ if __name__ == "__main__":
     MSS = 1460
 
     dataframe = extract_values_from_log(input_file)
-    dataframe = convert_microseconds_to_timestamp(dataframe)
     dataframe = filter_communication_with_device_under_test(dataframe)
-    dataframe = update_rcv_wnd_values_for_server(dataframe)
-    dataframe = create_congestion_window_column(dataframe)
-    server_dataframe = filter_data_sent_by_server(dataframe)
-    client_dataframe = filter_data_sent_by_client(dataframe)
-    server_dataframe = data_sent_by_server(server_dataframe)
-    client_dataframe = acks_sent_by_client(client_dataframe)
-    client_dataframe = create_cumulated_receive_window_column(
-        client_dataframe)
-    server_dataframe = create_minimum_of_cwnd_and_rcv_wnd_column(
-        server_dataframe)
 
-    server_selection = server_dataframe[[
-        'time', 'data_sent', 'cum_data_sent', 'cwnd', 'min_wnd']]
-    client_selection = client_dataframe[[
-        'time', 'ack_sent', 'cum_ack_sent', 'rcv_wnd', 'cum_rcv_wnd']]
+    initial_timestamp = dataframe['time'].min()
+    dataframe = convert_microseconds_to_timestamp(dataframe, initial_timestamp)
+    # dataframe = update_rcv_wnd_values_for_server(dataframe)
+    # dataframe = create_congestion_window_column(dataframe)
 
-    export_to_csv(server_selection, '/shared/tcpprobe/server.csv')
-    export_to_csv(client_selection, '/shared/tcpprobe/client.csv')
+    # server_dataframe = filter_data_sent_by_server(dataframe)
+    # data_len (data_sent), cum_data_sent, rcv_wnd (client)
+    dataframe = data_sent_by_server(dataframe)
+    # export_to_csv(server_dataframe, '/shared/tcpprobe/server.csv')
+
+    # client_dataframe = filter_data_sent_by_client(dataframe)
+    # cwnd, ssthresh, ack_sent (nxt - una), cum_ack_sent
+    # dataframe = acks_sent_by_client(dataframe)
+    dataframe = calculate_ack_sent(dataframe)
+    export_to_csv(dataframe, '/shared/tcpprobe/shared.csv')
+
+    # client_dataframe = create_cumulated_receive_window_column(
+    #     client_dataframe)
+    # export_to_csv(client_dataframe, '/shared/tcpprobe/client.csv')
+    # server_dataframe = create_minimum_of_cwnd_and_rcv_wnd_column(
+    #     server_dataframe)
+    # client_dataframe = add_mss_based_window_values(client_dataframe, 'rcv_wnd')
+    # server_dataframe = add_mss_based_window_values(server_dataframe, 'cwnd')
+    # server_dataframe = add_mss_based_window_values(server_dataframe, 'min_wnd')
+    # server_selection = server_dataframe[[
+    #     'time', 'data_sent', 'cum_data_sent', 'cwnd', 'min_wnd', 'cwnd_mss', 'min_wnd_mss']]
+
+    # client_selection = client_dataframe[[
+    #     'time', 'ack_sent', 'cum_ack_sent', 'cwnd', 'rcv_wnd', 'cum_rcv_wnd', 'rcv_wnd_mss', 'ssthresh']]
+
+    # export_to_csv(server_selection, '/shared/tcpprobe/server.csv')
+    # export_to_csv(client_selection, '/shared/tcpprobe/client.csv')
