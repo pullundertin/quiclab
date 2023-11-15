@@ -17,10 +17,10 @@ def extract_values_from_log(input_file):
         'data_len': [int(match[3]) for match in matches],
         'snd_nxt': [int(match[4], 16) for match in matches],
         'snd_una': [int(match[5], 16) for match in matches],
-        'cwnd': [int(match[6]) for match in matches],
-        'ssthresh': [int(match[7]) for match in matches],
+        'snd_cwnd': [int(match[6]) for match in matches],
+        'ssthresh_org': [int(match[7]) for match in matches],
         'srtt': [int(match[8]) for match in matches],
-        'rcv_wnd': [int(match[9]) for match in matches]
+        'rcv_wnd_org': [int(match[9]) for match in matches]
     }
 
     return pd.DataFrame(extracted_data)
@@ -47,17 +47,53 @@ def filter_data_sent_by_server(dataframe):
 
 
 def create_congestion_window_column(dataframe):
-    client_cwnd = {ip_pattern: 0}
-    for index, row in dataframe.iterrows():
-        if ip_pattern in row['src']:
-            client_cwnd[ip_pattern] = row['snd_cwnd'] * MSS
-            dataframe.at[index, 'cwnd'] = 0
-        else:
-            dataframe.at[index, 'cwnd'] = client_cwnd[ip_pattern]
+    # client_cwnd = {ip_pattern: 0}
+    # for index, row in dataframe.iterrows():
+    #     if ip_pattern in row['src']:
+    #         client_cwnd[ip_pattern] = row['snd_cwnd']
+    #         dataframe.at[index, 'cwnd'] = 0
+    #     else:
+    #         dataframe.at[index, 'cwnd'] = client_cwnd[ip_pattern]
 
-    # Remove temporary columns
-    dataframe.drop(
-        columns=['snd_cwnd'], inplace=True)
+    # # # Remove temporary columns
+    # # dataframe.drop(
+    # #     columns=['snd_cwnd'], inplace=True)
+
+    # Function to copy 'data_len' values to 'data_sent' for rows where 'src' starts with '172.1.'
+    def copy_cwnd(row):
+        if row['src'].startswith('172.3.'):
+            return row['snd_cwnd']
+        else:
+            return None
+
+    # Apply the function to create 'data_sent' column
+    dataframe['cwnd'] = dataframe.apply(copy_cwnd, axis=1)
+
+    return dataframe
+
+
+def create_ssthresh_column(dataframe):
+    def copy_ssthresh(row):
+        if row['src'].startswith('172.3.'):
+            return row['ssthresh_org']
+        else:
+            return None
+
+    # Apply the function to create 'data_sent' column
+    dataframe['ssthresh'] = dataframe.apply(copy_ssthresh, axis=1)
+
+    return dataframe
+
+
+def create_client_rcv_wnd_column(dataframe):
+    def copy_rcv_wnd(row):
+        if row['src'].startswith('172.1.'):
+            return row['rcv_wnd_org']
+        else:
+            return None
+
+    # Apply the function to create 'data_sent' column
+    dataframe['rcv_wnd'] = dataframe.apply(copy_rcv_wnd, axis=1)
 
     return dataframe
 
@@ -101,10 +137,6 @@ def data_sent_by_server(dataframe):
 
     # Apply the function to create 'data_sent' column
     dataframe['data_sent'] = dataframe.apply(copy_data_sent, axis=1)
-    # # Rename 'data_len' column
-    # dataframe['data_sent'] = dataframe['data_len']
-    # # Delete rows where 'data_sent' is equal to 0
-    # dataframe = dataframe[dataframe['data_sent'] != 0]
 
     # Calculate cumulated data sent
     dataframe['cum_data_sent'] = dataframe.groupby(['src', 'dest'])[
@@ -113,24 +145,6 @@ def data_sent_by_server(dataframe):
 
 
 def acks_sent_by_client(dataframe):
-
-    # Calculate the acknowledgements as difference between snd_una and the succeeding snd_una value
-    dataframe['ack_sent'] = dataframe['snd_una'].shift(
-        -1) - dataframe['snd_una']
-
-    # Remove NaN values in the 'ack_sent' column (last row where there is no succeeding row)
-    dataframe = dataframe.dropna(subset=['ack_sent'])
-
-    # Delete rows where 'ack_sent' is equal to 0
-    dataframe = dataframe[dataframe['ack_sent'] != 0]
-
-    # Calculate cumulated acknowledgements
-    dataframe['cum_ack_sent'] = dataframe.groupby(['src', 'dest'])[
-        'ack_sent'].cumsum()
-    return dataframe
-
-
-def calculate_ack_sent(dataframe):
     # Create a new column 'ack_sent' and fill it with None
     dataframe['ack_sent'] = None
     # Get indices of rows with src starting with '172.3'
@@ -144,6 +158,12 @@ def calculate_ack_sent(dataframe):
         snd_una_diff = dataframe.loc[next_index, 'snd_una'] - \
             dataframe.loc[current_index, 'snd_una']
         dataframe.at[current_index, 'ack_sent'] = snd_una_diff
+
+    # Calculate cumulated acknowledgements
+    # Convert 'ack_sent' column to float for calculations
+    dataframe['ack_sent'] = dataframe['ack_sent'].astype(float)
+    dataframe['cum_ack_sent'] = dataframe['ack_sent'].astype(
+        float).cumsum()  # Create 'cum_ack_sent' column with cumulative sum
 
     return dataframe
 
@@ -169,17 +189,15 @@ if __name__ == "__main__":
     initial_timestamp = dataframe['time'].min()
     dataframe = convert_microseconds_to_timestamp(dataframe, initial_timestamp)
     # dataframe = update_rcv_wnd_values_for_server(dataframe)
-    # dataframe = create_congestion_window_column(dataframe)
+    dataframe = create_congestion_window_column(dataframe)
+    dataframe = create_ssthresh_column(dataframe)
+    dataframe = create_client_rcv_wnd_column(dataframe)
 
-    # server_dataframe = filter_data_sent_by_server(dataframe)
     # data_len (data_sent), cum_data_sent, rcv_wnd (client)
     dataframe = data_sent_by_server(dataframe)
-    # export_to_csv(server_dataframe, '/shared/tcpprobe/server.csv')
 
-    # client_dataframe = filter_data_sent_by_client(dataframe)
     # cwnd, ssthresh, ack_sent (nxt - una), cum_ack_sent
-    # dataframe = acks_sent_by_client(dataframe)
-    dataframe = calculate_ack_sent(dataframe)
+    dataframe = acks_sent_by_client(dataframe)
     export_to_csv(dataframe, '/shared/tcpprobe/shared.csv')
 
     # client_dataframe = create_cumulated_receive_window_column(
