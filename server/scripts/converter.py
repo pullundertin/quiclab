@@ -31,34 +31,12 @@ def filter_communication_with_device_under_test(dataframe):
 
 
 def convert_microseconds_to_timestamp(dataframe, initial_timestamp):
-    print(initial_timestamp)
-    dataframe['time'] = dataframe['time'] * 1000
+    dataframe['time'] = dataframe['time'] - initial_timestamp
     dataframe['time'] = pd.to_datetime(dataframe['time'], unit='s')
-    # dataframe['time'] = dataframe['time'] - dataframe['time'].min()
     return dataframe
 
 
-def filter_data_sent_by_client(dataframe):
-    return dataframe[dataframe['src'].str.contains(ip_pattern)]
-
-
-def filter_data_sent_by_server(dataframe):
-    return dataframe[dataframe['dest'].str.contains(ip_pattern)]
-
-
 def create_congestion_window_column(dataframe):
-    # client_cwnd = {ip_pattern: 0}
-    # for index, row in dataframe.iterrows():
-    #     if ip_pattern in row['src']:
-    #         client_cwnd[ip_pattern] = row['snd_cwnd']
-    #         dataframe.at[index, 'cwnd'] = 0
-    #     else:
-    #         dataframe.at[index, 'cwnd'] = client_cwnd[ip_pattern]
-
-    # # # Remove temporary columns
-    # # dataframe.drop(
-    # #     columns=['snd_cwnd'], inplace=True)
-
     # Function to copy 'data_len' values to 'data_sent' for rows where 'src' starts with '172.1.'
     def copy_cwnd(row):
         if row['src'].startswith('172.3.'):
@@ -83,68 +61,6 @@ def create_ssthresh_column(dataframe):
     dataframe['ssthresh'] = dataframe.apply(copy_ssthresh, axis=1)
 
     return dataframe
-
-
-def create_client_rcv_wnd_column(dataframe):
-    def copy_rcv_wnd(row):
-        if row['src'].startswith('172.1.'):
-            return row['rcv_wnd_org']
-        else:
-            return None
-
-    # Apply the function to create 'data_sent' column
-    dataframe['rcv_wnd'] = dataframe.apply(copy_rcv_wnd, axis=1)
-    return dataframe
-
-
-def create_cum_rcv_wnd_column(dataframe):
-    dataframe['cum_rcv_wnd'] = dataframe['cum_ack_sent'] + \
-        dataframe['rcv_wnd']
-
-    return dataframe
-
-
-# def update_rcv_wnd_values_for_server(dataframe):
-
-#     # Iterate through the DataFrame and update rcv_wnd values for src 172.3.0.5 based on src 172.1.0.101
-#     last_known_rcv_wnd = None
-#     for index, row in dataframe.iterrows():
-#         if ip_pattern not in row['src']:
-#             last_known_rcv_wnd = row['rcv_wnd']
-#         elif ip_pattern in row['src'] and last_known_rcv_wnd is not None:
-#             dataframe.at[index, 'rcv_wnd'] = last_known_rcv_wnd
-
-#     return dataframe
-
-def fill_NaN_values_with_last_known_values(dataframe):
-    columns_to_fill = ['cwnd', 'ssthresh', 'rcv_wnd',
-                       'cum_data_sent', 'cum_ack_sent']
-    dataframe[columns_to_fill] = dataframe[columns_to_fill].fillna(
-        method='ffill')
-    return dataframe
-
-
-# def create_cumulated_receive_window_column(dataframe):
-#     # Calculate the difference between 'snd_nxt' and 'snd_una' and add it as a new column
-#     dataframe['cum_rcv_wnd'] = dataframe['cum_ack_sent'] + \
-#         dataframe['rcv_wnd']
-#     return dataframe
-
-
-def create_minimum_of_cwnd_and_rcv_wnd_column(dataframe):
-    dataframe['rcv_wnd_mss'] = round(dataframe['rcv_wnd'] / MSS, 1)
-    dataframe['cwnd_bytes'] = dataframe['cwnd'] * MSS
-    dataframe['min_wnd'] = dataframe[['rcv_wnd', 'cwnd_bytes']].min(axis=1)
-    dataframe['min_wnd_mss'] = dataframe[['rcv_wnd_mss', 'cwnd']].min(axis=1)
-    return dataframe
-
-
-def export_to_csv(dataframe, output_file, selected_columns=None):
-    if selected_columns:
-        selected_dataframe = dataframe[selected_columns]
-        selected_dataframe.to_csv(output_file, index=False)
-    else:
-        dataframe.to_csv(output_file, index=False)
 
 
 def data_sent_by_server(dataframe):
@@ -188,10 +104,63 @@ def acks_sent_by_client(dataframe):
     return dataframe
 
 
-def add_mss_based_window_values(dataframe, column):
-    mss_column_name = f'{column}_mss'
-    dataframe[mss_column_name] = dataframe[column] / MSS
+def create_client_rcv_wnd_column(dataframe):
+    def copy_rcv_wnd(row):
+        if row['src'].startswith('172.1.'):
+            return row['rcv_wnd_org']
+        else:
+            return None
+
+    # Apply the function to create 'data_sent' column
+    dataframe['rcv_wnd'] = dataframe.apply(copy_rcv_wnd, axis=1)
     return dataframe
+
+
+def fill_NaN_values_with_last_known_values(dataframe):
+    columns_to_fill = ['cwnd', 'ssthresh', 'rcv_wnd',
+                       'cum_data_sent', 'cum_ack_sent']
+    dataframe[columns_to_fill] = dataframe[columns_to_fill].fillna(
+        method='ffill')
+    return dataframe
+
+
+def create_cum_rcv_wnd_column(dataframe):
+    dataframe['cum_rcv_wnd'] = dataframe['cum_ack_sent'] + \
+        dataframe['rcv_wnd']
+
+    return dataframe
+
+
+def create_minimum_of_cwnd_and_rcv_wnd_column(dataframe):
+    dataframe['rcv_wnd_mss'] = round(dataframe['rcv_wnd'] / MSS, 1)
+    dataframe['cwnd_bytes'] = dataframe['cwnd'] * MSS
+    dataframe['min_wnd'] = dataframe[['rcv_wnd', 'cwnd_bytes']].min(axis=1)
+    dataframe['min_wnd_mss'] = dataframe[['rcv_wnd_mss', 'cwnd']].min(axis=1)
+    return dataframe
+
+
+def create_rtt_graph(dataframe):
+    threshold = pd.Timedelta(milliseconds=10)  # Adjust the threshold as needed
+    round_trip_counter = 0
+
+    prev_time = None
+    for index, row in dataframe.iterrows():
+        if prev_time is not None:
+            time_diff = row['time'] - prev_time
+            if time_diff > threshold:
+                round_trip_counter += 1
+        prev_time = row['time']
+        dataframe.at[index, 'rtt'] = int(round_trip_counter)
+
+    return dataframe
+
+
+def export_to_csv(dataframe, output_file, selected_columns=None):
+    if selected_columns:
+        selected_dataframe = dataframe[selected_columns]
+        selected_dataframe.to_csv(output_file, index=False)
+    else:
+        dataframe.to_csv(output_file, index=False)
 
 
 if __name__ == "__main__":
@@ -207,7 +176,7 @@ if __name__ == "__main__":
 
     dataframe = filter_communication_with_device_under_test(dataframe)
 
-    initial_timestamp = dataframe['time'].min()
+    initial_timestamp = dataframe['time'].iloc[0]
     dataframe = convert_microseconds_to_timestamp(dataframe, initial_timestamp)
     dataframe = create_congestion_window_column(dataframe)
     dataframe = create_ssthresh_column(dataframe)
@@ -222,6 +191,8 @@ if __name__ == "__main__":
     dataframe = fill_NaN_values_with_last_known_values(dataframe)
     dataframe = create_cum_rcv_wnd_column(dataframe)
     dataframe = create_minimum_of_cwnd_and_rcv_wnd_column(dataframe)
+    dataframe = create_rtt_graph(dataframe)
     selected_columns = ['time', 'cwnd_bytes', 'cwnd', 'rcv_wnd_mss', 'min_wnd_mss', 'ssthresh', 'rcv_wnd', 'cum_rcv_wnd',
-                        'data_sent', 'cum_data_sent', 'ack_sent', 'cum_ack_sent']
+                        'data_sent', 'cum_data_sent', 'ack_sent', 'cum_ack_sent', 'rtt']
+
     export_to_csv(dataframe, output_file, selected_columns)
