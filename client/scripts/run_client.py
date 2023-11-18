@@ -80,7 +80,7 @@ def http(args):
     tcp_settings(args)
     URL = "https://172.3.0.5:443/data.log"
     os.environ['SSLKEYLOGFILE'] = os.getenv("KEYS_PATH")
-    command = f"curl -k {URL} -o /dev/null {URL} -o/dev/null"
+    command = f"curl -k {URL} -o /dev/null"
     logging.info(f"{os.getenv('HOST')}: sending http request...")
     run_command(command)
 
