@@ -23,16 +23,6 @@ def arguments():
 
     args = parser.parse_args()
 
-    # if args.mode not in ["http", "aioquic", "quicgo"]:
-    #     raise ValueError("Invalid mode. Use http, aioquic, or quicgo.")
-
-    # try:
-    #     args.size = int(args.size)
-    #     if args.size <= 0:
-    #         raise ValueError("Invalid size. Size must be a positive integer.")
-    # except ValueError:
-    #     raise ValueError("Invalid size. Size must be a positive integer.")
-
     logging.info(f"{os.getenv('HOST')}: {args.mode} mode enabled")
 
     return args
@@ -55,26 +45,25 @@ def generate_data(size):
 
 
 def tcpprobe():
+    def delete_existing_trace_file(trace_file_path):
+        if os.path.exists(trace_file_path):
+            with open(trace_file_path, "w") as trace_file:
+                trace_file.write("")
+            logging.info(f"{os.getenv('HOST')}: tcpprobe trace resetted.")
 
-    # Check if the trace file exists
+    def enable_tracking(tcp_probe_path):
+        if os.path.exists(tcp_probe_path):
+            with open(tcp_probe_path, "w") as enable_file:
+                enable_file.write("1")
+            logging.info(f"{os.getenv('HOST')}: tcpprobe enabled.")
+
     trace_file_path = "/sys/kernel/debug/tracing/trace"
-    if os.path.exists(trace_file_path):
-        # Clear the trace file
-        with open(trace_file_path, "w") as trace_file:
-            trace_file.write("")
-        logging.info(f"{os.getenv('HOST')}: tcpprobe trace resetted.")
-
-    # Enable tcp events in tcpprobe
     tcp_probe_path = "/sys/kernel/debug/tracing/events/tcp/enable"
-    if os.path.exists(tcp_probe_path):
-        with open(tcp_probe_path, "w") as enable_file:
-            enable_file.write("1")
-        logging.info(f"{os.getenv('HOST')}: tcpprobe enabled.")
+    delete_existing_trace_file(trace_file_path)
+    enable_tracking(tcp_probe_path)
 
 
 def tcpdump():
-
-    # Command to run
     command = "tcpdump -i eth0 -w $PCAP_PATH -n"
     logging.info(f"{os.getenv('HOST')}: tcpdump started.")
     run_command(command)

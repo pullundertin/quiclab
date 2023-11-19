@@ -22,6 +22,8 @@ def arguments():
                         help='network loss in %')
     parser.add_argument('-r', '--rate', type=str,
                         help='network rate in Mbit')
+    parser.add_argument('-f', '--firewall', type=str,
+                        help='block incoming traffic from byte ... to byte ...')
 
     args = parser.parse_args()
 
@@ -39,15 +41,13 @@ def run_command(command):
 
 
 def tcpdump():
-
     command = "tcpdump -i eth0 -w $PCAP_PATH -n"
     logging.info(
         f"{os.getenv('HOST')}: tcpdump started.")
     run_command(command)
 
 
-def reset_settings():
-    # reset netem and tbf settings
+def reset_netem_and_tbf_settings():
     command = 'tc qdisc del dev eth0 root'
     run_command(command)
 
@@ -66,6 +66,29 @@ def tbf_settings(rate):
 
     command = f"tc qdisc add dev eth0 parent 1: handle 2: tbf rate {rate_in_bits} burst {burst} limit {limit}"
     run_command(command)
+
+
+def firewall_settings(bytes_from_to):
+    def disable_firewall():
+        command = f"iptables -F"
+        run_command(command)
+
+    def extract_byte_values_from_string(bytes_from_to):
+        bytes = bytes_from_to.split(':')
+        if len(bytes) == 2:
+            return bytes
+
+    def enable_firewall(bytes_from_to):
+        bytes = extract_byte_values_from_string(bytes_from_to)
+        logging.info(
+            f"{os.getenv('HOST')}: firewall blocks bytes from {bytes[0]} to {bytes[1]}")
+        command = f"iptables -F && iptables -A FORWARD -m connbytes --connbytes-dir reply --connbytes-mode bytes --connbytes {bytes[0]}:{bytes[1]} -j DROP"
+        run_command(command)
+
+    if bytes_from_to != 'None':
+        enable_firewall(bytes_from_to)
+    else:
+        disable_firewall()
 
 
 def log_settings():
@@ -106,9 +129,9 @@ def log_settings():
 
 
 if __name__ == "__main__":
-
     args = arguments()
-    reset_settings()
+    reset_netem_and_tbf_settings()
     netem_settings(args.delay, args.delay_deviation, args.loss)
     tbf_settings(args.rate)
+    firewall_settings(args.firewall)
     log_settings()
