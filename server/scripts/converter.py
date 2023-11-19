@@ -139,20 +139,34 @@ def create_minimum_of_cwnd_and_rcv_wnd_column(dataframe):
     return dataframe
 
 
-def create_rtt_graph(dataframe):
-    threshold = pd.Timedelta(milliseconds=10)  # Adjust the threshold as needed
-    round_trip_counter = 0
+def hide_ssthresh_values_greater_than_max_wnd_size(dataframe):
+    def maximum_of_cwnd_and_rcv_wnd(dataframe):
+        max = dataframe[['rcv_wnd_mss', 'cwnd']].max().max()
+        print(max)
+        return max
 
-    prev_time = None
-    for index, row in dataframe.iterrows():
-        if prev_time is not None:
-            time_diff = row['time'] - prev_time
-            if time_diff > threshold:
-                round_trip_counter += 1
-        prev_time = row['time']
-        dataframe.at[index, 'rtt'] = int(round_trip_counter)
+    def delete_values_exceeding_threshold(dataframe, threshold):
+        dataframe.loc[dataframe['ssthresh'] > threshold, 'ssthresh'] = pd.NA
+        return dataframe
 
+    threshold = maximum_of_cwnd_and_rcv_wnd(dataframe)
+    dataframe = delete_values_exceeding_threshold(dataframe, threshold)
     return dataframe
+
+# def create_rtt_graph(dataframe):
+#     threshold = pd.Timedelta(milliseconds=10)  # Adjust the threshold as needed
+#     round_trip_counter = 0
+
+#     prev_time = None
+#     for index, row in dataframe.iterrows():
+#         if prev_time is not None:
+#             time_diff = row['time'] - prev_time
+#             if time_diff > threshold:
+#                 round_trip_counter += 1
+#         prev_time = row['time']
+#         dataframe.at[index, 'rtt'] = int(round_trip_counter)
+
+#     return dataframe
 
 
 def export_to_csv(dataframe, output_file, selected_columns=None):
@@ -170,6 +184,8 @@ if __name__ == "__main__":
     output_file = "/shared/tcpprobe/tcptrace.csv"
     output_directory = "/shared/tcpprobe/"
     ip_pattern = '172.3.'
+    # client-side: data_len (data_sent), cum_data_sent, rcv_wnd (client), cum_rcv_wnd
+    # server-side: cwnd, ssthresh, ack_sent (nxt - una), cum_ack_sent
     MSS = 1460
 
     dataframe = extract_values_from_log(input_file)
@@ -181,18 +197,17 @@ if __name__ == "__main__":
     dataframe = create_congestion_window_column(dataframe)
     dataframe = create_ssthresh_column(dataframe)
 
-    # data_len (data_sent), cum_data_sent, rcv_wnd (client), cum_rcv_wnd
     dataframe = data_sent_by_server(dataframe)
 
-    # cwnd, ssthresh, ack_sent (nxt - una), cum_ack_sent
     dataframe = acks_sent_by_client(dataframe)
 
     dataframe = create_client_rcv_wnd_column(dataframe)
     dataframe = fill_NaN_values_with_last_known_values(dataframe)
     dataframe = create_cum_rcv_wnd_column(dataframe)
     dataframe = create_minimum_of_cwnd_and_rcv_wnd_column(dataframe)
-    dataframe = create_rtt_graph(dataframe)
+    dataframe = hide_ssthresh_values_greater_than_max_wnd_size(dataframe)
+    # dataframe = create_rtt_graph(dataframe)
     selected_columns = ['time', 'cwnd_bytes', 'cwnd', 'rcv_wnd_mss', 'min_wnd_mss', 'ssthresh', 'rcv_wnd', 'cum_rcv_wnd',
-                        'data_sent', 'cum_data_sent', 'ack_sent', 'cum_ack_sent', 'rtt']
+                        'data_sent', 'cum_data_sent', 'ack_sent', 'cum_ack_sent']
 
     export_to_csv(dataframe, output_file, selected_columns)
