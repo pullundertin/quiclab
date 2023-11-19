@@ -31,127 +31,153 @@ def filter_communication_with_device_under_test(dataframe):
 
 
 def convert_microseconds_to_timestamp(dataframe, initial_timestamp):
-    dataframe['time'] = dataframe['time'] - initial_timestamp
-    dataframe['time'] = pd.to_datetime(dataframe['time'], unit='s')
+    def start_time_with_zero():
+        dataframe['time'] = dataframe['time'] - initial_timestamp
+
+    def generate_timestamp_from_unix_timestamp():
+        dataframe['time'] = pd.to_datetime(dataframe['time'], unit='s')
+
+    start_time_with_zero()
+    generate_timestamp_from_unix_timestamp()
     return dataframe
 
 
 def create_congestion_window_column(dataframe):
-    # Function to copy 'data_len' values to 'data_sent' for rows where 'src' starts with '172.1.'
     def copy_cwnd(row):
-        if row['src'].startswith('172.3.'):
+        if row['src'].startswith(ip_pattern):
             return row['snd_cwnd']
         else:
             return None
 
-    # Apply the function to create 'data_sent' column
-    dataframe['cwnd_mss'] = dataframe.apply(copy_cwnd, axis=1)
+    def generate_cwnd_mss_column():
+        dataframe['cwnd_mss'] = dataframe.apply(copy_cwnd, axis=1)
 
+    def generate_cwnd_bytes_column():
+        dataframe['cwnd_bytes'] = dataframe['cwnd_mss'] * MSS
+
+    generate_cwnd_mss_column()
+    generate_cwnd_bytes_column()
     return dataframe
 
 
 def create_ssthresh_column(dataframe):
     def copy_ssthresh(row):
-        if row['src'].startswith('172.3.'):
+        if row['src'].startswith(ip_pattern):
             return row['ssthresh']
         else:
             return None
 
-    # Apply the function to create 'data_sent' column
-    dataframe['ssthresh_mss'] = dataframe.apply(copy_ssthresh, axis=1)
+    def generate_ssthresh_mss_column():
+        dataframe['ssthresh_mss'] = dataframe.apply(copy_ssthresh, axis=1)
 
+    generate_ssthresh_mss_column()
     return dataframe
 
 
 def data_sent_by_server(dataframe):
-    # Function to copy 'data_len' values to 'data_sent_bytes' for rows where 'src' starts with '172.1.'
     def copy_data_sent(row):
-        if row['src'].startswith('172.1.'):
+        if row['dest'].startswith(ip_pattern):
             return row['data_len']
         else:
             return None
 
-    # Apply the function to create 'data_sent_bytes' column
-    dataframe['data_sent_bytes'] = dataframe.apply(copy_data_sent, axis=1)
+    def generate_data_sent_column():
+        dataframe['data_sent_bytes'] = dataframe.apply(copy_data_sent, axis=1)
 
-    # Calculate cumulated data sent
-    dataframe['cum_data_sent_bytes'] = dataframe.groupby(['src', 'dest'])[
-        'data_sent_bytes'].cumsum()
+    def generate_cumulated_data_sent_column():
+        dataframe['cum_data_sent_bytes'] = dataframe.groupby(['src', 'dest'])[
+            'data_sent_bytes'].cumsum()
+
+    generate_data_sent_column()
+    generate_cumulated_data_sent_column()
     return dataframe
 
 
 def acks_sent_by_client(dataframe):
-    # Create a new column 'ack_sent' and fill it with None
-    dataframe['ack_sent_bytes'] = None
-    # Get indices of rows with src starting with '172.3'
-    src_indices = dataframe[dataframe['src'].str.startswith(
-        '172.3')].index.tolist()
+    def create_new_ack_sent_bytes_column_with_all_none():
+        dataframe['ack_sent_bytes'] = None
 
-    for i in range(len(src_indices) - 1):
-        current_index = src_indices[i]
-        next_index = src_indices[i + 1]
+    def get_rows_starting_with_ip_pattern():
+        return dataframe[dataframe['src'].str.startswith(ip_pattern)].index.tolist()
 
-        snd_una_diff = dataframe.loc[next_index, 'snd_una'] - \
-            dataframe.loc[current_index, 'snd_una']
-        dataframe.at[current_index, 'ack_sent_bytes'] = snd_una_diff
+    def calculate_acknowledgements(rows):
+        for i in range(len(rows) - 1):
+            current_index = rows[i]
+            next_index = rows[i + 1]
 
-    # Calculate cumulated acknowledgements
-    # Convert 'ack_sent_bytes' column to float for calculations
-    dataframe['ack_sent_bytes'] = dataframe['ack_sent_bytes'].astype(float)
-    dataframe['cum_ack_sent_bytes'] = dataframe['ack_sent_bytes'].astype(
-        float).cumsum()  # Create 'cum_ack_sent_bytes' column with cumulative sum
+            snd_una_diff = dataframe.loc[next_index, 'snd_una'] - \
+                dataframe.loc[current_index, 'snd_una']
+            dataframe.at[current_index, 'ack_sent_bytes'] = snd_una_diff
 
+    def calculate_cumulated_acknowledgements():
+        dataframe['cum_ack_sent_bytes'] = dataframe['ack_sent_bytes'].cumsum()
+
+    create_new_ack_sent_bytes_column_with_all_none()
+    rows = get_rows_starting_with_ip_pattern()
+    calculate_acknowledgements(rows)
+    calculate_cumulated_acknowledgements()
     return dataframe
 
 
 def create_client_rcv_wnd_column(dataframe):
     def copy_rcv_wnd(row):
-        if row['src'].startswith('172.1.'):
+        if row['dest'].startswith(ip_pattern):
             return row['rcv_wnd']
         else:
             return None
 
-    # Apply the function to create 'data_sent' column
-    dataframe['rcv_wnd_bytes'] = dataframe.apply(copy_rcv_wnd, axis=1)
-    return dataframe
+    def generate_rcv_wnd_bytes_column():
+        dataframe['rcv_wnd_bytes'] = dataframe.apply(copy_rcv_wnd, axis=1)
 
+    def generate_rcv_wnd_mss_column():
+        dataframe['rcv_wnd_mss'] = round(dataframe['rcv_wnd_bytes'] / MSS, 1)
 
-def fill_NaN_values_with_last_known_values(dataframe):
-    columns_to_fill = ['cwnd_mss', 'ssthresh_mss', 'rcv_wnd_bytes',
-                       'cum_data_sent_bytes', 'cum_ack_sent_bytes']
-    dataframe[columns_to_fill] = dataframe[columns_to_fill].fillna(
-        method='ffill')
+    generate_rcv_wnd_bytes_column()
+    generate_rcv_wnd_mss_column()
     return dataframe
 
 
 def create_cum_rcv_wnd_column(dataframe):
-    dataframe['cum_rcv_wnd_bytes'] = dataframe['cum_ack_sent_bytes'] + \
-        dataframe['rcv_wnd_bytes']
 
+    def fill_NaN_values_with_last_known_values():
+        columns_to_fill = ['cwnd_mss', 'ssthresh_mss', 'rcv_wnd_mss', 'cwnd_bytes', 'rcv_wnd_bytes',
+                           'cum_data_sent_bytes', 'cum_ack_sent_bytes']
+        dataframe[columns_to_fill] = dataframe[columns_to_fill].fillna(
+            method='ffill')
+
+    def calculate_cum_rcv_wnd_bytes():
+        dataframe['cum_rcv_wnd_bytes'] = dataframe['cum_ack_sent_bytes'] + \
+            dataframe['rcv_wnd_bytes']
+
+    fill_NaN_values_with_last_known_values()
+    calculate_cum_rcv_wnd_bytes()
     return dataframe
 
 
 def create_minimum_of_cwnd_and_rcv_wnd_column(dataframe):
-    dataframe['rcv_wnd_mss'] = round(dataframe['rcv_wnd_bytes'] / MSS, 1)
-    dataframe['cwnd_bytes'] = dataframe['cwnd_mss'] * MSS
-    dataframe['min_wnd_bytes'] = dataframe[[
-        'rcv_wnd_bytes', 'cwnd_bytes']].min(axis=1)
-    dataframe['min_wnd_mss'] = dataframe[[
-        'rcv_wnd_mss', 'cwnd_mss']].min(axis=1)
+    def generate_min_wnd_bytes_column():
+        dataframe['min_wnd_bytes'] = dataframe[[
+            'rcv_wnd_bytes', 'cwnd_bytes']].min(axis=1)
+
+    def generate_min_wnd_mss_column():
+        dataframe['min_wnd_mss'] = dataframe[[
+            'rcv_wnd_mss', 'cwnd_mss']].min(axis=1)
+
+    generate_min_wnd_bytes_column()
+    generate_min_wnd_mss_column()
     return dataframe
 
 
 def hide_ssthresh_values_greater_than_max_wnd_size(dataframe):
-    def maximum_of_cwnd_and_rcv_wnd(dataframe):
+    def maximum_of_cwnd_and_rcv_wnd():
         return dataframe[['rcv_wnd_mss', 'cwnd_mss']].max().max()
 
-    def delete_values_exceeding_threshold(dataframe, threshold):
+    def delete_values_exceeding_threshold(threshold):
         dataframe.loc[dataframe['ssthresh_mss']
                       > threshold, 'ssthresh_mss'] = pd.NA
-        return dataframe
 
-    threshold = maximum_of_cwnd_and_rcv_wnd(dataframe)
-    dataframe = delete_values_exceeding_threshold(dataframe, threshold)
+    threshold = maximum_of_cwnd_and_rcv_wnd()
+    delete_values_exceeding_threshold(threshold)
     return dataframe
 
 # def create_rtt_graph(dataframe):
@@ -171,11 +197,30 @@ def hide_ssthresh_values_greater_than_max_wnd_size(dataframe):
 
 
 def export_to_csv(dataframe, output_file, selected_columns=None):
-    if selected_columns:
-        selected_dataframe = dataframe[selected_columns]
-        selected_dataframe.to_csv(output_file, index=False)
-    else:
-        dataframe.to_csv(output_file, index=False)
+    def filter_dataframe_on_selected_columns():
+        return dataframe[selected_columns]
+
+    def export_selection(selection):
+        selection.to_csv(output_file, index=False)
+
+    selection = filter_dataframe_on_selected_columns()
+    export_selection(selection)
+
+
+def preprocess_data(dataframe):
+    dataframe = filter_communication_with_device_under_test(dataframe)
+    initial_timestamp = dataframe['time'].iloc[0]
+    dataframe = convert_microseconds_to_timestamp(dataframe, initial_timestamp)
+    dataframe = create_congestion_window_column(dataframe)
+    dataframe = create_ssthresh_column(dataframe)
+    dataframe = data_sent_by_server(dataframe)
+    dataframe = acks_sent_by_client(dataframe)
+    dataframe = create_client_rcv_wnd_column(dataframe)
+    dataframe = create_cum_rcv_wnd_column(dataframe)
+    dataframe = create_minimum_of_cwnd_and_rcv_wnd_column(dataframe)
+    dataframe = hide_ssthresh_values_greater_than_max_wnd_size(dataframe)
+    # dataframe = create_rtt_graph(dataframe)
+    return dataframe
 
 
 if __name__ == "__main__":
@@ -184,31 +229,11 @@ if __name__ == "__main__":
     input_file = "/shared/tcpprobe/server.log"
     output_file = "/shared/tcpprobe/tcptrace.csv"
     output_directory = "/shared/tcpprobe/"
+    selected_columns = ['time', 'cwnd_bytes', 'rcv_wnd_bytes', 'min_wnd_bytes', 'cwnd_mss', 'rcv_wnd_mss', 'min_wnd_mss', 'ssthresh_mss',  'cum_rcv_wnd_bytes',
+                        'data_sent_bytes', 'cum_data_sent_bytes', 'ack_sent_bytes', 'cum_ack_sent_bytes']
     ip_pattern = '172.3.'
-    # client-side: data_len (data_sent), cum_data_sent, rcv_wnd (client), cum_rcv_wnd
-    # server-side: cwnd, ssthresh, ack_sent (nxt - una), cum_ack_sent
     MSS = 1460
 
     dataframe = extract_values_from_log(input_file)
-
-    dataframe = filter_communication_with_device_under_test(dataframe)
-
-    initial_timestamp = dataframe['time'].iloc[0]
-    dataframe = convert_microseconds_to_timestamp(dataframe, initial_timestamp)
-    dataframe = create_congestion_window_column(dataframe)
-    dataframe = create_ssthresh_column(dataframe)
-
-    dataframe = data_sent_by_server(dataframe)
-
-    dataframe = acks_sent_by_client(dataframe)
-
-    dataframe = create_client_rcv_wnd_column(dataframe)
-    dataframe = fill_NaN_values_with_last_known_values(dataframe)
-    dataframe = create_cum_rcv_wnd_column(dataframe)
-    dataframe = create_minimum_of_cwnd_and_rcv_wnd_column(dataframe)
-    dataframe = hide_ssthresh_values_greater_than_max_wnd_size(dataframe)
-    # dataframe = create_rtt_graph(dataframe)
-    selected_columns = ['time', 'cwnd_bytes', 'rcv_wnd_bytes', 'min_wnd_bytes', 'cwnd_mss', 'rcv_wnd_mss', 'min_wnd_mss', 'ssthresh_mss',  'cum_rcv_wnd_bytes',
-                        'data_sent_bytes', 'cum_data_sent_bytes', 'ack_sent_bytes', 'cum_ack_sent_bytes']
-
+    dataframe = preprocess_data(dataframe)
     export_to_csv(dataframe, output_file, selected_columns)
