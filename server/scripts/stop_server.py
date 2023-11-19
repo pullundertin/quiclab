@@ -32,43 +32,42 @@ def run_command(command):
 
 
 def tcpprobe():
-    # Save tcpprobe to file
+    def cat_trace_file_and_write_to_file():
+        with open(output_file_path, "w") as output_file:
+            subprocess.run(["cat", trace_file_path],
+                           stdout=output_file, stderr=output_file, check=True)
+        logging.info(f"{os.getenv('HOST')}: tcpprobe written to file.")
+
+    def process_trace_data():
+        command = "python /scripts/converter.py"
+        run_command(command)
+        logging.info(f"{os.getenv('HOST')}: tcpprobe converted.")
+
+    def disable_tcptrace():
+        with open(tcp_probe_enable_path, "w") as enable_file:
+            enable_file.write("0")
+            logging.info(f"{os.getenv('HOST')}: tcpprobe disabled.")
+
     trace_file_path = "/sys/kernel/debug/tracing/trace"
     output_file_path = "/shared/tcpprobe/server.log"
-
-    with open(output_file_path, "w") as output_file:
-        # Use subprocess to run cat command and redirect its output to the file
-        subprocess.run(["cat", trace_file_path],
-                       stdout=output_file, stderr=output_file, check=True)
-    logging.info(f"{os.getenv('HOST')}: tcpprobe written to file.")
-
-    # Run the converter.py script
-    command = "python /scripts/converter.py"
-    run_command(command)
-    logging.info(f"{os.getenv('HOST')}: tcpprobe converted.")
-
-    # Disable tcp events in tcpprobe
     tcp_probe_enable_path = "/sys/kernel/debug/tracing/events/tcp/enable"
-    with open(tcp_probe_enable_path, "w") as enable_file:
-        enable_file.write("0")
-        logging.info(f"{os.getenv('HOST')}: tcpprobe disabled.")
+    cat_trace_file_and_write_to_file()
+    process_trace_data()
+    disable_tcptrace()
 
 
 def http():
-
     tcpprobe()
     kill('nginx')
     kill('tcpdump')
 
 
 def aioquic():
-
     kill('tcpdump')
     kill('python')
 
 
 def quicgo():
-
     kill('tcpdump')
     kill('go')
     kill('/tmp/go-build')
