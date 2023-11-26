@@ -3,6 +3,7 @@ import subprocess
 import re
 import logging
 import argparse
+import socket
 
 
 # Configure logging
@@ -30,6 +31,13 @@ def arguments():
     return args
 
 
+def get_interface():
+    if socket.gethostname() == 'router_1':
+        return 'eth1'
+    else:
+        return 'eth0'
+
+
 def run_command(command):
     try:
         process = subprocess.run(
@@ -48,13 +56,12 @@ def tcpdump():
 
 
 def reset_netem_and_tbf_settings():
-    command = 'tc qdisc del dev eth0 root'
+    command = f"tc qdisc del dev {interface} root"
     run_command(command)
 
 
 def netem_settings(delay, delay_deviation, loss):
-    # TODO change eth0/eth1 on router_1
-    command = f"tc qdisc add dev eth0 root handle 1: netem delay {delay} {delay_deviation} loss {loss}"
+    command = f"tc qdisc add dev {interface} root handle 1: netem delay {delay} {delay_deviation} loss {loss}"
     run_command(command)
 
 
@@ -64,7 +71,7 @@ def tbf_settings(rate):
     burst = int(rate_in_bits/2)
     limit = rate_in_bits + burst/2
 
-    command = f"tc qdisc add dev eth0 parent 1: handle 2: tbf rate {rate_in_bits} burst {burst} limit {limit}"
+    command = f"tc qdisc add dev {interface} parent 1: handle 2: tbf rate {rate_in_bits} burst {burst} limit {limit}"
     run_command(command)
 
 
@@ -94,7 +101,7 @@ def firewall_settings(bytes_from_to):
 def log_settings():
 
     tc_settings = subprocess.check_output(
-        ["tc", "qdisc", "show", "dev", "eth0"]).decode("utf-8")
+        ["tc", "qdisc", "show", "dev", interface]).decode("utf-8")
 
     # Regular expressions for extracting values
     limit_pattern = r'limit (\d+)'
@@ -129,6 +136,7 @@ def log_settings():
 
 
 if __name__ == "__main__":
+    interface = get_interface()
     args = arguments()
     reset_netem_and_tbf_settings()
     netem_settings(args.delay, args.delay_deviation, args.loss)
