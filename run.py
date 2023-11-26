@@ -77,9 +77,10 @@ def arguments():
 def get_docker_container():
     host = docker.from_env()
     client_1 = host.containers.get("client_1")
+    router_1 = host.containers.get("router_1")
     router_2 = host.containers.get("router_2")
     server = host.containers.get("server")
-    return client_1, router_2, server
+    return client_1, router_1, router_2, server
 
 
 def run_command(command):
@@ -104,6 +105,7 @@ def run_client(args):
 
 def traffic_control(args):
     command = f'python /scripts/traffic_control.py --delay {args.delay} --delay_deviation {args.delay_deviation} --loss {args.loss} --rate {args.rate} --firewall {args.firewall}'
+    router_1.exec_run(command)
     router_2.exec_run(command)
 
 
@@ -135,7 +137,7 @@ if __name__ == "__main__":
     log_config()
     reset_workdir(folders_in_workdir)
     args = arguments()
-    client_1, router_2, server = get_docker_container()
+    client_1, router_1, router_2, server = get_docker_container()
 
     with ThreadPoolExecutor() as executor:
 
