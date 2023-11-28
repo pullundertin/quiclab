@@ -63,15 +63,20 @@ def tcpdump():
 
 def aioquic():
     URL = "https://172.3.0.5:4433/data.log"
-    command = f"python /aioquic/examples/http3_client.py -k {URL} {URL} --secrets-log $KEYS_PATH --quic-log $QLOG_PATH --zero-rtt --session-ticket $TICKET_PATH"
+    max_data = 2000000
+    command = f"python /aioquic/examples/http3_client.py -k {URL} --secrets-log $KEYS_PATH --quic-log $QLOG_PATH --zero-rtt --session-ticket $TICKET_PATH"
+    # command = f"python /aioquic/examples/http3_client.py -k {URL} --max-data {max_data} --secrets-log $KEYS_PATH --quic-log $QLOG_PATH --zero-rtt --session-ticket $TICKET_PATH"
+    # command = f"python /aioquic/examples/http3_client.py -k {URL} {URL} --secrets-log $KEYS_PATH --quic-log $QLOG_PATH --zero-rtt --session-ticket $TICKET_PATH"
     logging.info(f"{os.getenv('HOST')}: sending aioquic request...")
+    # run_command(command)
     run_command(command)
 
 
 def quicgo():
     URL = "https://172.3.0.5:6121/data.log"
     os.chdir("/quic-go/example/client")
-    command = f"go run main.go --insecure --keylog $KEYS_PATH --qlog {URL} {URL}"
+    command = f"go run main.go --insecure --keylog $KEYS_PATH --qlog {URL}"
+    # command = f"go run main.go --insecure --keylog $KEYS_PATH --qlog {URL} {URL}"
     logging.info(f"{os.getenv('HOST')}: sending quic-go request...")
     run_command(command)
 
