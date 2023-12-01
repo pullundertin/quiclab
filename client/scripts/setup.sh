@@ -10,4 +10,11 @@ sysctl -w net.ipv4.tcp_fastopen=0
 # set initial latency
 tc qdisc add dev eth0 root handle 1: netem delay 5ms
 
+# disable rx tx checksum
+ethtool --offload  eth0  rx off  tx off
+
+# disable generic segmentation offload
+ethtool -K eth0 gso off
+
+
 

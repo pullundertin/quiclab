@@ -27,7 +27,7 @@ run_and_log_command "apt upgrade -y"
 log_message "Package upgrade complete."
 
 # Install dependencies
-run_and_log_command "apt install git vim python-is-python3 pip curl iputils-ping net-tools bc iproute2 libssl-dev python3-dev nginx tcpdump wget python3-psutil iptables -y"
+run_and_log_command "apt install git vim python-is-python3 pip curl iputils-ping net-tools bc iproute2 ethtool libssl-dev python3-dev nginx tcpdump wget python3-psutil iptables -y"
 log_message "Dependency installation complete."
 
 # Install aioquic
@@ -69,3 +69,5 @@ run_and_log_command "pip install docker"
 log_message "Docker installation complete."
 
 log_message "Script execution complete."
+
+
