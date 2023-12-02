@@ -20,6 +20,12 @@ sysctl -w net.ipv4.tcp_fastopen=0
 # disable Tail Loss Probe
 sysctl -w net.ipv4.tcp_early_retrans=0
 
+# disable Forward RTO Recovery
+sysctl -w net.ipv4.tcp_frto=0
+
+# disable RACK
+sysctl -w net.ipv4.tcp_recovery=4
+
 # set initial latency
 tc qdisc add dev eth0 root handle 1: netem delay 5ms
 
