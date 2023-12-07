@@ -71,6 +71,7 @@ def tcpdump():
 
 def aioquic():
     command = "python /aioquic/examples/http3_server.py --certificate /aioquic/tests/ssl_cert.pem --private-key /aioquic/tests/ssl_key.pem --quic-log $QLOG_PATH"
+    # command = "python /aioquic/examples/http3_server.py --certificate /aioquic/tests/ssl_cert.pem --private-key /aioquic/tests/ssl_key.pem --quic-log $QLOG_PATH --retry"
     logging.info(f"{os.getenv('HOST')}: starting aioquic server...")
     run_command(command)
 
