@@ -40,40 +40,24 @@ def reset_workdir(folders):
     loop_through_folders_and_delete_files(folders)
 
 
-def arguments():
-    parser = argparse.ArgumentParser(description='QuicLab Test Environment')
+def read_configurations(file_name):
+    configurations_list = []
+    with open(file_name, 'r') as file:
+        config = {}
+        for line in file:
+            line = line.strip()
+            if line.startswith('Iteration'):
+                if config:
+                    configurations_list.append(config)
+                config = {}
+            elif ': ' in line:
+                key, value = line.split(': ', 1)
+                config[key.strip()] = value.strip()
 
-    modes = ['http', 'aioquic', 'quicgo']
-    parser.add_argument('-m', '--mode', choices=modes, type=str,
-                        help='modes: http, aioquic, quicgo', default='http')
+        if config:
+            configurations_list.append(config)
 
-    parser.add_argument('-s', '--size', type=str,
-                        help='size of the file to download', default='1M')
-
-    parser.add_argument('-d', '--delay', type=str,
-                        help='network latency in ms', default='0')
-    parser.add_argument('-a', '--delay_deviation', type=str,
-                        help='network latency deviation in ms', default='0')
-    parser.add_argument('-l', '--loss', type=str,
-                        help='network loss in %', default='0')
-    parser.add_argument('-r', '--rate', type=str,
-                        help='network rate in Mbit', default='1000')
-    parser.add_argument('-f', '--firewall', type=str,
-                        help='block incoming traffic from byte ... to byte ...', default='None')
-
-    parser.add_argument('-w', '--window_scaling', type=str,
-                        help='enable/disable receiver window scaling', default='1')
-    parser.add_argument('--rmin', type=str,
-                        help='minimum recieve window in bytes', default='4096')
-    parser.add_argument('--rdef', type=str,
-                        help='default recieve window in bytes', default='131072')
-    parser.add_argument('--rmax', type=str,
-                        help='maximum recieve window in bytes', default='6291456')
-    parser.add_argument('--migration', choices=['true', 'false'],
-                        help='enable/disable connection migration simulation', default='false')
-
-    args = parser.parse_args()
-    return args
+    return configurations_list
 
 
 def get_docker_container():
@@ -100,25 +84,39 @@ def rsync():
     run_command(command)
 
 
-def run_client(args):
-    command = f'python /scripts/run_client.py --mode {args.mode} --window_scaling {args.window_scaling} --rmin {args.rmin} --rdef {args.rdef} --rmax {args.rmax} --migration {args.migration}'
+def run_client(args, pcap_path, iteration):
+    command = f"python /scripts/run_client.py --mode {args.get('mode')} --window_scaling {args.get('window_scaling')} --rmin {args.get('rmin')} --rdef {args.get('rdef')} --rmax {args.get('rmax')} --migration {args.get('migration')} --pcap {pcap_path} --iteration {iteration}"
     client_1.exec_run(command)
 
 
 def traffic_control(args):
-    command = f'python /scripts/traffic_control.py --delay {args.delay} --delay_deviation {args.delay_deviation} --loss {args.loss} --rate {args.rate} --firewall {args.firewall}'
+    command = f"python /scripts/traffic_control.py --delay {args.get('delay')} --delay_deviation {args.get('delay_deviation')} --loss {args.get('loss')} --rate {args.get('rate')} --firewall {args.get('firewall')}"
     router_1.exec_run(command)
     router_2.exec_run(command)
 
 
-def run_server(args):
-    command = f'python /scripts/run_server.py --mode {args.mode} --size {args.size}'
+def run_server(args, pcap_path, iteration):
+    command = f"python /scripts/run_server.py --mode {args.get('mode')} --size {args.get('size')} --pcap {pcap_path} --iteration {iteration}"
     server.exec_run(command)
 
 
-def shutdown_server(args):
-    command = f'python /scripts/stop_server.py --mode {args.mode}'
+def shutdown_server(args, iteration):
+    command = f"python /scripts/stop_server.py --mode {args.get('mode')} --iteration {iteration}"
     server.exec_run(command)
+
+
+def main(iteration, args):
+    try:
+        with ThreadPoolExecutor() as executor:
+            thread_1 = executor.submit(run_server, args, PCAP_PATH, iteration)
+            thread_2 = executor.submit(traffic_control, args)
+            time.sleep(3)
+            thread_3 = executor.submit(run_client, args, PCAP_PATH, iteration)
+            concurrent.futures.wait([thread_3])
+            shutdown_server(args, iteration)
+
+    except Exception as e:
+        logging.error(f"An error occurred: {e}")
 
 
 if __name__ == "__main__":
@@ -128,6 +126,8 @@ if __name__ == "__main__":
     SSH_PUBLIC_KEY_PATH = "../.ssh/mba"
     REMOTE_HOST = "marco@mba:/Users/Marco/shared"
     OUTPUT = "./shared/logs/output.log"
+    PCAP_PATH = "./shared/pcap/"
+    CONFIG_PATH = "config.yaml"
 
     folders_in_workdir = [
         f'{WORKDIR}/pcap',
@@ -138,21 +138,12 @@ if __name__ == "__main__":
 
     log_config()
     reset_workdir(folders_in_workdir)
-    args = arguments()
     client_1, router_1, router_2, server = get_docker_container()
 
-    try:
-        with ThreadPoolExecutor() as executor:
-            thread_1 = executor.submit(run_server, args)
-            thread_2 = executor.submit(traffic_control, args)
-            time.sleep(3)
-            thread_3 = executor.submit(run_client, args)
-            concurrent.futures.wait([thread_3])
-            shutdown_server(args)
-            rsync()
-            logging.info("All tasks are completed.")
+    configs = read_configurations(CONFIG_PATH)
 
-    except Exception as e:
-        logging.error(f"An error occurred: {e}")
-        shutdown_server(args)
-        rsync()
+    for index, config in enumerate(configs, start=1):
+        main(index, config)
+
+    rsync()
+    logging.info("All tasks are completed.")

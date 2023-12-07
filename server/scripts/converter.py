@@ -1,5 +1,6 @@
 import pandas as pd
 import re
+import os
 
 
 def extract_values_from_log(input_file):
@@ -223,17 +224,27 @@ def preprocess_data(dataframe):
     return dataframe
 
 
+def process_all_input_files():
+    for filename in os.listdir(input_directory):
+        if filename.endswith(".log"):
+            input_file = os.path.join(input_directory, filename)
+            output_file = os.path.join(
+                output_directory, f"{os.path.splitext(filename)[0]}.csv")
+
+            dataframe = extract_values_from_log(input_file)
+            dataframe = preprocess_data(dataframe)
+            export_to_csv(dataframe, output_file, selected_columns)
+
+
 if __name__ == "__main__":
 
     pd.options.mode.chained_assignment = None
-    input_file = "/shared/tcpprobe/server.log"
-    output_file = "/shared/tcpprobe/tcptrace.csv"
+
+    input_directory = "/shared/tcpprobe/"
     output_directory = "/shared/tcpprobe/"
     selected_columns = ['time', 'cwnd_bytes', 'rcv_wnd_bytes', 'min_wnd_bytes', 'cwnd_mss', 'rcv_wnd_mss', 'min_wnd_mss', 'ssthresh_mss',  'cum_rcv_wnd_bytes',
                         'data_sent_bytes', 'cum_data_sent_bytes', 'ack_sent_bytes', 'cum_ack_sent_bytes']
     ip_pattern = '172.3.'
     MSS = 1460
 
-    dataframe = extract_values_from_log(input_file)
-    dataframe = preprocess_data(dataframe)
-    export_to_csv(dataframe, output_file, selected_columns)
+    process_all_input_files()

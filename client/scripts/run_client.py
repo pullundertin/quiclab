@@ -32,6 +32,12 @@ def arguments():
                         help='maximum recieve window in bytes')
     parser.add_argument('--migration', choices=['true', 'false'],
                         help='enable/disable connection migration simulation')
+    parser.add_argument('--pcap', type=str,
+                        help='pcap_path')
+    parser.add_argument('--qlog', type=str,
+                        help='qlog_path')
+    parser.add_argument('--iteration', type=str,
+                        help='number of iteration')
 
     args = parser.parse_args()
 
@@ -57,8 +63,8 @@ def tcp_settings(args):
     run_command(command)
 
 
-def tcpdump():
-    command = "tcpdump -i eth0 -w $PCAP_PATH -n"
+def tcpdump(path, iteration):
+    command = f"tcpdump -i eth0 -w {path}/{iteration}_client_1.pcap -n"
     logging.info(f"{os.getenv('HOST')}: tcpdump started.")
     run_command(command)
 
@@ -66,7 +72,7 @@ def tcpdump():
 def aioquic():
     URL = "https://172.3.0.5:4433/data.log"
     max_data = 2000000
-    command = f"python /aioquic/examples/http3_client.py -k {URL} --secrets-log $KEYS_PATH --quic-log $QLOG_PATH --zero-rtt --session-ticket $TICKET_PATH"
+    command = f"python /aioquic/examples/http3_client.py -k {URL} --secrets-log {keys_path} --quic-log $QLOG_PATH --zero-rtt --session-ticket $TICKET_PATH"
     # command = f"python /aioquic/examples/http3_client.py -k {URL} --max-data {max_data} --secrets-log $KEYS_PATH --quic-log $QLOG_PATH --zero-rtt --session-ticket $TICKET_PATH"
     # command = f"python /aioquic/examples/http3_client.py -k {URL} {URL} --secrets-log $KEYS_PATH --quic-log $QLOG_PATH --zero-rtt --session-ticket $TICKET_PATH"
     logging.info(f"{os.getenv('HOST')}: sending aioquic request...")
@@ -77,7 +83,7 @@ def aioquic():
 def quicgo():
     URL = "https://172.3.0.5:6121/data.log"
     os.chdir("/quic-go/example/client")
-    command = f"go run main.go --insecure --keylog $KEYS_PATH --qlog {URL}"
+    command = f"go run main.go --insecure --keylog '{keys_path}' --qlog {URL}"
     # command = f"go run main.go --insecure --keylog $KEYS_PATH --qlog {URL} {URL}"
     logging.info(f"{os.getenv('HOST')}: sending quic-go request...")
     run_command(command)
@@ -86,7 +92,7 @@ def quicgo():
 def http(args):
     tcp_settings(args)
     URL = "https://172.3.0.5:443/data.log"
-    os.environ['SSLKEYLOGFILE'] = os.getenv("KEYS_PATH")
+    os.environ['SSLKEYLOGFILE'] = keys_path
     command = f"curl -k {URL} -o /dev/null"
     logging.info(f"{os.getenv('HOST')}: sending http request...")
     run_command(command)
@@ -129,10 +135,11 @@ def change_ip(old_ip, new_ip):
 if __name__ == "__main__":
 
     args = arguments()
+    keys_path = f"/shared/keys/client.key"
 
     with ThreadPoolExecutor() as executor:
 
-        thread_1 = executor.submit(tcpdump)
+        thread_1 = executor.submit(tcpdump, args.pcap, args.iteration)
         time.sleep(3)
         thread_2 = executor.submit(client_request, args)
         if (args.migration == 'true'):

@@ -1,0 +1,43 @@
+# Configurations for different iterations
+Iteration 1:
+mode: http
+size: 1M
+delay: 20ms
+delay_deviation: 0
+loss: 0
+rate: 500
+firewall: None
+window_scaling: 1
+rmin: 4096
+rdef: 4096
+rmax: 4096
+migration: false
+
+
+Iteration 2:
+mode: http
+size: 2M
+delay: 30ms
+delay_deviation: 0
+loss: 0
+rate: 1000
+firewall: None
+window_scaling: 1
+rmin: 4096
+rdef: 131072
+rmax: 6291456
+migration: false
+
+Iteration 3:
+mode: http
+size: 3M
+delay: 40ms
+delay_deviation: 1
+loss: 0
+rate: 1000
+firewall: None
+window_scaling: 1
+rmin: 4096
+rdef: 131072
+rmax: 6291456
+migration: false

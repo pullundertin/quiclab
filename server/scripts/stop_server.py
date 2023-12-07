@@ -15,6 +15,8 @@ def arguments():
 
     parser.add_argument('-m', '--mode', type=str,
                         help='modes: http, aioquic, quicgo')
+    parser.add_argument('--iteration', type=str,
+                        help='number of iteration')
 
     args = parser.parse_args()
 
@@ -31,7 +33,7 @@ def run_command(command):
         logging.info(f"Error {os.getenv('HOST')} output: {e.stderr.decode()}")
 
 
-def tcpprobe():
+def tcpprobe(iteration):
     def cat_trace_file_and_write_to_file():
         with open(output_file_path, "w") as output_file:
             subprocess.run(["cat", trace_file_path],
@@ -49,7 +51,7 @@ def tcpprobe():
             logging.info(f"{os.getenv('HOST')}: tcpprobe disabled.")
 
     trace_file_path = "/sys/kernel/debug/tracing/trace"
-    output_file_path = "/shared/tcpprobe/server.log"
+    output_file_path = f"/shared/tcpprobe/{iteration}_tcptrace.log"
     tcp_probe_enable_path = "/sys/kernel/debug/tracing/events/tcp/enable"
     cat_trace_file_and_write_to_file()
     process_trace_data()
@@ -57,7 +59,7 @@ def tcpprobe():
 
 
 def http():
-    tcpprobe()
+    tcpprobe(args.iteration)
     kill('nginx')
     kill('tcpdump')
 
