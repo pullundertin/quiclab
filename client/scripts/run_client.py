@@ -30,6 +30,8 @@ def arguments():
                         help='default recieve window in bytes')
     parser.add_argument('--rmax', type=str,
                         help='maximum recieve window in bytes')
+    parser.add_argument('--migration', choices=['true', 'false'],
+                        help='enable/disable connection migration simulation')
 
     args = parser.parse_args()
 
@@ -115,6 +117,15 @@ def kill(process_name):
                 pass
 
 
+def change_ip(old_ip, new_ip):
+    try:
+        command = f"ip addr add {new_ip}/24 dev eth0 && ip addr del {old_ip}/24 dev eth0"
+        run_command(command)
+        logging.info(f"{os.getenv('HOST')}: IP address changed to {new_ip}")
+    except Exception as e:
+        logging.info(f"{os.getenv('HOST')}: An error occurred: {e}")
+
+
 if __name__ == "__main__":
 
     args = arguments()
@@ -124,7 +135,12 @@ if __name__ == "__main__":
         thread_1 = executor.submit(tcpdump)
         time.sleep(3)
         thread_2 = executor.submit(client_request, args)
-
+        if (args.migration == 'true'):
+            time.sleep(1)
+            thread_3 = executor.submit(change_ip, '172.1.0.101', '172.1.0.102')
+            wait([thread_3])
+            time.sleep(2)
+            change_ip('172.1.0.102', '172.1.0.101')
         wait([thread_2])
         logging.info(f"{os.getenv('HOST')}: request completed.")
 

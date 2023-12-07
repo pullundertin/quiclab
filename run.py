@@ -69,6 +69,8 @@ def arguments():
                         help='default recieve window in bytes', default='131072')
     parser.add_argument('--rmax', type=str,
                         help='maximum recieve window in bytes', default='6291456')
+    parser.add_argument('--migration', choices=['true', 'false'],
+                        help='enable/disable connection migration simulation', default='false')
 
     args = parser.parse_args()
     return args
@@ -99,7 +101,7 @@ def rsync():
 
 
 def run_client(args):
-    command = f'python /scripts/run_client.py --mode {args.mode} --window_scaling {args.window_scaling} --rmin {args.rmin} --rdef {args.rdef} --rmax {args.rmax}'
+    command = f'python /scripts/run_client.py --mode {args.mode} --window_scaling {args.window_scaling} --rmin {args.rmin} --rdef {args.rdef} --rmax {args.rmax} --migration {args.migration}'
     client_1.exec_run(command)
 
 
@@ -139,16 +141,18 @@ if __name__ == "__main__":
     args = arguments()
     client_1, router_1, router_2, server = get_docker_container()
 
-    with ThreadPoolExecutor() as executor:
+    try:
+        with ThreadPoolExecutor() as executor:
+            thread_1 = executor.submit(run_server, args)
+            thread_2 = executor.submit(traffic_control, args)
+            time.sleep(3)
+            thread_3 = executor.submit(run_client, args)
+            concurrent.futures.wait([thread_3])
+            shutdown_server(args)
+            rsync()
+            logging.info("All tasks are completed.")
 
-        thread_1 = executor.submit(run_server, args)
-        thread_2 = executor.submit(traffic_control, args)
-        time.sleep(3)
-        thread_3 = executor.submit(run_client, args)
-        concurrent.futures.wait([thread_3])
-
+    except Exception as e:
+        logging.error(f"An error occurred: {e}")
         shutdown_server(args)
-
         rsync()
-
-    logging.info("All tasks are completed.")
