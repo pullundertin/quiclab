@@ -38,10 +38,48 @@ def run_command(command):
         logging.info(f"Error {os.getenv('HOST')} output: {e.stderr.decode()}")
 
 
-def generate_data(size):
-    command = f'dd if=/dev/zero of=/data/data.log bs=1 count=0 seek={size} status=none'
+def convert_to_bytes(size_string):
+    # Convert to lowercase for case-insensitive comparison
+    size_string = size_string.lower()
+
+    multipliers = {
+        'm': 1024 * 1024,  # 1 MB = 1024^2 bytes
+        'g': 1024 * 1024 * 1024  # 1 GB = 1024^3 bytes
+    }
+
+    for unit, multiplier in multipliers.items():
+        if size_string.endswith(unit):
+            # Remove the unit suffix and convert the number part to an integer
+            size = float(size_string.strip('mg').strip()) * multiplier
+            return size
+
+    raise ValueError("Invalid unit or format for size string")
+
+
+def generate_data(file_path, size):
+    # command = f'dd if=/dev/zero of=/data/data.log bs=1 count=0 seek={size} status=none'
+
+    # Target file size in bytes (1 MB is approximately 1,048,576 bytes)
+    target_file_size = convert_to_bytes(size)
+
+    with open(file_path, 'w') as file:
+        total_bytes_written = 0
+        number = 0
+
+        while total_bytes_written < target_file_size:
+            # Convert number to string and write to file with a hyphen
+            number_str = str(number)
+            file.write(number_str + '-')
+
+            # Calculate the size of the string in bytes
+            bytes_written = len((number_str + '-').encode('utf-8'))
+            total_bytes_written += bytes_written
+
+            # Increment the number for the next iteration
+            number += 1
+
     logging.info(f"{os.getenv('HOST')}: Download size {size}.")
-    run_command(command)
+    # run_command(command)
 
 
 def tcpprobe():
@@ -92,12 +130,14 @@ def http():
 
 if __name__ == "__main__":
 
+    file_path = '/data/data.log'
+
     try:
         args = arguments()
 
         with ThreadPoolExecutor() as executor:
             thread_1 = executor.submit(tcpdump)
-            thread_2 = executor.submit(generate_data, args.size)
+            thread_2 = executor.submit(generate_data, file_path, args.size)
             time.sleep(3)
 
             if args.mode == "http":
