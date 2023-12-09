@@ -64,13 +64,13 @@ def tcp_settings(args):
 
 
 def tcpdump(path, iteration):
-    command = f"tcpdump -i eth0 -w {path}/{iteration}_client_1.pcap -n"
+    command = f"tcpdump -i eth0 -w {path}/{iteration}client_1.pcap -n"
     logging.info(f"{os.getenv('HOST')}: tcpdump started.")
     run_command(command)
 
 
 def tshark(path, iteration):
-    command = f"tshark -i eth0 -w {path}/{iteration}_client_1.pcap -n -T json"
+    command = f"tshark -i eth0 -w {path}/{iteration}client_1.pcap -n -T json"
     logging.info(f"{os.getenv('HOST')}: tshark started.")
     run_command(command)
 

@@ -108,7 +108,7 @@ def tcpprobe():
 
 
 def tcpdump(path, number):
-    command = f"tcpdump -i eth0 -w {path}/{number}_server.pcap -n"
+    command = f"tcpdump -i eth0 -w {path}/{number}server.pcap -n"
     logging.info(f"{os.getenv('HOST')}: tcpdump started.")
     run_command(command)
 

@@ -1,13 +1,13 @@
 import subprocess
 import logging
-from modules.logs import log_config
-from modules.prerequisites import get_docker_container
+from modules.prerequisites import get_docker_container, read_configuration
 
 
 client_1, router_1, router_2, server = get_docker_container()
-SSH_PUBLIC_KEY_PATH = "../.ssh/mba"
-WORKDIR = "./shared/"
-REMOTE_HOST = "marco@mba:/Users/Marco/shared"
+SSH_PUBLIC_KEY_PATH = read_configuration().get("SSH_PUBLIC_KEY_PATH")
+WORKDIR = read_configuration().get("WORKDIR")
+REMOTE_HOST = read_configuration().get("REMOTE_HOST")
+PCAP_PATH = read_configuration().get("PCAP_PATH")
 
 
 def run_command(command):
@@ -25,8 +25,8 @@ def rsync():
     run_command(command)
 
 
-def run_client(args, pcap_path, iteration):
-    command = f"python /scripts/run_client.py --mode {args.get('mode')} --window_scaling {args.get('window_scaling')} --rmin {args.get('rmin')} --rdef {args.get('rdef')} --rmax {args.get('rmax')} --migration {args.get('migration')} --pcap {pcap_path} --iteration {iteration}"
+def run_client(args, iteration):
+    command = f"python /scripts/run_client.py --mode {args.get('mode')} --window_scaling {args.get('window_scaling')} --rmin {args.get('rmin')} --rdef {args.get('rdef')} --rmax {args.get('rmax')} --migration {args.get('migration')} --pcap {PCAP_PATH} --iteration {iteration}"
     client_1.exec_run(command)
 
 
@@ -36,8 +36,8 @@ def traffic_control(args):
     router_2.exec_run(command)
 
 
-def run_server(args, pcap_path, iteration):
-    command = f"python /scripts/run_server.py --mode {args.get('mode')} --size {args.get('size')} --pcap {pcap_path} --iteration {iteration}"
+def run_server(args, iteration):
+    command = f"python /scripts/run_server.py --mode {args.get('mode')} --size {args.get('size')} --pcap {PCAP_PATH} --iteration {iteration}"
     server.exec_run(command)
 
 

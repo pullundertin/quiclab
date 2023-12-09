@@ -51,7 +51,7 @@ def tcpprobe(iteration):
             logging.info(f"{os.getenv('HOST')}: tcpprobe disabled.")
 
     trace_file_path = "/sys/kernel/debug/tracing/trace"
-    output_file_path = f"/shared/tcpprobe/{iteration}_tcptrace.log"
+    output_file_path = f"/shared/tcpprobe/{iteration}tcptrace.log"
     tcp_probe_enable_path = "/sys/kernel/debug/tracing/events/tcp/enable"
     cat_trace_file_and_write_to_file()
     process_trace_data()

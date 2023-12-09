@@ -1,16 +1,10 @@
-Iteration 1:
-mode: http
-size: 0.001M
-delay: 0
-delay_deviation: 0
-loss: 0
-rate: 10
-firewall: None
-window_scaling: 1
-rmin: 4096
-rdef: 131072
-rmax: 62901456
-migration: false
+WORKDIR: ./shared
+TICKET_PATH: ./shared/keys/ticket.txt
+SSH_PUBLIC_KEY_PATH: ../.ssh/mba
+REMOTE_HOST: marco@mba:/Users/Marco/shared
+OUTPUT_PATH: ./shared/logs/output.log
+PCAP_PATH: ./shared/pcap
+TEST_CASES: test_cases.yaml
 
 
 

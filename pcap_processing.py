@@ -2,8 +2,9 @@ import os
 import logging
 import json
 from modules.commands import run_command
+from modules.prerequisites import read_configuration
 
-PCAP_PATH = "./shared/pcap/"
+PCAP_PATH = read_configuration().get("PCAP_PATH")
 tcp_connection_durations = []
 tcp_handshake_durations = []
 
@@ -13,7 +14,7 @@ def convert_pcap_to_json():
         if filename.endswith('.pcap'):
             pcap_file = os.path.join(PCAP_PATH, filename)
             json_output = f'{pcap_file}.json'
-            # logging.info(f"writing {json_output}")
+            logging.info(f"writing {json_output}")
             command = f"tshark -r {pcap_file} -T json > {json_output}"
             run_command(command)
 

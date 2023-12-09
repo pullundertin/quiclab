@@ -1,9 +1,17 @@
 import os
 import logging
 import docker
+import yaml
 
 
-def reset_workdir(folders):
+def reset_workdir():
+    WORKDIR = read_configuration().get("WORKDIR")
+    folders = [
+        f'{WORKDIR}/pcap',
+        f'{WORKDIR}/qlog_client',
+        f'{WORKDIR}/qlog_server',
+        f'{WORKDIR}/keys',
+        f'{WORKDIR}/tcpprobe']
 
     def list_and_delete_files_in_folder(folder):
         for filename in os.listdir(folder):
@@ -25,24 +33,39 @@ def reset_workdir(folders):
     loop_through_folders_and_delete_files(folders)
 
 
-def read_configurations(file_name):
-    configurations_list = []
+def read_test_cases(file_name):
+    test_cases = []
     with open(file_name, 'r') as file:
-        config = {}
+        test_case = {}
         for line in file:
             line = line.strip()
             if line.startswith('Iteration'):
-                if config:
-                    configurations_list.append(config)
-                config = {}
+                if test_case:
+                    test_cases.append(test_case)
+                test_case = {}
             elif ': ' in line:
                 key, value = line.split(': ', 1)
-                config[key.strip()] = value.strip()
+                test_case[key.strip()] = value.strip()
 
-        if config:
-            configurations_list.append(config)
+        if test_case:
+            test_cases.append(test_case)
 
-    return configurations_list
+    return test_cases
+
+
+def read_configuration():
+    # with open('./config.yaml', 'r') as file:
+    #     variable = {}
+    #     for line in file:
+    #         line = line.strip()
+    #         if ': ' in line:
+    #             key, value = line.split(': ', 1)
+    #             variable[key.strip()] = value.strip()
+    # return variable
+    with open('./config.yaml', 'r') as file:
+        config = yaml.safe_load(file)
+
+    return config
 
 
 def get_docker_container():
