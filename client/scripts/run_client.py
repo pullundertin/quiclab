@@ -69,10 +69,17 @@ def tcpdump(path, iteration):
     run_command(command)
 
 
+def tshark(path, iteration):
+    command = f"tshark -i eth0 -w {path}/{iteration}_client_1.pcap -n -T json"
+    logging.info(f"{os.getenv('HOST')}: tshark started.")
+    run_command(command)
+
+
 def aioquic():
     URL = "https://172.3.0.5:4433/data.log"
     max_data = 2000000
-    command = f"python /aioquic/examples/http3_client.py -k {URL} --secrets-log {keys_path} --quic-log $QLOG_PATH --zero-rtt --session-ticket $TICKET_PATH"
+    request = (URL + ' ') * 1
+    command = f"python /aioquic/examples/http3_client.py -k {request} --secrets-log {keys_path} --quic-log $QLOG_PATH --zero-rtt --session-ticket $TICKET_PATH"
     # command = f"python /aioquic/examples/http3_client.py -k {URL} --max-data {max_data} --secrets-log $KEYS_PATH --quic-log $QLOG_PATH --zero-rtt --session-ticket $TICKET_PATH"
     # command = f"python /aioquic/examples/http3_client.py -k {URL} {URL} --secrets-log $KEYS_PATH --quic-log $QLOG_PATH --zero-rtt --session-ticket $TICKET_PATH"
     logging.info(f"{os.getenv('HOST')}: sending aioquic request...")
@@ -92,7 +99,9 @@ def quicgo():
 def http(args):
     tcp_settings(args)
     URL = "https://172.3.0.5:443/data.log"
+    request = (URL + ' ') * 1
     os.environ['SSLKEYLOGFILE'] = keys_path
+    # {URL} -o /dev/null {URL} -o /dev/null"
     command = f"curl -k {URL} -o /dev/null"
     logging.info(f"{os.getenv('HOST')}: sending http request...")
     run_command(command)
@@ -139,6 +148,7 @@ if __name__ == "__main__":
 
     with ThreadPoolExecutor() as executor:
 
+        # thread_1 = executor.submit(tshark, args.pcap, args.iteration)
         thread_1 = executor.submit(tcpdump, args.pcap, args.iteration)
         time.sleep(3)
         thread_2 = executor.submit(client_request, args)
@@ -152,5 +162,6 @@ if __name__ == "__main__":
         logging.info(f"{os.getenv('HOST')}: request completed.")
 
         time.sleep(3)
+        # kill("tshark")
         kill("tcpdump")
         wait([thread_1])

@@ -3,3 +3,5 @@ server/data/data.log
 server/data/
 server/data/data.log
 server/scripts/demo.py
+server/data/data.log
+.gitignore
