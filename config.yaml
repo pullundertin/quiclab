@@ -1,5 +1,6 @@
 WORKDIR: ./shared
 TICKET_PATH: ./shared/keys/ticket.txt
+KEY_PATH: ./shared/keys
 SSH_PUBLIC_KEY_PATH: ../.ssh/mba
 REMOTE_HOST: marco@mba:/Users/Marco/shared
 OUTPUT_PATH: ./shared/logs/output.log

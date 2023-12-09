@@ -33,38 +33,32 @@ def reset_workdir():
     loop_through_folders_and_delete_files(folders)
 
 
-def read_test_cases(file_name):
-    test_cases = []
-    with open(file_name, 'r') as file:
-        test_case = {}
-        for line in file:
-            line = line.strip()
-            if line.startswith('Iteration'):
-                if test_case:
-                    test_cases.append(test_case)
-                test_case = {}
-            elif ': ' in line:
-                key, value = line.split(': ', 1)
-                test_case[key.strip()] = value.strip()
+def read_test_cases():
+    # test_cases = []
+    # with open(file_name, 'r') as file:
+    #     test_case = {}
+    #     for line in file:
+    #         line = line.strip()
+    #         if line.startswith('Iteration'):
+    #             if test_case:
+    #                 test_cases.append(test_case)
+    #             test_case = {}
+    #         elif ': ' in line:
+    #             key, value = line.split(': ', 1)
+    #             test_case[key.strip()] = value.strip()
 
-        if test_case:
-            test_cases.append(test_case)
+    #     if test_case:
+    #         test_cases.append(test_case)
 
+    # return test_cases
+    with open('./test_cases.yaml', 'r') as file:
+        test_cases = yaml.safe_load(file)
     return test_cases
 
 
 def read_configuration():
-    # with open('./config.yaml', 'r') as file:
-    #     variable = {}
-    #     for line in file:
-    #         line = line.strip()
-    #         if ': ' in line:
-    #             key, value = line.split(': ', 1)
-    #             variable[key.strip()] = value.strip()
-    # return variable
     with open('./config.yaml', 'r') as file:
         config = yaml.safe_load(file)
-
     return config
 
 

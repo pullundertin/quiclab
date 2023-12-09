@@ -21,26 +21,28 @@ def run_command(command):
 
 
 def rsync():
-    command = f'rsync -ahP --delete {WORKDIR} -e ssh -i {SSH_PUBLIC_KEY_PATH} {REMOTE_HOST}'
+    command = f'rsync -ahP --delete {WORKDIR}/ -e ssh -i {SSH_PUBLIC_KEY_PATH} {REMOTE_HOST}'
+    print(command)
     run_command(command)
 
 
-def run_client(args, iteration):
-    command = f"python /scripts/run_client.py --mode {args.get('mode')} --window_scaling {args.get('window_scaling')} --rmin {args.get('rmin')} --rdef {args.get('rdef')} --rmax {args.get('rmax')} --migration {args.get('migration')} --pcap {PCAP_PATH} --iteration {iteration}"
+def run_client(test_case, iteration_prefix):
+    command = f"python /scripts/run_client.py --mode {test_case.get('mode')} --window_scaling {test_case.get('window_scaling')} --rmin {test_case.get('rmin')} --rdef {test_case.get('rdef')} --rmax {test_case.get('rmax')} --migration {test_case.get('migration')} --pcap {PCAP_PATH}/ --iteration {iteration_prefix}"
+    print(command)
     client_1.exec_run(command)
 
 
-def traffic_control(args):
-    command = f"python /scripts/traffic_control.py --delay {args.get('delay')} --delay_deviation {args.get('delay_deviation')} --loss {args.get('loss')} --rate {args.get('rate')} --firewall {args.get('firewall')}"
+def traffic_control(test_case):
+    command = f"python /scripts/traffic_control.py --delay {test_case.get('delay')} --delay_deviation {test_case.get('delay_deviation')} --loss {test_case.get('loss')} --rate {test_case.get('rate')} --firewall {test_case.get('firewall')}"
     router_1.exec_run(command)
     router_2.exec_run(command)
 
 
-def run_server(args, iteration):
-    command = f"python /scripts/run_server.py --mode {args.get('mode')} --size {args.get('size')} --pcap {PCAP_PATH} --iteration {iteration}"
+def run_server(test_case, iteration_prefix):
+    command = f"python /scripts/run_server.py --mode {test_case.get('mode')} --size {test_case.get('size')} --pcap {PCAP_PATH} --iteration {iteration_prefix}"
     server.exec_run(command)
 
 
-def shutdown_server(args, iteration):
-    command = f"python /scripts/stop_server.py --mode {args.get('mode')} --iteration {iteration}"
+def shutdown_server(test_case, iteration_prefix):
+    command = f"python /scripts/stop_server.py --mode {test_case.get('mode')} --iteration {iteration_prefix}"
     server.exec_run(command)

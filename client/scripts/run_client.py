@@ -30,7 +30,7 @@ def arguments():
                         help='default recieve window in bytes')
     parser.add_argument('--rmax', type=str,
                         help='maximum recieve window in bytes')
-    parser.add_argument('--migration', choices=['true', 'false'],
+    parser.add_argument('--migration', choices=['True', 'False'],
                         help='enable/disable connection migration simulation')
     parser.add_argument('--pcap', type=str,
                         help='pcap_path')
@@ -63,15 +63,10 @@ def tcp_settings(args):
     run_command(command)
 
 
-def tcpdump(path, iteration):
-    command = f"tcpdump -i eth0 -w {path}/{iteration}client_1.pcap -n"
+def tcpdump(args):
+    command = f"tcpdump -i eth0 -w {args.pcap}/{args.iteration}client_1.pcap -n"
+    logging.info(command)
     logging.info(f"{os.getenv('HOST')}: tcpdump started.")
-    run_command(command)
-
-
-def tshark(path, iteration):
-    command = f"tshark -i eth0 -w {path}/{iteration}client_1.pcap -n -T json"
-    logging.info(f"{os.getenv('HOST')}: tshark started.")
     run_command(command)
 
 
@@ -149,7 +144,8 @@ if __name__ == "__main__":
     with ThreadPoolExecutor() as executor:
 
         # thread_1 = executor.submit(tshark, args.pcap, args.iteration)
-        thread_1 = executor.submit(tcpdump, args.pcap, args.iteration)
+        thread_1 = executor.submit(tcpdump, args)
+        print(thread_1)
         time.sleep(3)
         thread_2 = executor.submit(client_request, args)
         if (args.migration == 'true'):
@@ -162,6 +158,5 @@ if __name__ == "__main__":
         logging.info(f"{os.getenv('HOST')}: request completed.")
 
         time.sleep(3)
-        # kill("tshark")
         kill("tcpdump")
         wait([thread_1])
