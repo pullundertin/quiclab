@@ -3,7 +3,7 @@ rounds: 1
 iterations:
   - mode: http
     size: 0.001M
-    delay: 0
+    delay: 10ms
     delay_deviation: 0
     loss: 0
     rate: 10
@@ -12,11 +12,11 @@ iterations:
     rmin: 4096
     rdef: 131072
     rmax: 62901456
-    migration: true
+    migration: false
 
-  - mode: http
+  - mode: aioquic
     size: 0.001M
-    delay: 10
+    delay: 10ms
     delay_deviation: 0
     loss: 0
     rate: 10
@@ -25,4 +25,4 @@ iterations:
     rmin: 4096
     rdef: 131072
     rmax: 62901456
-    migration: true
+    migration: false

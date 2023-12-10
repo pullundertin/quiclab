@@ -3,11 +3,10 @@ import time
 import concurrent.futures
 from concurrent.futures import ThreadPoolExecutor
 import logging
-import statistics
-from pcap_processing import convert_pcap_to_json, get_tcp_handshake_time, get_tcp_connection_time
+from modules.pcap_processing import convert_pcap_to_json, get_statistics
 from modules.commands import rsync, run_client, traffic_control, run_server, shutdown_server
 from modules.logs import log_config
-from modules.prerequisites import reset_workdir, read_test_cases, read_configuration, get_docker_container
+from modules.prerequisites import reset_workdir, read_test_cases, read_configuration
 
 
 def run_test_case(iteration_prefix, test_case):
@@ -42,17 +41,7 @@ if __name__ == "__main__":
     reset_workdir()
     test_case_settings = read_test_cases()
     run_tests()
-
     convert_pcap_to_json()
-    tcp_handshake_durations = get_tcp_handshake_time()
-    tcp_connection_durations = get_tcp_connection_time()
-
-    print('hs_median', statistics.median(tcp_handshake_durations))
-    print('hs_min', min(tcp_handshake_durations))
-    print('hs_max', max(tcp_handshake_durations))
-    print('conn_median', statistics.median(tcp_connection_durations))
-    print('con_min', min(tcp_connection_durations))
-    print('con_max', max(tcp_connection_durations))
-    # get_tcp_rtt_statistics()
+    get_statistics()
     rsync()
     logging.info("All tasks are completed.")

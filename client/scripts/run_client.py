@@ -146,7 +146,8 @@ if __name__ == "__main__":
         thread_1 = executor.submit(tcpdump, args)
         time.sleep(3)
         thread_2 = executor.submit(client_request, args)
-        if (args.migration == 'true'):
+        
+        if (args.migration == 'True'):
             time.sleep(1)
             thread_3 = executor.submit(change_ip, '172.1.0.101', '172.1.0.102')
             wait([thread_3])
