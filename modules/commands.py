@@ -22,13 +22,11 @@ def run_command(command):
 
 def rsync():
     command = f'rsync -ahP --delete {WORKDIR}/ -e ssh -i {SSH_PUBLIC_KEY_PATH} {REMOTE_HOST}'
-    print(command)
     run_command(command)
 
 
 def run_client(test_case, iteration_prefix):
     command = f"python /scripts/run_client.py --mode {test_case.get('mode')} --window_scaling {test_case.get('window_scaling')} --rmin {test_case.get('rmin')} --rdef {test_case.get('rdef')} --rmax {test_case.get('rmax')} --migration {test_case.get('migration')} --pcap {PCAP_PATH}/ --iteration {iteration_prefix}"
-    print(command)
     client_1.exec_run(command)
 
 

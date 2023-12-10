@@ -65,7 +65,6 @@ def tcp_settings(args):
 
 def tcpdump(args):
     command = f"tcpdump -i eth0 -w {args.pcap}/{args.iteration}client_1.pcap -n"
-    logging.info(command)
     logging.info(f"{os.getenv('HOST')}: tcpdump started.")
     run_command(command)
 
@@ -145,7 +144,6 @@ if __name__ == "__main__":
 
         # thread_1 = executor.submit(tshark, args.pcap, args.iteration)
         thread_1 = executor.submit(tcpdump, args)
-        print(thread_1)
         time.sleep(3)
         thread_2 = executor.submit(client_request, args)
         if (args.migration == 'true'):

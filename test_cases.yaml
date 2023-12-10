@@ -1,3 +1,5 @@
+rounds: 1
+
 iterations:
   - mode: http
     size: 0.001M
