@@ -5,6 +5,7 @@ SSH_PUBLIC_KEY_PATH: ../.ssh/mba
 REMOTE_HOST: marco@mba:/Users/Marco/shared
 OUTPUT_PATH: ./shared/logs/output.log
 PCAP_PATH: ./shared/pcap
+QLOG_PATH: ./shared/qlog_client
 TEST_CASES: test_cases.yaml
 
 

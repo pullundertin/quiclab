@@ -7,6 +7,7 @@ from modules.prerequisites import read_configuration
 
 PCAP_PATH = read_configuration().get("PCAP_PATH")
 KEYS_PATH = read_configuration().get("KEYS_PATH")
+QLOG_PATH = read_configuration().get("QLOG_PATH")
 tcp_connection_durations = []
 tcp_handshake_durations = []
 quic_connection_durations = []
@@ -42,7 +43,7 @@ def get_tcp_handshake_time():
                         handshake_type = tls_handshake['tls.handshake.type']
                         time = float(packet["_source"]["layers"]
                                      ["frame"]["frame.time_relative"])
-                        if handshake_type == '20' and ip_source == "172.1.0.101":
+                        if handshake_type == '20' and ip_source == "172.3.0.5":
                             tcp_handshake_durations.append(time)
     return tcp_handshake_durations
 
@@ -125,25 +126,47 @@ def get_quic_handshake_time():
     return quic_handshake_durations
 
 
-# def get_tcp_rtt_statistics():
-#     json_data = read_json_files()
-#     # List to store non-empty tcp.analysis.ack_rtt values
-#     # Extract non-empty tcp.analysis.ack_rtt values
-#     non_empty_ack_rtt_values = [
-#         float(packet["_source"]["layers"]["tcp"]
-#               ["tcp.analysis"]["tcp.analysis.ack_rtt"])
-#         for packet in json_data
-#         if "tcp" in packet["_source"]["layers"] and "tcp.analysis" in packet["_source"]["layers"]["tcp"]
-#         and "tcp.analysis.ack_rtt" in packet["_source"]["layers"]["tcp"]["tcp.analysis"]
-#     ]
+def get_tcp_rtt_statistics():
+    rtt_values = []
+    for filename in os.listdir(PCAP_PATH):
+        if filename.endswith('client_1.pcap.json'):
+            json_file = os.path.join(PCAP_PATH, filename)
+            json_data = read_json_files(json_file)
+            # Extract non-empty tcp.analysis.ack_rtt values for packets with IP '172.3.0.5'
+            rtt_values.extend([
+                float(packet["_source"]["layers"]["tcp"]
+                      ["tcp.analysis"]["tcp.analysis.ack_rtt"])
+                for packet in json_data
+                if "tcp" in packet["_source"]["layers"]
+                and "ip" in packet["_source"]["layers"]
+                and packet["_source"]["layers"]["ip"]["ip.src"] == "172.3.0.5"
+                and "tcp.analysis" in packet["_source"]["layers"]["tcp"]
+                and "tcp.analysis.ack_rtt" in packet["_source"]["layers"]["tcp"]["tcp.analysis"]
+            ])
+    return rtt_values
 
-#     print('RTT Median', statistics.median(non_empty_ack_rtt_values))
-#     print('RTT Min', min(non_empty_ack_rtt_values))
-#     print('RTT Max', max(non_empty_ack_rtt_values))
+
+def get_quic_rtt_statistics():
+    min_rtt_values = []
+    smoothed_rtt_values = []
+    for filename in os.listdir(QLOG_PATH):
+        if filename.endswith('.qlog'):
+            json_file = os.path.join(QLOG_PATH, filename)
+            json_data = read_json_files(json_file)
+            for packet in json_data["traces"]:
+                for event in packet["events"]:
+                    if 'min_rtt' in event["data"]:
+                        min_rtt_values.append(event["data"]["min_rtt"]/1000)
+                        smoothed_rtt_values.append(
+                            event["data"]["smoothed_rtt"]/1000)
+    return min_rtt_values, smoothed_rtt_values
+
 
 def get_statistics():
+    tcp_rtt = get_tcp_rtt_statistics()
     tcp_handshake_durations = get_tcp_handshake_time()
     tcp_connection_durations = get_tcp_connection_time()
+    quic_min_rtt, quic_smoothed_rtt = get_quic_rtt_statistics()
     quic_handshake_durations = get_quic_handshake_time()
     quic_connection_durations = get_quic_connection_time()
 
@@ -161,8 +184,11 @@ def get_statistics():
         logging.info(f"{label}_minimum: {minimum} ms")
         logging.info(f"{label}_maximum: {maximum} ms")
 
+    calculate_and_log_stats(tcp_rtt, 'tcp_rtt')
     calculate_and_log_stats(tcp_handshake_durations, 'tcp_hs')
     calculate_and_log_stats(tcp_connection_durations, 'tcp_conn')
+    calculate_and_log_stats(quic_min_rtt, 'quic_min_rtt')
+    calculate_and_log_stats(quic_smoothed_rtt, 'quic_smoothed_rtt')
     calculate_and_log_stats(quic_handshake_durations, 'quic_hs')
     calculate_and_log_stats(quic_connection_durations, 'quic_conn')
     for i in tcp_handshake_durations:
