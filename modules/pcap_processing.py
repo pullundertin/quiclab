@@ -2,6 +2,7 @@ import os
 import logging
 import json
 import statistics
+from collections import Counter, defaultdict
 from modules.commands import run_command
 from modules.prerequisites import read_configuration
 
@@ -20,7 +21,7 @@ def convert_pcap_to_json():
             pcap_file = os.path.join(PCAP_PATH, filename)
             json_output = f'{pcap_file}.json'
             logging.info(f"writing {json_output}")
-            command = f"tshark -o tls.keylog_file:{KEYS_PATH} -r {pcap_file} -T json > {json_output}"
+            command = f"tshark -o tls.keylog_file:{KEYS_PATH} -r {pcap_file} -T ek > {json_output}"
             run_command(command)
 
 
@@ -29,120 +30,169 @@ def read_json_files(file_path):
         return json.load(file)
 
 
-def get_tcp_handshake_time():
+def read_json_objects_from_file(file_path):
+    with open(file_path) as file:
+        lines = file.readlines()
+
+    json_objects = []
+    for line in lines:
+        json_objects.append(json.loads(line))
+
+    return json_objects
+
+
+def traverse_pcap_directory():
+    json_files = []
     for filename in os.listdir(PCAP_PATH):
         if filename.endswith('client_1.pcap.json'):
-            json_file = os.path.join(PCAP_PATH, filename)
+            json_files.append(os.path.join(PCAP_PATH, filename))
+    return json_files
 
-            json_data = read_json_files(json_file)
-            for packet in json_data:
-                if 'tls' in packet["_source"]["layers"] and 'tls.record' in packet["_source"]["layers"]["tls"] and 'tls.handshake' in packet["_source"]["layers"]["tls"]["tls.record"]:
-                    tls_handshake = packet["_source"]["layers"]["tls"]["tls.record"]["tls.handshake"]
-                    ip_source = packet["_source"]["layers"]["ip"]["ip.src"]
-                    if 'tls.handshake.type' in tls_handshake:
-                        handshake_type = tls_handshake['tls.handshake.type']
-                        time = float(packet["_source"]["layers"]
-                                     ["frame"]["frame.time_relative"])
-                        if handshake_type == '20' and ip_source == "172.3.0.5":
-                            tcp_handshake_durations.append(time)
+
+def contains_tcp_key(packet):
+    return 'layers' in packet and 'tcp' in packet['layers']
+
+
+def contains_quic_key(packet):
+    return 'layers' in packet and 'quic' in packet['layers']
+
+
+def get_tcp_handshake_time():
+    tcp_handshake_durations = []
+    for json_file in traverse_pcap_directory():
+        json_objects = read_json_objects_from_file(json_file)
+        for packet in json_objects:
+            if contains_tcp_key(packet):
+                results = search_key_value(
+                    json_objects, 'tls_tls_handshake_type', '20')
+
+                frame_time_relative = float(
+                    results[0]['layers']['frame']['frame_frame_time_relative'])
+                tcp_handshake_durations.append(frame_time_relative)
+                break
+
     return tcp_handshake_durations
 
 
 def get_tcp_connection_time():
     tcp_connection_durations = []
+    for json_file in traverse_pcap_directory():
+        for packet in read_json_objects_from_file(json_file):
+            layers = packet.get('layers', {})
+            ip_layer = layers.get('ip', {})
+            tcp_layer = layers.get('tcp', {})
 
-    for filename in os.listdir(PCAP_PATH):
-        if filename.endswith('client_1.pcap.json'):
-            json_file = os.path.join(PCAP_PATH, filename)
+            src_ip = ip_layer.get('ip_ip_src')
+            flags_fin = tcp_layer.get('tcp_tcp_flags_fin')
+            seq_raw = tcp_layer.get('tcp_tcp_seq_raw')
+            ack_raw = tcp_layer.get('tcp_tcp_ack_raw')
 
-            json_data = read_json_files(json_file)
-            fin_ack_seq = None
+            if src_ip == '172.3.0.5' and flags_fin:
+                fin_ack_seq = ack_raw
+                break
+        else:
+            continue  # No FIN packet found
 
-            # Find the server's FIN packet
-            for packet in json_data:
-                if 'tcp' in packet.get('_source', {}).get('layers', {}):
-                    ip = packet["_source"]["layers"]["ip"]
-                    tcp = packet["_source"]["layers"]["tcp"]
-                    tcp_flags = tcp["tcp.flags_tree"]
+        for packet in read_json_objects_from_file(json_file):
+            layers = packet.get('layers', {})
+            ip_layer = layers.get('ip', {})
+            tcp_layer = layers.get('tcp', {})
 
-                    if ip["ip.src"] == "172.3.0.5" and tcp_flags.get("tcp.flags.fin") == "1":
-                        fin_ack_seq = tcp["tcp.ack_raw"]
-                        break
+            src_ip = ip_layer.get('ip_ip_src')
+            seq_raw_packet = tcp_layer.get('tcp_tcp_seq_raw')
 
-            # Find the client's packet with the matching sequence number
-            if fin_ack_seq:
-                for packet in json_data:
-                    if 'ip' in packet["_source"]["layers"]:
-                        ip = packet["_source"]["layers"]["ip"]
-                        tcp = packet["_source"]["layers"]["tcp"]
-
-                        if ip["ip.src"] == "172.1.0.101" and tcp.get("tcp.seq_raw") == fin_ack_seq:
-                            tcp_connection_duration = float(
-                                packet["_source"]["layers"]["frame"]["frame.time_relative"])
-                            tcp_connection_durations.append(
-                                tcp_connection_duration)
-                            break
+            if src_ip == '172.1.0.101' and seq_raw_packet == fin_ack_seq:
+                time_relative = float(
+                    packet['layers']['frame']['frame_frame_time_relative'])
+                tcp_connection_durations.append(time_relative)
+                break
 
     return tcp_connection_durations
 
 
 def get_quic_connection_time():
-    for filename in os.listdir(PCAP_PATH):
-        if filename.endswith('client_1.pcap.json'):
-            json_file = os.path.join(PCAP_PATH, filename)
-
-            json_data = read_json_files(json_file)
-            quic_connection_duration = None
-            for packet in json_data:
-                if 'quic' in packet.get('_source', {}).get('layers', {}):
-                    frame_type = packet["_source"]["layers"]["quic"]["quic.frame"]["quic.frame_type"]
-                    time = float(packet["_source"]["layers"]
-                                 ["frame"]["frame.time_relative"])
+    for json_file in traverse_pcap_directory():
+        json_objects = read_json_objects_from_file(json_file)
+        for packet in json_objects:
+            if contains_quic_key(packet):
+                if 'layers' in packet and 'quic' in packet['layers'] and 'quic_quic_frame_type' in packet['layers']['quic']:
+                    frame_type = packet["layers"]["quic"]["quic_quic_frame_type"]
+                    time = float(packet["layers"]
+                                 ["frame"]["frame_frame_time_relative"])
                     if frame_type == '29':
-                        quic_connection_duration = time
-                if quic_connection_duration:
-                    quic_connection_durations.append(quic_connection_duration)
+                        quic_connection_durations.append(time)
+
     return quic_connection_durations
 
 
-def get_quic_handshake_time():
-    for filename in os.listdir(PCAP_PATH):
-        if filename.endswith('client_1.pcap.json'):
-            json_file = os.path.join(PCAP_PATH, filename)
+def search_key_value(json_objects, search_key, search_value):
+    results = []
 
-            json_data = read_json_files(json_file)
-            for packet in json_data:
-                if 'quic' in packet["_source"]["layers"]:
-                    quic_frame = packet["_source"]["layers"]["quic"].get(
-                        "quic.frame", {})
-                    tls_handshake = quic_frame.get(
-                        "tls", {}).get("tls.handshake", {})
-                    if 'tls.handshake.type' in tls_handshake:
-                        handshake_type = tls_handshake['tls.handshake.type']
-                        time = float(packet["_source"]["layers"]
-                                     ["frame"]["frame.time_relative"])
-                        if handshake_type == '20':
-                            quic_handshake_durations.append(time)
+    for obj in json_objects:
+        result, root = search_key_value_recursive(
+            obj, search_key, search_value, obj)
+        if result is not None:
+            results.append(root)
+
+    return results
+
+
+def search_key_value_recursive(obj, search_key, search_value, root):
+    if isinstance(obj, dict):
+        if search_key in obj and obj[search_key] == search_value:
+            return obj, root
+        else:
+            for value in obj.values():
+                result, root_element = search_key_value_recursive(
+                    value, search_key, search_value, root)
+                if result is not None:
+                    return result, root_element
+    elif isinstance(obj, list):
+        for item in obj:
+            result, root_element = search_key_value_recursive(
+                item, search_key, search_value, root)
+            if result is not None:
+                return result, root_element
+    return None, None
+
+
+def get_quic_handshake_time():
+    for json_file in traverse_pcap_directory():
+        json_objects = read_json_objects_from_file(json_file)
+        for packet in json_objects:
+            if contains_quic_key(packet):
+                results = search_key_value(
+                    json_objects, 'tls_tls_handshake_type', '20')
+
+                frame_time_relative = float(
+                    results[0]['layers']['frame']['frame_frame_time_relative'])
+                quic_handshake_durations.append(frame_time_relative)
+                break
+
+                # if 'layers' in packet and 'quic' in packet['layers'] and 'tls' in packet["layers"]['quic'] and 'tls_tls_handshake_type' in packet['layers']['quic']['tls']:
+                #     print(packet["layers"]["quic"]["tls"]
+                #           ["tls_tls_handshake_type"])
+                #     frame_type = packet["layers"]["quic"]["tls"]["tls_tls_handshake_type"]
+                #     frame_time_relative = float(packet["layers"]
+                #                                 ["frame"]["frame_frame_time_relative"])
+                #     for type in frame_type:
+                #         if type == '20':
+                #             quic_handshake_durations.append(
+                #                 frame_time_relative)
+
     return quic_handshake_durations
 
 
 def get_tcp_rtt_statistics():
     rtt_values = []
-    for filename in os.listdir(PCAP_PATH):
-        if filename.endswith('client_1.pcap.json'):
-            json_file = os.path.join(PCAP_PATH, filename)
-            json_data = read_json_files(json_file)
-            # Extract non-empty tcp.analysis.ack_rtt values for packets with IP '172.3.0.5'
-            rtt_values.extend([
-                float(packet["_source"]["layers"]["tcp"]
-                      ["tcp.analysis"]["tcp.analysis.ack_rtt"])
-                for packet in json_data
-                if "tcp" in packet["_source"]["layers"]
-                and "ip" in packet["_source"]["layers"]
-                and packet["_source"]["layers"]["ip"]["ip.src"] == "172.3.0.5"
-                and "tcp.analysis" in packet["_source"]["layers"]["tcp"]
-                and "tcp.analysis.ack_rtt" in packet["_source"]["layers"]["tcp"]["tcp.analysis"]
-            ])
+    for json_file in traverse_pcap_directory():
+        json_objects = read_json_objects_from_file(json_file)
+        for packet in json_objects:
+            if 'layers' in packet:
+                if 'ip' in packet['layers'] and packet['layers']['ip']['ip_ip_src'] == '172.3.0.5':
+                    if 'tcp' in packet['layers'] and 'tcp_tcp_analysis_ack_rtt' in packet['layers']['tcp']:
+                        rtt_values.append(
+                            float(packet['layers']['tcp']['tcp_tcp_analysis_ack_rtt']))
     return rtt_values
 
 
@@ -152,13 +202,30 @@ def get_quic_rtt_statistics():
     for filename in os.listdir(QLOG_PATH):
         if filename.endswith('.qlog'):
             json_file = os.path.join(QLOG_PATH, filename)
-            json_data = read_json_files(json_file)
-            for packet in json_data["traces"]:
-                for event in packet["events"]:
-                    if 'min_rtt' in event["data"]:
-                        min_rtt_values.append(event["data"]["min_rtt"]/1000)
-                        smoothed_rtt_values.append(
-                            event["data"]["smoothed_rtt"]/1000)
+            # json format - aioquic
+            try:
+                json_data = read_json_files(json_file)
+                if isinstance(json_data, dict) and 'traces' in json_data:
+                    for packet in json_data["traces"]:
+                        for event in packet["events"]:
+                            if 'min_rtt' in event["data"]:
+                                min_rtt_values.append(
+                                    event["data"]["min_rtt"]/1000)
+                                smoothed_rtt_values.append(
+                                    event["data"]["smoothed_rtt"]/1000)
+            # ndjson format - quicgo
+            except json.JSONDecodeError:
+                with open(json_file, 'r') as f:
+                    ndjson_data = f.read()
+                    # Split the data into lines and parse each line as JSON
+                    for line in ndjson_data.strip().split('\n'):
+                        json_data = json.loads(line)
+                        if "data" in json_data:
+                            if "min_rtt" in json_data["data"]:
+                                min_rtt_values.append(
+                                    json_data["data"]["min_rtt"]/1000)
+                                smoothed_rtt_values.append(
+                                    json_data["data"]["smoothed_rtt"]/1000)
     return min_rtt_values, smoothed_rtt_values
 
 
@@ -180,6 +247,7 @@ def get_statistics():
         minimum = round(min(multiplied_data), 2)
         maximum = round(max(multiplied_data), 2)
 
+        logging.info(f"{label}_data: {data}")
         logging.info(f"{label}_median: {median} ms")
         logging.info(f"{label}_minimum: {minimum} ms")
         logging.info(f"{label}_maximum: {maximum} ms")
@@ -191,11 +259,3 @@ def get_statistics():
     calculate_and_log_stats(quic_smoothed_rtt, 'quic_smoothed_rtt')
     calculate_and_log_stats(quic_handshake_durations, 'quic_hs')
     calculate_and_log_stats(quic_connection_durations, 'quic_conn')
-    for i in tcp_handshake_durations:
-        print('hs', i)
-    for i in tcp_connection_durations:
-        print('conn', i)
-    for i in quic_handshake_durations:
-        print(i)
-    for i in quic_connection_durations:
-        print(i)

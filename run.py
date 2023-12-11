@@ -26,11 +26,9 @@ def run_tests():
     test_case_settings = read_test_cases()
     test_cases = test_case_settings.get('iterations')
     rounds = test_case_settings.get('rounds')
-    iteration_prefixes = [f"{r}:{i}_" for r in range(
-        rounds) for i in range(1, len(test_cases) + 1)]
 
     for round in range(rounds):
-        for index, test_case in enumerate(test_case_settings.get('iterations'), start=1):
+        for index, test_case in enumerate(test_cases, start=1):
             iteration_prefix = f"{round}:{index}_"
             run_test_case(iteration_prefix, test_case)
 
@@ -46,5 +44,5 @@ if __name__ == "__main__":
     # run_tests()
     # convert_pcap_to_json()
     get_statistics()
-    # rsync()
+    rsync()
     logging.info("All tasks are completed.")
