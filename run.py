@@ -40,9 +40,9 @@ if __name__ == "__main__":
     TEST_CASES = config.get("TEST_CASES")
 
     log_config()
-    # reset_workdir()
-    # run_tests()
-    # convert_pcap_to_json()
+    reset_workdir()
+    run_tests()
+    convert_pcap_to_json()
     get_statistics()
     rsync()
     logging.info("All tasks are completed.")

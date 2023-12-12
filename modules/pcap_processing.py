@@ -4,7 +4,6 @@ import json
 import statistics
 from modules.commands import run_command
 from modules.prerequisites import read_configuration
-from jsonpath_ng import jsonpath, parse
 
 PCAP_PATH = read_configuration().get("PCAP_PATH")
 KEYS_PATH = read_configuration().get("KEYS_PATH")
