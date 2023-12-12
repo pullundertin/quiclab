@@ -21,7 +21,7 @@ def run_command(command):
 
 
 def rsync():
-    command = f'rsync -ahP --delete {WORKDIR}/ -e ssh -i {SSH_PUBLIC_KEY_PATH} {REMOTE_HOST}'
+    command = f"rsync -ahP --delete {WORKDIR}/ '-e ssh -i {SSH_PUBLIC_KEY_PATH}' {REMOTE_HOST}"
     run_command(command)
 
 
@@ -36,11 +36,21 @@ def traffic_control(test_case):
     router_2.exec_run(command)
 
 
-def run_server(test_case, iteration_prefix):
-    command = f"python /scripts/run_server.py --mode {test_case.get('mode')} --size {test_case.get('size')} --pcap {PCAP_PATH} --iteration {iteration_prefix}"
+def run_server():
+    command = f"python /scripts/run_server.py"
     server.exec_run(command)
 
 
-def shutdown_server(test_case, iteration_prefix):
-    command = f"python /scripts/stop_server.py --mode {test_case.get('mode')} --iteration {iteration_prefix}"
+def run_server_tracing(test_case, iteration_prefix):
+    command = f"python /scripts/run_server_tracing.py --mode {test_case['mode']} --size {test_case.get('size')} --pcap {PCAP_PATH} --iteration {iteration_prefix}"
+    server.exec_run(command)
+
+
+def stop_server():
+    command = f"python /scripts/stop_server.py"
+    server.exec_run(command)
+
+
+def stop_server_tracing(test_case, iteration_prefix):
+    command = f"python /scripts/stop_server_tracing.py --mode {test_case['mode']} --iteration {iteration_prefix}"
     server.exec_run(command)

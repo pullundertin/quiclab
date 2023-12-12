@@ -1,9 +1,9 @@
 import time
-import concurrent.futures
 from concurrent.futures import ThreadPoolExecutor
+from concurrent.futures import wait
 import logging
 from modules.pcap_processing import convert_pcap_to_json, get_statistics
-from modules.commands import rsync, run_client, traffic_control, run_server, shutdown_server
+from modules.commands import rsync, run_client, traffic_control, run_server, run_server_tracing, stop_server, stop_server_tracing
 from modules.logs import log_config
 from modules.prerequisites import reset_workdir, read_test_cases, read_configuration
 
@@ -11,13 +11,17 @@ from modules.prerequisites import reset_workdir, read_test_cases, read_configura
 def run_test_case(iteration_prefix, test_case):
     try:
         with ThreadPoolExecutor() as executor:
-            executor.submit(run_server, test_case, iteration_prefix)
+            logging.info(
+                f"//////   TEST CASE {iteration_prefix}{test_case['mode']} ///////")
+            executor.submit(run_server_tracing, test_case, iteration_prefix)
             executor.submit(traffic_control, test_case)
             time.sleep(3)
             thread_3 = executor.submit(run_client, test_case, iteration_prefix)
-            concurrent.futures.wait([thread_3])
-            shutdown_server(test_case, iteration_prefix)
-
+            wait([thread_3])
+            thread_4 = executor.submit(
+                stop_server_tracing, test_case, iteration_prefix)
+            wait([thread_4])
+            logging.info(f"//////////////////////////////////////////")
     except Exception as e:
         logging.error(f"An error occurred: {e}")
 
@@ -41,8 +45,19 @@ if __name__ == "__main__":
 
     log_config()
     reset_workdir()
-    run_tests()
-    convert_pcap_to_json()
-    get_statistics()
-    rsync()
-    logging.info("All tasks are completed.")
+
+    try:
+        with ThreadPoolExecutor() as executor:
+            thread_1 = executor.submit(run_server)
+            time.sleep(3)
+            thread_2 = executor.submit(run_tests)
+            wait([thread_2])
+            stop_server()
+            convert_pcap_to_json()
+            get_statistics()
+            rsync()
+            logging.info("All tasks are completed.")
+
+    except Exception as e:
+        # logging.error(f"{os.getenv('HOST')}: Error: {str(e)}")
+        raise
