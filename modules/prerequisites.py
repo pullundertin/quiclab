@@ -13,44 +13,31 @@ def reset_workdir():
         f'{WORKDIR}/keys',
         f'{WORKDIR}/tcpprobe']
 
-    def list_and_delete_files_in_folder(folder):
+    def delete_file(file_path):
+        try:
+            if os.path.isfile(file_path):
+                os.remove(file_path)
+                logging.info(f"File '{file_path}' deleted.")
+        except Exception as e:
+            logging.error(f"Error deleting file '{file_path}': {e}")
+
+    def delete_files_in_folder(folder):
         for filename in os.listdir(folder):
             file_path = os.path.join(folder, filename)
-            try:
-                if os.path.isfile(file_path):
-                    os.remove(file_path)
-                    logging.info(f"File '{file_path}' deleted.")
-            except Exception as e:
-                logging.info(f"Error: {e}")
+            delete_file(file_path)
 
-    def loop_through_folders_and_delete_files(folders):
+    def delete_files_in_folders(folders):
         for folder in folders:
             if os.path.exists(folder):
-                list_and_delete_files_in_folder(folder)
+                delete_files_in_folder(folder)
             else:
                 logging.info(f"Folder '{folder}' not found.")
 
-    loop_through_folders_and_delete_files(folders)
+    delete_files_in_folders(folders)
+
 
 
 def read_test_cases():
-    # test_cases = []
-    # with open(file_name, 'r') as file:
-    #     test_case = {}
-    #     for line in file:
-    #         line = line.strip()
-    #         if line.startswith('Iteration'):
-    #             if test_case:
-    #                 test_cases.append(test_case)
-    #             test_case = {}
-    #         elif ': ' in line:
-    #             key, value = line.split(': ', 1)
-    #             test_case[key.strip()] = value.strip()
-
-    #     if test_case:
-    #         test_cases.append(test_case)
-
-    # return test_cases
     with open('./test_cases.yaml', 'r') as file:
         test_cases = yaml.safe_load(file)
     return test_cases

@@ -2,17 +2,13 @@ import os
 import logging
 import json
 import statistics
-from collections import Counter, defaultdict
 from modules.commands import run_command
 from modules.prerequisites import read_configuration
+from jsonpath_ng import jsonpath, parse
 
 PCAP_PATH = read_configuration().get("PCAP_PATH")
 KEYS_PATH = read_configuration().get("KEYS_PATH")
 QLOG_PATH = read_configuration().get("QLOG_PATH")
-tcp_connection_durations = []
-tcp_handshake_durations = []
-quic_connection_durations = []
-quic_handshake_durations = []
 
 
 def convert_pcap_to_json():
@@ -23,11 +19,6 @@ def convert_pcap_to_json():
             logging.info(f"writing {json_output}")
             command = f"tshark -o tls.keylog_file:{KEYS_PATH} -r {pcap_file} -T ek > {json_output}"
             run_command(command)
-
-
-def read_json_files(file_path):
-    with open(file_path, 'r') as file:
-        return json.load(file)
 
 
 def read_json_objects_from_file(file_path):
@@ -42,27 +33,24 @@ def read_json_objects_from_file(file_path):
 
 
 def traverse_pcap_directory():
-    json_files = []
-    for filename in os.listdir(PCAP_PATH):
-        if filename.endswith('client_1.pcap.json'):
-            json_files.append(os.path.join(PCAP_PATH, filename))
-    return json_files
+    return [os.path.join(PCAP_PATH, filename) for filename in os.listdir(PCAP_PATH) if filename.endswith('client_1.pcap.json')]
 
 
-def contains_tcp_key(packet):
-    return 'layers' in packet and 'tcp' in packet['layers']
+def traverse_qlog_directory():
+    return [os.path.join(QLOG_PATH, filename) for filename in os.listdir(QLOG_PATH) if filename.endswith('.qlog')]
 
 
-def contains_quic_key(packet):
-    return 'layers' in packet and 'quic' in packet['layers']
+def check_if_packet_contains_protocol(packet, key):
+    return 'layers' in packet and key in packet['layers']
 
 
 def get_tcp_handshake_time():
     tcp_handshake_durations = []
+
     for json_file in traverse_pcap_directory():
         json_objects = read_json_objects_from_file(json_file)
         for packet in json_objects:
-            if contains_tcp_key(packet):
+            if check_if_packet_contains_protocol(packet, 'tcp'):
                 results = search_key_value(
                     json_objects, 'tls_tls_handshake_type', '20')
 
@@ -76,8 +64,10 @@ def get_tcp_handshake_time():
 
 def get_tcp_connection_time():
     tcp_connection_durations = []
+
     for json_file in traverse_pcap_directory():
-        for packet in read_json_objects_from_file(json_file):
+        packets = read_json_objects_from_file(json_file)
+        for packet in packets:
             layers = packet.get('layers', {})
             ip_layer = layers.get('ip', {})
             tcp_layer = layers.get('tcp', {})
@@ -93,7 +83,7 @@ def get_tcp_connection_time():
         else:
             continue  # No FIN packet found
 
-        for packet in read_json_objects_from_file(json_file):
+        for packet in packets:
             layers = packet.get('layers', {})
             ip_layer = layers.get('ip', {})
             tcp_layer = layers.get('tcp', {})
@@ -111,18 +101,33 @@ def get_tcp_connection_time():
 
 
 def get_quic_connection_time():
+    quic_connection_durations = []
+
     for json_file in traverse_pcap_directory():
         json_objects = read_json_objects_from_file(json_file)
         for packet in json_objects:
-            if contains_quic_key(packet):
-                if 'layers' in packet and 'quic' in packet['layers'] and 'quic_quic_frame_type' in packet['layers']['quic']:
-                    frame_type = packet["layers"]["quic"]["quic_quic_frame_type"]
-                    time = float(packet["layers"]
-                                 ["frame"]["frame_frame_time_relative"])
+            if check_if_packet_contains_protocol(packet, 'quic'):
+                quic_data = packet.get('layers', {}).get('quic', {})
+                if quic_data and 'quic_quic_frame_type' in quic_data:
+                    frame_type = quic_data['quic_quic_frame_type']
+                    frame_time_relative = float(
+                        packet['layers']['frame']['frame_frame_time_relative'])
                     if frame_type == '29':
-                        quic_connection_durations.append(time)
+                        quic_connection_durations.append(frame_time_relative)
 
     return quic_connection_durations
+
+
+# def search_key_value(json_objects, search_key, search_value):
+#     results = []
+#     json_path_expression = f"$..*[?(@.{search_key} == '{search_value}')]"
+
+#     for obj in json_objects:
+#         matches = parse(json_path_expression).find(obj)
+#         for match in matches:
+#             results.append(match.value)
+
+#     return results
 
 
 def search_key_value(json_objects, search_key, search_value):
@@ -157,75 +162,79 @@ def search_key_value_recursive(obj, search_key, search_value, root):
 
 
 def get_quic_handshake_time():
+    quic_handshake_durations = []
+
     for json_file in traverse_pcap_directory():
         json_objects = read_json_objects_from_file(json_file)
         for packet in json_objects:
-            if contains_quic_key(packet):
+            if check_if_packet_contains_protocol(packet, 'quic'):
                 results = search_key_value(
                     json_objects, 'tls_tls_handshake_type', '20')
 
-                frame_time_relative = float(
-                    results[0]['layers']['frame']['frame_frame_time_relative'])
-                quic_handshake_durations.append(frame_time_relative)
-                break
-
-                # if 'layers' in packet and 'quic' in packet['layers'] and 'tls' in packet["layers"]['quic'] and 'tls_tls_handshake_type' in packet['layers']['quic']['tls']:
-                #     print(packet["layers"]["quic"]["tls"]
-                #           ["tls_tls_handshake_type"])
-                #     frame_type = packet["layers"]["quic"]["tls"]["tls_tls_handshake_type"]
-                #     frame_time_relative = float(packet["layers"]
-                #                                 ["frame"]["frame_frame_time_relative"])
-                #     for type in frame_type:
-                #         if type == '20':
-                #             quic_handshake_durations.append(
-                #                 frame_time_relative)
+                if results:
+                    frame_time_relative = float(
+                        results[0]['layers']['frame']['frame_frame_time_relative'])
+                    quic_handshake_durations.append(frame_time_relative)
+                    break
 
     return quic_handshake_durations
 
 
 def get_tcp_rtt_statistics():
     rtt_values = []
+
     for json_file in traverse_pcap_directory():
         json_objects = read_json_objects_from_file(json_file)
         for packet in json_objects:
-            if 'layers' in packet:
-                if 'ip' in packet['layers'] and packet['layers']['ip']['ip_ip_src'] == '172.3.0.5':
-                    if 'tcp' in packet['layers'] and 'tcp_tcp_analysis_ack_rtt' in packet['layers']['tcp']:
-                        rtt_values.append(
-                            float(packet['layers']['tcp']['tcp_tcp_analysis_ack_rtt']))
+            layers = packet.get('layers', {})
+            ip_layer = layers.get('ip', {})
+            tcp_layer = layers.get('tcp', {})
+
+            if (
+                'ip' in layers and
+                ip_layer.get('ip_ip_src') == '172.3.0.5' and
+                'tcp' in layers and
+                'tcp_tcp_analysis_ack_rtt' in tcp_layer
+            ):
+                rtt_values.append(float(tcp_layer['tcp_tcp_analysis_ack_rtt']))
+
     return rtt_values
 
 
 def get_quic_rtt_statistics():
     min_rtt_values = []
     smoothed_rtt_values = []
-    for filename in os.listdir(QLOG_PATH):
-        if filename.endswith('.qlog'):
-            json_file = os.path.join(QLOG_PATH, filename)
-            # json format - aioquic
-            try:
-                json_data = read_json_files(json_file)
-                if isinstance(json_data, dict) and 'traces' in json_data:
-                    for packet in json_data["traces"]:
-                        for event in packet["events"]:
-                            if 'min_rtt' in event["data"]:
-                                min_rtt_values.append(
-                                    event["data"]["min_rtt"]/1000)
-                                smoothed_rtt_values.append(
-                                    event["data"]["smoothed_rtt"]/1000)
-            # ndjson format - quicgo
-            except json.JSONDecodeError:
-                with open(json_file, 'r') as f:
-                    ndjson_data = f.read()
-                    # Split the data into lines and parse each line as JSON
-                    for line in ndjson_data.strip().split('\n'):
-                        json_data = json.loads(line)
-                        if "data" in json_data:
-                            if "min_rtt" in json_data["data"]:
-                                min_rtt_values.append(
-                                    json_data["data"]["min_rtt"]/1000)
-                                smoothed_rtt_values.append(
-                                    json_data["data"]["smoothed_rtt"]/1000)
+    for qlog_file in traverse_qlog_directory():
+        try:
+            with open(qlog_file, 'r') as f:
+                data = f.read()
+                qlog_data = json.loads(data)
+
+            if isinstance(qlog_data, dict) and 'traces' in qlog_data:
+                for packet in qlog_data['traces']:
+                    for event in packet.get('events', []):
+                        data = event.get('data', {})
+                        min_rtt = data.get('min_rtt')
+                        smoothed_rtt = data.get('smoothed_rtt')
+
+                        if min_rtt is not None:
+                            min_rtt_values.append(min_rtt / 1000)
+                        if smoothed_rtt is not None:
+                            smoothed_rtt_values.append(smoothed_rtt / 1000)
+
+        # ndjson format - quicgo
+        except json.JSONDecodeError:
+            with open(qlog_file, 'r') as f:
+                ndqlog_data = f.read()
+                # Split the data into lines and parse each line as JSON
+                for line in ndqlog_data.strip().split('\n'):
+                    qlog_data = json.loads(line)
+                    if "data" in qlog_data:
+                        if "min_rtt" in qlog_data["data"]:
+                            min_rtt_values.append(
+                                qlog_data["data"]["min_rtt"]/1000)
+                            smoothed_rtt_values.append(
+                                qlog_data["data"]["smoothed_rtt"]/1000)
     return min_rtt_values, smoothed_rtt_values
 
 
