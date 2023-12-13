@@ -2,14 +2,11 @@ import os
 import subprocess
 import logging
 import argparse
-import psutil
 from concurrent.futures import ThreadPoolExecutor
 from concurrent.futures import wait
-
-
-# Configure logging
-logging.basicConfig(filename='/shared/logs/output.log', level=logging.INFO,
-                    format='%(asctime)s - %(levelname)s - %(message)s')
+from modules.converter import convert_log_to_csv
+from modules.logs import log_config
+from modules.commands import run_command
 
 
 def arguments():
@@ -25,16 +22,6 @@ def arguments():
     return args
 
 
-def run_command(command):
-    try:
-        process = subprocess.run(
-            command, check=True, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-        logging.info(f"{os.getenv('HOST')}: {process.stdout.decode()}")
-    except subprocess.CalledProcessError as e:
-        logging.info(f"Error on {os.getenv('HOST')}: {e}")
-        logging.info(f"Error {os.getenv('HOST')} output: {e.stderr.decode()}")
-
-
 def tcpprobe(iteration):
     def cat_trace_file_and_write_to_file():
         with open(output_file_path, "w") as output_file:
@@ -43,8 +30,7 @@ def tcpprobe(iteration):
         logging.info(f"{os.getenv('HOST')}: tcpprobe written to file.")
 
     def process_trace_data():
-        command = "python /scripts/converter.py"
-        run_command(command)
+        convert_log_to_csv()
         logging.info(f"{os.getenv('HOST')}: tcpprobe converted.")
 
     def disable_tcptrace():
@@ -67,6 +53,7 @@ def tcpdump():
 
 if __name__ == "__main__":
 
+    log_config()
     args = arguments()
 
     try:

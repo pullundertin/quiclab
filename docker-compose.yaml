@@ -8,26 +8,26 @@ services:
     hostname: client_1
     container_name: client_1
     volumes:
-      - ./client/scripts/:/scripts
-      - ./shared:/shared
-      - ./shared/logs:/shared/logs
-      - ./shared/keys:/shared/keys
-      - ./shared/pcap:/shared/pcap
-      - ./shared/qlog_client:/shared/qlog_client
-      - ./shared/tcpprobe:/shared/tcpprobe
+      - ${CLIENT_SCRIPTS_DIRECTORY}
+      - ${SHARED_DIRECTORY}
+      - ${LOG_DIRECTORY}
+      - ${KEYS_DIRECTORY}
+      - ${PCAP_DIRECTORY}
+      - ${QLOG_DIRECTORY_CLIENT}
+      - ${TCPPROBE_DIRECTORY}
     cap_add:
       - NET_ADMIN
     networks:
       A_client_network:
-        ipv4_address: 172.1.0.101
+        ipv4_address: ${CLIENT_1_IP}
     environment:
-      - TZ=Europe/Berlin
+      - TZ=${TZ}
       - HOST=client_1
-      - LOG_PATH=/shared/logs/client_1.log
-      - KEYS_PATH=/shared/keys/client.key
-      - TICKET_PATH=/shared/keys/ticket.txt
-      - QLOG_PATH=/shared/qlog_client
-      - PCAP_PATH=/shared/pcap/client_1.pcap
+      - LOG_PATH=${LOG_PATH}
+      - KEYS_PATH=${KEYS_PATH}
+      - TICKET_PATH=${TICKET_PATH}
+      - QLOG_PATH_CLIENT=${QLOG_PATH_CLIENT}
+      - PCAP_PATH=${PCAP_PATH}
     stdin_open: true
     tty: true
     command: sh -c "/scripts/setup.sh && tail -f /dev/null"
@@ -39,26 +39,26 @@ services:
     hostname: client_2
     container_name: client_2
     volumes:
-      - ./client/scripts/:/scripts
-      - ./shared:/shared
-      - ./shared/logs:/shared/logs
-      - ./shared/keys:/shared/keys
-      - ./shared/pcap:/shared/pcap
-      - ./shared/qlog_client:/shared/qlog_client
-      - ./shared/tcpprobe:/shared/tcpprobe
+      - ${CLIENT_SCRIPTS_DIRECTORY}
+      - ${SHARED_DIRECTORY}
+      - ${LOG_DIRECTORY}
+      - ${KEYS_DIRECTORY}
+      - ${PCAP_DIRECTORY}
+      - ${QLOG_DIRECTORY_CLIENT}
+      - ${TCPPROBE_DIRECTORY}
     cap_add:
       - NET_ADMIN
     networks:
       A_client_network:
-        ipv4_address: 172.1.0.102
+        ipv4_address: ${CLIENT_2_IP}
     environment:
-      - TZ=Europe/Berlin
+      - TZ=${TZ}
       - HOST=client_2
-      - LOG_PATH=/shared/logs/client_2.log
-      - KEYS_PATH=/shared/keys/client.key
-      - TICKET_PATH=/shared/keys/ticket.txt
-      - QLOG_PATH=/shared/qlog_client
-      - PCAP_PATH=/shared/pcap/client_2.pcap
+      - LOG_PATH=${LOG_PATH}
+      - KEYS_PATH=${KEYS_PATH}
+      - TICKET_PATH=${TICKET_PATH}
+      - QLOG_PATH_CLIENT=${QLOG_PATH_CLIENT}
+      - PCAP_PATH=${PCAP_PATH}
     stdin_open: true
     tty: true
     command: sh -c "/scripts/setup.sh && tail -f /dev/null"
@@ -70,27 +70,26 @@ services:
     hostname: router_1
     container_name: router_1
     volumes:
-      - ./router/scripts/:/scripts
-      - ./shared:/shared
-      - ./shared/logs:/shared/logs
-      - ./shared/pcap:/shared/pcap
+      - ${ROUTER_SCRIPTS_DIRECTORY}
+      - ${SHARED_DIRECTORY}
+      - ${LOG_DIRECTORY}
+      - ${PCAP_DIRECTORY}
     cap_add:
       - NET_ADMIN
     networks:
       A_client_network:
-        ipv4_address: 172.1.0.3
+        ipv4_address: ${ROUTER_1_CLIENT_SIDE_IP}
       B_wan_network:
-        ipv4_address: 172.2.0.3
+        ipv4_address: ${ROUTER_1_WAN_SIDE_IP}
     environment:
-      - TZ=Europe/Berlin
+      - TZ=${TZ}
       - HOST=router_1
-      - LOG_PATH=/shared/logs/router_1.log
-      - PCAP_PATH_1=/shared/pcap/router_1_eth0.pcap
-      - PCAP_PATH_2=/shared/pcap/router_1_eth1.pcap
-      - SUBNET_1=172.2.0.0/24
-      - SUBNET_2=172.3.0.0/24
-      - GW_1=172.2.0.3
-      - GW_2=172.2.0.4
+      - LOG_PATH=${LOG_PATH}
+      - PCAP_PATH=${PCAP_PATH}
+      - SUBNET_1=${WAN_SUBNET}
+      - SUBNET_2=${SERVER_SUBNET}
+      - GW_1=${ROUTER_1_WAN_SIDE_IP}
+      - GW_2=${ROUTER_2_WAN_SIDE_IP}
       - IFACE=eth1
 
     command: sh -c "/scripts/setup.sh && tail -f /dev/null"
@@ -103,27 +102,26 @@ services:
     hostname: router_2
     container_name: router_2
     volumes:
-      - ./router/scripts/:/scripts
-      - ./shared:/shared
-      - ./shared/logs:/shared/logs
-      - ./shared/pcap:/shared/pcap
+      - ${ROUTER_SCRIPTS_DIRECTORY}
+      - ${SHARED_DIRECTORY}
+      - ${LOG_DIRECTORY}
+      - ${PCAP_DIRECTORY}
     cap_add:
       - NET_ADMIN
     networks:
       B_wan_network:
-        ipv4_address: 172.2.0.4
+        ipv4_address: ${ROUTER_2_WAN_SIDE_IP}
       C_server_network:
-        ipv4_address: 172.3.0.4
+        ipv4_address: ${ROUTER_2_SERVER_SIDE_IP}
     environment:
-      - TZ=Europe/Berlin
+      - TZ=${TZ}
       - HOST=router_2
-      - LOG_PATH=/shared/logs/router_2.log
-      - PCAP_PATH_1=/shared/pcap/router_2_eth0.pcap
-      - PCAP_PATH_2=/shared/pcap/router_2_eth1.pcap
-      - SUBNET_1=172.1.0.0/24
-      - SUBNET_2=172.2.0.0/24
-      - GW_1=172.2.0.3
-      - GW_2=172.2.0.4
+      - LOG_PATH=${LOG_PATH}
+      - PCAP_PATH=${PCAP_PATH}
+      - SUBNET_1=${CLIENT_SUBNET}
+      - SUBNET_2=${WAN_SUBNET}
+      - GW_1=${ROUTER_1_WAN_SIDE_IP}
+      - GW_2=${ROUTER_2_WAN_SIDE_IP}
       - IFACE=eth0
 
     command: sh -c "/scripts/setup.sh && tail -f /dev/null"
@@ -136,27 +134,28 @@ services:
     hostname: server
     container_name: server
     volumes:
-      - ./server/scripts/:/scripts
-      - ./server/data/:/data
-      - ./shared:/shared
-      - ./shared/logs:/shared/logs
-      - ./shared/keys:/shared/keys
-      - ./shared/pcap:/shared/pcap
-      - ./shared/qlog_server:/shared/qlog_server
-      - ./shared/tcpprobe:/shared/tcpprobe
+      - ${SERVER_SCRIPTS_DIRECTORY}
+      - ${SERVER_DATA_DIRECTORY}
+      - ${SHARED_DIRECTORY}
+      - ${LOG_DIRECTORY}
+      - ${KEYS_DIRECTORY}
+      - ${PCAP_DIRECTORY}
+      - ${QLOG_DIRECTORY_SERVER}
+      - ${TCPPROBE_DIRECTORY}
     cap_add:
       - NET_ADMIN
     networks:
       C_server_network:
-        ipv4_address: 172.3.0.5
+        ipv4_address: ${SERVER_IP}
     ports:
       - "8086:8086"
     environment:
-      - TZ=Europe/Berlin
+      - TZ=${TZ}
       - HOST=server
-      - LOG_PATH=/shared/logs/server.log
-      - QLOG_PATH=/shared/qlog_server
-      - PCAP_PATH=/shared/pcap/server.pcap
+      - LOG_PATH=${LOG_PATH}
+      - QLOG_PATH_SERVER=${QLOG_PATH_SERVER}
+      - PCAP_PATH=${PCAP_PATH}
+      - DATA_PATH=${DATA_PATH}
 
     command: sh -c "/scripts/setup.sh && tail -f /dev/null"
     stdin_open: true
@@ -169,7 +168,7 @@ services:
       - grafana-storage:/var/lib/grafana
     networks:
       A_client_network:
-        ipv4_address: 172.1.0.52
+        ipv4_address: ${GRAFANA_SERVER_IP}
     ports:
       - "3000:3000"
     environment:
@@ -185,8 +184,8 @@ services:
     ports:
       - "80:80"
     volumes:
-      - ./server/scripts/:/scripts
-      - ./shared:/shared
+      - ${SERVER_SCRIPTS_DIRECTORY}
+      - ${SHARED_DIRECTORY}
     command: sh -c "/scripts/setup_file_server.sh && tail -f /dev/null"
     stdin_open: true
     tty: true
@@ -198,8 +197,8 @@ services:
     ports:
       - "8080:8080"
     volumes:
-      - ./server/scripts/:/scripts
-      - ./shared:/shared
+      - ${SERVER_SCRIPTS_DIRECTORY}
+      - ${SHARED_DIRECTORY}
     command: sh -c "/scripts/setup_qvis_server.sh && tail -f /dev/null"
     stdin_open: true
     tty: true
@@ -211,14 +210,14 @@ networks:
     driver: bridge
     ipam:
       config:
-        - subnet: 172.1.0.0/24
+        - subnet: ${CLIENT_SUBNET}
   B_wan_network:
     driver: bridge
     ipam:
       config:
-        - subnet: 172.2.0.0/24
+        - subnet: ${WAN_SUBNET}
   C_server_network:
     driver: bridge
     ipam:
       config:
-        - subnet: 172.3.0.0/24
+        - subnet: ${SERVER_SUBNET}

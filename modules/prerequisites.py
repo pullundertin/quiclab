@@ -36,7 +36,6 @@ def reset_workdir():
     delete_files_in_folders(folders)
 
 
-
 def read_test_cases():
     with open('./test_cases.yaml', 'r') as file:
         test_cases = yaml.safe_load(file)
@@ -44,7 +43,7 @@ def read_test_cases():
 
 
 def read_configuration():
-    with open('./config.yaml', 'r') as file:
+    with open('./.env', 'r') as file:
         config = yaml.safe_load(file)
     return config
 

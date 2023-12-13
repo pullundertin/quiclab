@@ -1,4 +1,4 @@
-rounds: 1
+rounds: 2
 
 iterations:
   - mode: http
@@ -14,28 +14,28 @@ iterations:
     rmax: 62901456
     migration: false
 
-  - mode: aioquic
-    size: 0.001M
-    delay: 10ms
-    delay_deviation: 0
-    loss: 0
-    rate: 10
-    firewall: None
-    window_scaling: 1
-    rmin: 4096
-    rdef: 131072
-    rmax: 62901456
-    migration: false
+  # - mode: quicgo
+  #   size: 0.001M
+  #   delay: 10ms
+  #   delay_deviation: 0
+  #   loss: 0
+  #   rate: 10
+  #   firewall: None
+  #   window_scaling: 1
+  #   rmin: 4096
+  #   rdef: 131072
+  #   rmax: 62901456
+  #   migration: false
 
-  - mode: quicgo
-    size: 0.001M
-    delay: 10ms
-    delay_deviation: 0
-    loss: 0
-    rate: 10
-    firewall: None
-    window_scaling: 1
-    rmin: 4096
-    rdef: 131072
-    rmax: 62901456
-    migration: false
+  # - mode: quicgo
+  #   size: 0.001M
+  #   delay: 10ms
+  #   delay_deviation: 0
+  #   loss: 0
+  #   rate: 10
+  #   firewall: None
+  #   window_scaling: 1
+  #   rmin: 4096
+  #   rdef: 131072
+  #   rmax: 62901456
+  #   migration: false

@@ -7,7 +7,7 @@ from modules.prerequisites import read_configuration
 
 PCAP_PATH = read_configuration().get("PCAP_PATH")
 KEYS_PATH = read_configuration().get("KEYS_PATH")
-QLOG_PATH = read_configuration().get("QLOG_PATH")
+QLOG_PATH_CLIENT = read_configuration().get("QLOG_PATH_CLIENT")
 
 
 def convert_pcap_to_json():
@@ -36,7 +36,7 @@ def traverse_pcap_directory():
 
 
 def traverse_qlog_directory():
-    return [os.path.join(QLOG_PATH, filename) for filename in os.listdir(QLOG_PATH) if filename.endswith('.qlog')]
+    return [os.path.join(QLOG_PATH_CLIENT, filename) for filename in os.listdir(QLOG_PATH_CLIENT) if filename.endswith('.qlog')]
 
 
 def check_if_packet_contains_protocol(packet, key):
@@ -52,11 +52,11 @@ def get_tcp_handshake_time():
             if check_if_packet_contains_protocol(packet, 'tcp'):
                 results = search_key_value(
                     json_objects, 'tls_tls_handshake_type', '20')
-
-                frame_time_relative = float(
-                    results[0]['layers']['frame']['frame_frame_time_relative'])
-                tcp_handshake_durations.append(frame_time_relative)
-                break
+                if results:
+                    frame_time_relative = float(
+                        results[0]['layers']['frame']['frame_frame_time_relative'])
+                    tcp_handshake_durations.append(frame_time_relative)
+                    break
 
     return tcp_handshake_durations
 

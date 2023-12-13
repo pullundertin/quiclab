@@ -1,15 +1,10 @@
-import time
 import os
-import subprocess
 from concurrent.futures import ThreadPoolExecutor
 from concurrent.futures import wait
-
+from modules.logs import log_config
+from modules.commands import run_command
 import logging
 import argparse
-
-# Configure logging
-logging.basicConfig(filename='/shared/logs/output.log', level=logging.INFO,
-                    format='%(asctime)s - %(levelname)s - %(message)s')
 
 
 def arguments():
@@ -30,19 +25,8 @@ def arguments():
 
     args = parser.parse_args()
 
-    # logging.info(f"{os.getenv('HOST')}: {args.mode} mode enabled")
 
     return args
-
-
-def run_command(command):
-    try:
-        process = subprocess.run(
-            command, check=True, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-        logging.info(f"{os.getenv('HOST')}: {process.stdout.decode()}")
-    except subprocess.CalledProcessError as e:
-        logging.info(f"Error on {os.getenv('HOST')}: {e}")
-        logging.info(f"Error {os.getenv('HOST')} output: {e.stderr.decode()}")
 
 
 def convert_to_bytes(size_string):
@@ -116,7 +100,8 @@ def tcpdump(path, number):
 
 if __name__ == "__main__":
 
-    file_path = '/data/data.log'
+    log_config()
+    file_path = os.getenv('DATA_PATH')
 
     try:
         args = arguments()

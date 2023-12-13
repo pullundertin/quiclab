@@ -1,5 +1,4 @@
 
-import psutil
 import time
 import os
 import subprocess
@@ -73,9 +72,9 @@ def aioquic():
     URL = "https://172.3.0.5:4433/data.log"
     max_data = 2000000
     request = (URL + ' ') * 1
-    command = f"python /aioquic/examples/http3_client.py -k {request} --secrets-log {keys_path} --quic-log $QLOG_PATH --zero-rtt --session-ticket $TICKET_PATH"
-    # command = f"python /aioquic/examples/http3_client.py -k {URL} --max-data {max_data} --secrets-log $KEYS_PATH --quic-log $QLOG_PATH --zero-rtt --session-ticket $TICKET_PATH"
-    # command = f"python /aioquic/examples/http3_client.py -k {URL} {URL} --secrets-log $KEYS_PATH --quic-log $QLOG_PATH --zero-rtt --session-ticket $TICKET_PATH"
+    command = f"python /aioquic/examples/http3_client.py -k {request} --secrets-log {keys_path} --quic-log $QLOG_PATH_CLIENT --zero-rtt --session-ticket $TICKET_PATH"
+    # command = f"python /aioquic/examples/http3_client.py -k {URL} --max-data {max_data} --secrets-log $KEYS_PATH --quic-log $QLOG_PATH_CLIENT --zero-rtt --session-ticket $TICKET_PATH"
+    # command = f"python /aioquic/examples/http3_client.py -k {URL} {URL} --secrets-log $KEYS_PATH --quic-log $QLOG_PATH_CLIENT --zero-rtt --session-ticket $TICKET_PATH"
     logging.info(f"{os.getenv('HOST')}: sending aioquic request...")
     # run_command(command)
     run_command(command)
@@ -111,19 +110,23 @@ def client_request(args):
         quicgo()
 
 
-def kill(process_name):
+def kill_tcpdump():
+    command = f"pkill tcpdump"
+    run_command(command)
 
-    for process in psutil.process_iter(attrs=['pid', 'name']):
-        if process.info['name'] == process_name:
+# def kill(process_name):
 
-            try:
-                pid = process.info['pid']
-                p = psutil.Process(pid)
-                p.terminate()
-                logging.info(f"{os.getenv('HOST')}: {process_name} stopped.")
-            except (psutil.NoSuchProcess, psutil.AccessDenied, psutil.TimeoutExpired):
-                logging.info(f"{os.getenv('HOST')} Error: {process_name}")
-                pass
+#     for process in psutil.process_iter(attrs=['pid', 'name']):
+#         if process.info['name'] == process_name:
+
+#             try:
+#                 pid = process.info['pid']
+#                 p = psutil.Process(pid)
+#                 p.terminate()
+#                 logging.info(f"{os.getenv('HOST')}: {process_name} stopped.")
+#             except (psutil.NoSuchProcess, psutil.AccessDenied, psutil.TimeoutExpired):
+#                 logging.info(f"{os.getenv('HOST')} Error: {process_name}")
+#                 pass
 
 
 def change_ip(old_ip, new_ip):
@@ -142,11 +145,10 @@ if __name__ == "__main__":
 
     with ThreadPoolExecutor() as executor:
 
-        # thread_1 = executor.submit(tshark, args.pcap, args.iteration)
         thread_1 = executor.submit(tcpdump, args)
         time.sleep(3)
         thread_2 = executor.submit(client_request, args)
-        
+
         if (args.migration == 'True'):
             time.sleep(1)
             thread_3 = executor.submit(change_ip, '172.1.0.101', '172.1.0.102')
@@ -157,5 +159,6 @@ if __name__ == "__main__":
         logging.info(f"{os.getenv('HOST')}: request completed.")
 
         time.sleep(3)
-        kill("tcpdump")
+        kill_tcpdump()
+        # kill("tcpdump")
         wait([thread_1])
