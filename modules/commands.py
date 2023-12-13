@@ -36,8 +36,8 @@ def traffic_control(test_case):
     router_2.exec_run(command)
 
 
-def run_server():
-    command = f"python /scripts/run_server.py"
+def run_server(test_case):
+    command = f"python /scripts/run_server.py --mode {test_case['mode']}"
     server.exec_run(command)
 
 
@@ -46,8 +46,8 @@ def run_server_tracing(test_case, iteration_prefix):
     server.exec_run(command)
 
 
-def stop_server():
-    command = f"python /scripts/stop_server.py"
+def stop_server(test_case):
+    command = f"python /scripts/stop_server.py --mode {test_case['mode']}"
     server.exec_run(command)
 
 

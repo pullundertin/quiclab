@@ -1,28 +1,29 @@
-import time
 import os
-import subprocess
+from modules.commands import run_command
 from concurrent.futures import ThreadPoolExecutor
 import logging
 import argparse
-
-# Configure logging
-logging.basicConfig(filename='/shared/logs/output.log', level=logging.INFO,
-                    format='%(asctime)s - %(levelname)s - %(message)s')
+from modules.logs import log_config
 
 
-def run_command(command):
-    try:
-        process = subprocess.run(
-            command, check=True, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-        logging.info(f"{os.getenv('HOST')}: {process.stdout.decode()}")
-    except subprocess.CalledProcessError as e:
-        logging.info(f"Error on {os.getenv('HOST')}: {e}")
-        logging.info(f"Error {os.getenv('HOST')} output: {e.stderr.decode()}")
+def arguments():
+
+    # Create an ArgumentParser object
+    parser = argparse.ArgumentParser(description='QuicLab Test Environment')
+
+    parser.add_argument('-m', '--mode', type=str,
+                        help='modes: http, aioquic, quicgo')
+
+    args = parser.parse_args()
+
+    logging.info(f"{os.getenv('HOST')}: {args.mode} mode enabled")
+
+    return args
 
 
 def aioquic():
-    command = "python /aioquic/examples/http3_server.py --certificate /aioquic/tests/ssl_cert.pem --private-key /aioquic/tests/ssl_key.pem --quic-log $QLOG_PATH"
-    # command = "python /aioquic/examples/http3_server.py --certificate /aioquic/tests/ssl_cert.pem --private-key /aioquic/tests/ssl_key.pem --quic-log $QLOG_PATH --retry"
+    command = "python /aioquic/examples/http3_server.py --certificate /aioquic/tests/ssl_cert.pem --private-key /aioquic/tests/ssl_key.pem --quic-log $QLOG_PATH_SERVER"
+    # command = "python /aioquic/examples/http3_server.py --certificate /aioquic/tests/ssl_cert.pem --private-key /aioquic/tests/ssl_key.pem --quic-log $QLOG_PATH_SERVER --retry"
     logging.info(f"{os.getenv('HOST')}: starting aioquic server...")
     run_command(command)
 
@@ -41,13 +42,19 @@ def http():
 
 
 if __name__ == "__main__":
+    log_config()
 
     try:
         with ThreadPoolExecutor() as executor:
 
-            executor.submit(http)
-            executor.submit(quicgo)
-            executor.submit(aioquic)
+            args = arguments()
+
+            if args.mode == "http":
+                http()
+            elif args.mode == "aioquic":
+                aioquic()
+            elif args.mode == "quicgo":
+                quicgo()
 
     except Exception as e:
         logging.error(f"{os.getenv('HOST')}: Error: {str(e)}")

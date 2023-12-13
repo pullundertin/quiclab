@@ -6,6 +6,7 @@ from modules.pcap_processing import convert_pcap_to_json, get_statistics
 from modules.commands import rsync, run_client, traffic_control, run_server, run_server_tracing, stop_server, stop_server_tracing
 from modules.logs import log_config
 from modules.prerequisites import reset_workdir, read_test_cases, read_configuration
+import os
 
 
 def run_test_case(iteration_prefix, test_case):
@@ -13,14 +14,18 @@ def run_test_case(iteration_prefix, test_case):
         with ThreadPoolExecutor() as executor:
             logging.info(
                 f"//////   TEST CASE {iteration_prefix}{test_case['mode']} ///////")
+            executor.submit(run_server, test_case)
+            time.sleep(1)
             executor.submit(run_server_tracing, test_case, iteration_prefix)
             executor.submit(traffic_control, test_case)
             time.sleep(3)
-            thread_3 = executor.submit(run_client, test_case, iteration_prefix)
-            wait([thread_3])
-            thread_4 = executor.submit(
+            client_process = executor.submit(
+                run_client, test_case, iteration_prefix)
+            wait([client_process])
+            stop_tracing_process = executor.submit(
                 stop_server_tracing, test_case, iteration_prefix)
-            wait([thread_4])
+            wait([stop_tracing_process])
+            executor.submit(stop_server, test_case)
             logging.info(f"//////////////////////////////////////////")
     except Exception as e:
         logging.error(f"An error occurred: {e}")
@@ -33,7 +38,7 @@ def run_tests():
 
     for round in range(rounds):
         for index, test_case in enumerate(test_cases, start=1):
-            iteration_prefix = f"{round}:{index}_"
+            iteration_prefix = f"{round+1}:{index}_"
             run_test_case(iteration_prefix, test_case)
 
 
@@ -48,16 +53,13 @@ if __name__ == "__main__":
 
     try:
         with ThreadPoolExecutor() as executor:
-            thread_1 = executor.submit(run_server)
-            time.sleep(3)
-            thread_2 = executor.submit(run_tests)
-            wait([thread_2])
-            stop_server()
+            test_process = executor.submit(run_tests)
+            wait([test_process])
             convert_pcap_to_json()
             get_statistics()
             rsync()
             logging.info("All tasks are completed.")
 
     except Exception as e:
-        # logging.error(f"{os.getenv('HOST')}: Error: {str(e)}")
+        logging.error(f"{os.getenv('HOST')}: Error: {str(e)}")
         raise
