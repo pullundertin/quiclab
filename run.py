@@ -36,9 +36,9 @@ def run_tests():
     test_cases = test_case_settings.get('iterations')
     rounds = test_case_settings.get('rounds')
 
-    for round in range(rounds):
-        for index, test_case in enumerate(test_cases, start=1):
-            iteration_prefix = f"{round+1}:{index}_"
+    for index, test_case in enumerate(test_cases, start=1):
+        for round in range(rounds):
+            iteration_prefix = f"case_{index}_iteration_{round+1}_"
             run_test_case(iteration_prefix, test_case)
 
 
