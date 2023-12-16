@@ -43,10 +43,6 @@ def run_tests():
 
 
 if __name__ == "__main__":
-    config = read_configuration()
-    WORKDIR = config.get("WORKDIR")
-    PCAP_PATH = config.get("PCAP_PATH")
-    TEST_CASES = config.get("TEST_CASES")
 
     log_config()
     reset_workdir()
