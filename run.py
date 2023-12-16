@@ -5,8 +5,21 @@ import logging
 from modules.pcap_processing import convert_pcap_to_json, get_statistics
 from modules.commands import rsync, run_client, traffic_control, run_server, run_server_tracing, stop_server, stop_server_tracing
 from modules.logs import log_config
-from modules.prerequisites import reset_workdir, read_test_cases, read_configuration
+from modules.prerequisites import reset_workdir, read_test_cases
 import os
+import argparse
+
+
+def arguments():
+    # Create an ArgumentParser object
+    parser = argparse.ArgumentParser(description='QuicLab Test Environment')
+
+    parser.add_argument('--full', action='store_true',
+                        help='run full execution')
+
+    args = parser.parse_args()
+
+    return args
 
 
 def run_test_case(iteration_prefix, test_case):
@@ -43,19 +56,31 @@ def run_tests():
 
 
 if __name__ == "__main__":
-
     log_config()
-    reset_workdir()
+    args = arguments()
+
+    if args.full:
+        logging.info(f"{os.getenv('HOST')}: full execution enabled")
+
+        reset_workdir()
+        try:
+            with ThreadPoolExecutor() as executor:
+                test_process = executor.submit(run_tests)
+                wait([test_process])
+                logging.info("Full execution completed.")
+        except Exception as e:
+            logging.error(
+                f"{os.getenv('HOST')}: Error during full execution: {str(e)}")
+            raise
+    else:
+        logging.info("Executing evaluation only")
 
     try:
-        with ThreadPoolExecutor() as executor:
-            test_process = executor.submit(run_tests)
-            wait([test_process])
-            convert_pcap_to_json()
-            get_statistics()
-            rsync()
-            logging.info("All tasks are completed.")
-
+        convert_pcap_to_json()
+        logging.info(f"\n{get_statistics()}")
+        rsync()
+        logging.info("All tasks are completed.")
     except Exception as e:
-        logging.error(f"{os.getenv('HOST')}: Error: {str(e)}")
+        logging.error(
+            f"{os.getenv('HOST')}: Error during partial tasks execution: {str(e)}")
         raise

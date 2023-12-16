@@ -1,3 +1,4 @@
+import pandas as pd
 import os
 import logging
 import json
@@ -8,6 +9,9 @@ from modules.prerequisites import read_configuration
 PCAP_PATH = read_configuration().get("PCAP_PATH")
 KEYS_PATH = read_configuration().get("KEYS_PATH")
 QLOG_PATH_CLIENT = read_configuration().get("QLOG_PATH_CLIENT")
+pd.set_option('display.max_rows', None)
+pd.set_option('display.max_columns', None)
+pd.set_option('display.max_colwidth', None)
 
 
 def convert_pcap_to_json():
@@ -115,18 +119,6 @@ def get_quic_connection_time():
                         quic_connection_durations.append(frame_time_relative)
 
     return quic_connection_durations
-
-
-# def search_key_value(json_objects, search_key, search_value):
-#     results = []
-#     json_path_expression = f"$..*[?(@.{search_key} == '{search_value}')]"
-
-#     for obj in json_objects:
-#         matches = parse(json_path_expression).find(obj)
-#         for match in matches:
-#             results.append(match.value)
-
-#     return results
 
 
 def search_key_value(json_objects, search_key, search_value):
@@ -245,25 +237,33 @@ def get_statistics():
     quic_handshake_durations = get_quic_handshake_time()
     quic_connection_durations = get_quic_connection_time()
 
-    def calculate_and_log_stats(data, label):
-        if not data:
-            logging.info(f"No data available for {label}")
-            return
+    # Create an empty DataFrame to store statistics
+    statistics_df = pd.DataFrame(columns=[
+        'tcp_rtt', 'tcp_hs', 'tcp_conn',
+        'quic_min_rtt', 'quic_smoothed_rtt', 'quic_hs', 'quic_conn'
+    ])
 
-        multiplied_data = [x * 1000 for x in data]
-        median = round(statistics.median(multiplied_data), 2)
-        minimum = round(min(multiplied_data), 2)
-        maximum = round(max(multiplied_data), 2)
+    # Populate the DataFrame with statistics
+    statistics_df['tcp_rtt'] = get_statistics_series(tcp_rtt)
+    statistics_df['tcp_hs'] = get_statistics_series(tcp_handshake_durations)
+    statistics_df['tcp_conn'] = get_statistics_series(tcp_connection_durations)
+    statistics_df['quic_min_rtt'] = get_statistics_series(quic_min_rtt)
+    statistics_df['quic_smoothed_rtt'] = get_statistics_series(
+        quic_smoothed_rtt)
+    statistics_df['quic_hs'] = get_statistics_series(quic_handshake_durations)
+    statistics_df['quic_conn'] = get_statistics_series(
+        quic_connection_durations)
 
-        logging.info(f"{label}_data: {data}")
-        logging.info(f"{label}_median: {median} ms")
-        logging.info(f"{label}_minimum: {minimum} ms")
-        logging.info(f"{label}_maximum: {maximum} ms")
+    return statistics_df
 
-    calculate_and_log_stats(tcp_rtt, 'tcp_rtt')
-    calculate_and_log_stats(tcp_handshake_durations, 'tcp_hs')
-    calculate_and_log_stats(tcp_connection_durations, 'tcp_conn')
-    calculate_and_log_stats(quic_min_rtt, 'quic_min_rtt')
-    calculate_and_log_stats(quic_smoothed_rtt, 'quic_smoothed_rtt')
-    calculate_and_log_stats(quic_handshake_durations, 'quic_hs')
-    calculate_and_log_stats(quic_connection_durations, 'quic_conn')
+
+def get_statistics_series(data):
+    if not data:
+        return pd.Series([None, None, None, None], index=['data', 'median', 'minimum', 'maximum'])
+
+    multiplied_data = [x * 1000 for x in data]
+    median = round(statistics.median(multiplied_data), 2)
+    minimum = round(min(multiplied_data), 2)
+    maximum = round(max(multiplied_data), 2)
+
+    return pd.Series([data, median, minimum, maximum], index=['data', 'median', 'minimum', 'maximum'])
