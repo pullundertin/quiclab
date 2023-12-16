@@ -6,6 +6,7 @@ from modules.pcap_processing import convert_pcap_to_json, get_statistics
 from modules.commands import rsync, run_client, traffic_control, run_server, run_server_tracing, stop_server, stop_server_tracing
 from modules.logs import log_config
 from modules.prerequisites import reset_workdir, read_test_cases
+from modules.heatmap import show_heatmap
 import os
 import argparse
 
@@ -67,6 +68,7 @@ if __name__ == "__main__":
             with ThreadPoolExecutor() as executor:
                 test_process = executor.submit(run_tests)
                 wait([test_process])
+                convert_pcap_to_json()
                 logging.info("Full execution completed.")
         except Exception as e:
             logging.error(
@@ -76,9 +78,10 @@ if __name__ == "__main__":
         logging.info("Executing evaluation only")
 
     try:
-        convert_pcap_to_json()
-        logging.info(f"\n{get_statistics()}")
+        statistics = get_statistics()
+        logging.info(f"\n{statistics}")
         rsync()
+        show_heatmap(statistics)
         logging.info("All tasks are completed.")
     except Exception as e:
         logging.error(

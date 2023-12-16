@@ -3,7 +3,7 @@ version: "3.3"
 services:
 
   client_1:
-    image: pulltin/quiclab:2.4
+    image: pulltin/quiclab:${VERSION}
     privileged: true
     hostname: client_1
     container_name: client_1
@@ -34,7 +34,7 @@ services:
     working_dir: /
 
   client_2:
-    image: pulltin/quiclab:2.4
+    image: pulltin/quiclab:${VERSION}
     privileged: true
     hostname: client_2
     container_name: client_2
@@ -65,7 +65,7 @@ services:
     working_dir: /
 
   router_1:
-    image: pulltin/quiclab:2.4
+    image: pulltin/quiclab:${VERSION}
     privileged: true
     hostname: router_1
     container_name: router_1
@@ -97,7 +97,7 @@ services:
     tty: true
 
   router_2:
-    image: pulltin/quiclab:2.4
+    image: pulltin/quiclab:${VERSION}
     privileged: true
     hostname: router_2
     container_name: router_2
@@ -129,7 +129,7 @@ services:
     tty: true
 
   server:
-    image: pulltin/quiclab:2.4
+    image: pulltin/quiclab:${VERSION}
     privileged: true
     hostname: server
     container_name: server
@@ -178,7 +178,7 @@ services:
     restart: unless-stopped
 
   file_server:
-    image: pulltin/quiclab:2.4
+    image: pulltin/quiclab:${VERSION}
     container_name: file_server
     hostname: file_server
     ports:
