@@ -7,7 +7,7 @@ import socket
 
 
 # Configure logging
-logging.basicConfig(filename='/shared/logs/output.log', level=logging.INFO,
+logging.basicConfig(filename=os.getenv('LOG_PATH'), level=logging.INFO,
                     format='%(asctime)s - %(levelname)s - %(message)s')
 
 

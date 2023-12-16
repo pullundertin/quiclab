@@ -16,15 +16,10 @@ def arguments():
                         help='modes: http, aioquic, quicgo')
     parser.add_argument('-s', '--size', type=str,
                         help='size of the file to download')
-    parser.add_argument('--pcap', type=str,
-                        help='pcap_path')
-    parser.add_argument('--qlog', type=str,
-                        help='qlog_path')
     parser.add_argument('--iteration', type=str,
                         help='number of iteration')
 
     args = parser.parse_args()
-
 
     return args
 
@@ -92,8 +87,8 @@ def tcpprobe():
     enable_tracking(tcp_probe_path)
 
 
-def tcpdump(path, number):
-    command = f"tcpdump -i eth0 -w {path}/{number}server.pcap -n"
+def tcpdump(iteration):
+    command = f"tcpdump -i eth0 -w $PCAP_PATH/{iteration}server.pcap -n"
     logging.info(f"{os.getenv('HOST')}: tcpdump started.")
     run_command(command)
 
@@ -109,7 +104,7 @@ if __name__ == "__main__":
         with ThreadPoolExecutor() as executor:
             if args.mode == 'http':
                 thread_1 = executor.submit(tcpprobe)
-            thread_2 = executor.submit(tcpdump, args.pcap, args.iteration)
+            thread_2 = executor.submit(tcpdump, args.iteration)
             thread_3 = executor.submit(generate_data, file_path, args.size)
             wait([thread_2])
 

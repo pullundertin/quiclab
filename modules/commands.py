@@ -42,7 +42,7 @@ def run_server(test_case):
 
 
 def run_server_tracing(test_case, iteration_prefix):
-    command = f"python /scripts/run_server_tracing.py --mode {test_case['mode']} --size {test_case.get('size')} --pcap {PCAP_PATH} --iteration {iteration_prefix}"
+    command = f"python /scripts/run_server_tracing.py --mode {test_case['mode']} --size {test_case.get('size')} --iteration {iteration_prefix}"
     server.exec_run(command)
 
 
