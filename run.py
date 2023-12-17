@@ -6,7 +6,7 @@ from modules.pcap_processing import convert_pcap_to_json, get_statistics
 from modules.commands import rsync, run_client, traffic_control, run_server, run_server_tracing, stop_server, stop_server_tracing
 from modules.logs import log_config
 from modules.prerequisites import reset_workdir, read_test_cases
-from modules.heatmap import show_heatmap
+from modules.heatmap import show_handshake_heatmap, show_connection_heatmap
 import os
 import argparse
 
@@ -47,14 +47,20 @@ def run_test_case(iteration_prefix, test_case):
 
 def run_tests():
     test_case_settings = read_test_cases()
-    test_cases = test_case_settings.get('iterations')
-    rounds = test_case_settings.get('rounds')
+    test_cases = test_case_settings.get('cases')
+    iterations = test_case_settings.get('iterations')
 
     for index, test_case in enumerate(test_cases, start=1):
-        for round in range(rounds):
-            iteration_prefix = f"case_{index}_iteration_{round+1}_"
+        for iteration in range(iterations):
+            iteration_prefix = f"case_{index}_iteration_{iteration+1}_"
             run_test_case(iteration_prefix, test_case)
 
+def evaluate_test_results():
+        statistics, medians = get_statistics()
+        statistics.to_csv('statistics/statistics.csv', index=False)
+        medians.to_csv('statistics/medians.csv', index=False)
+        show_handshake_heatmap(medians)
+        show_connection_heatmap(medians)
 
 if __name__ == "__main__":
     log_config()
@@ -78,10 +84,8 @@ if __name__ == "__main__":
         logging.info("Executing evaluation only")
 
     try:
-        statistics = get_statistics()
-        logging.info(f"\n{statistics}")
+        evaluate_test_results()
         rsync()
-        show_heatmap(statistics)
         logging.info("All tasks are completed.")
     except Exception as e:
         logging.error(

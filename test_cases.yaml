@@ -1,6 +1,6 @@
-rounds: 1
+iterations: 3
 
-iterations:
+cases:
   - mode: http
     size: 0.001M
     delay: 10ms
