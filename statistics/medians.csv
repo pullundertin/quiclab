@@ -1,0 +1,4 @@
+mode,tcp_rtt,tcp_hs,tcp_conn,quic_min_rtt,quic_smoothed_rtt,quic_hs,quic_conn
+aioquic,,,0.0,,,0.059177,0.127947
+http,,0.100666,0.199234,,,,
+quicgo,,,0.0,,,0.042182,0.074724
