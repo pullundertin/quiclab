@@ -173,7 +173,6 @@ def get_quic_handshake_time(json_file):
 def get_tcp_rtt_statistics(json_file):
     rtt_values = []
 
-    
     json_objects = read_json_objects_from_file(json_file)
     for packet in json_objects:
         layers = packet.get('layers', {})
@@ -248,11 +247,18 @@ def get_statistics():
     statistics_df = pd.DataFrame(statistics_data)
 
     # Convert lists with multiple values to NaN for numeric calculations
-    df = statistics_df.applymap(lambda x: np.nan if isinstance(x, list) and len(x) > 1 else x)
+    def replace_lists(x):
+        return np.nan if isinstance(x, list) and len(x) > 1 else x
 
+    df = statistics_df.apply(lambda x: x.apply(replace_lists))
     # Group by 'mode' column and calculate median for specified columns
-    median_values = df.groupby('mode').agg(lambda x: np.nanmedian([v for v in x if not np.isnan(v)])).reset_index()
 
-    
+    def nan_median(x):
+        if x.isnull().all():
+            return np.nan
+        return np.nanmedian(x)
+
+    median_values = df.groupby('mode').agg(
+        lambda x: nan_median(x)).reset_index()
+
     return statistics_df, median_values
-

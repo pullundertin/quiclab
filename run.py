@@ -55,12 +55,14 @@ def run_tests():
             iteration_prefix = f"case_{index}_iteration_{iteration+1}_"
             run_test_case(iteration_prefix, test_case)
 
+
 def evaluate_test_results():
-        statistics, medians = get_statistics()
-        statistics.to_csv('statistics/statistics.csv', index=False)
-        medians.to_csv('statistics/medians.csv', index=False)
-        show_handshake_heatmap(medians)
-        show_connection_heatmap(medians)
+    statistics, medians = get_statistics()
+    statistics.to_csv('shared/statistics/statistics.csv', index=False)
+    medians.to_csv('shared/statistics/medians.csv', index=False)
+    show_handshake_heatmap(medians)
+    show_connection_heatmap(medians)
+
 
 if __name__ == "__main__":
     log_config()

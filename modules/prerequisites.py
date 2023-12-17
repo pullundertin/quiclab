@@ -7,11 +7,14 @@ import yaml
 def reset_workdir():
     WORKDIR = read_configuration().get("WORKDIR")
     folders = [
+        f'{WORKDIR}/heatmaps',
+        f'{WORKDIR}/keys',
         f'{WORKDIR}/pcap',
         f'{WORKDIR}/qlog_client',
         f'{WORKDIR}/qlog_server',
-        f'{WORKDIR}/keys',
-        f'{WORKDIR}/tcpprobe']
+        f'{WORKDIR}/statistics',
+        f'{WORKDIR}/tcpprobe',
+    ]
 
     def delete_file(file_path):
         try:
