@@ -245,13 +245,13 @@ def add_configuration_parameters(json_file):
 
 def get_quic_dcid(json_file):
     quic_dcid = None
-
+    quic_dcid_ascii = None
     packets = read_json_objects_from_file(json_file)
     if check_if_packet_contains_protocol(packets[1], 'quic'):
         quic_dcid_string = packets[1]['layers']['quic']['quic_quic_dcid']
         quic_dcid_ascii = quic_dcid_string.replace(":", "")
         quic_dcid = bytes(quic_dcid_ascii, 'utf-8').hex()
-    return quic_dcid
+    return quic_dcid, quic_dcid_ascii
 
 
 def get_statistics():
@@ -265,7 +265,7 @@ def get_statistics():
             data['tcp_conn'] = get_tcp_connection_time(json_file)
             data['quic_hs'] = get_quic_handshake_time(json_file)
             data['quic_conn'] = get_quic_connection_time(json_file)
-            data['dcid'] = get_quic_dcid(json_file)
+            data['dcid'], data['dcid_hex'] = get_quic_dcid(json_file)
             data['quic_min_rtt'] = None
             data['quic_smoothed_rtt'] = None
 
@@ -282,7 +282,7 @@ def get_statistics():
 
         def get_dataframe_index_of_qlog_file(qlog_file):
             for index, row in statistics_df.iterrows():
-                if row['dcid'] != None and row['dcid'] in qlog_file:
+                if row['dcid'] != None and (row['dcid'] in qlog_file or row['dcid_hex'] in qlog_file):
                     return index
 
         for qlog_file in files:
@@ -294,16 +294,13 @@ def get_statistics():
                     qlog_data = json.loads(data)
 
                 if isinstance(qlog_data, dict) and 'traces' in qlog_data:
-
                     for packet in qlog_data['traces']:
                         for event in packet.get('events', []):
                             data = event.get('data', {})
-                            min_rtt = data.get('min_rtt')
-                            smoothed_rtt = data.get('smoothed_rtt')
-
-                            if min_rtt is not None:
+                            if 'min_rtt' in data:
+                                min_rtt = data.get('min_rtt')
                                 min_rtt_values.append(min_rtt / 1000)
-                            if smoothed_rtt is not None:
+                                smoothed_rtt = data.get('smoothed_rtt')
                                 smoothed_rtt_values.append(smoothed_rtt / 1000)
 
             # ndjson format - quicgo

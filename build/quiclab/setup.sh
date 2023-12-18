@@ -35,7 +35,7 @@ run_and_log_command "git clone https://github.com/aiortc/aioquic.git"
 run_and_log_command "pip install aioquic"
 run_and_log_command "cd /aioquic"
 run_and_log_command "pip install --upgrade pip setuptools"
-run_and_log_command "pip install . dnslib jinja2 starlette wsproto"
+run_and_log_command "pip install /aioquic dnslib jinja2 starlette wsproto"
 log_message "aioquic installation complete."
 
 # Prepare nginx

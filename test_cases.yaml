@@ -6,7 +6,7 @@ cases:
     delay: 10ms
     delay_deviation: 0
     loss: 0
-    rate: 100
+    rate: 10
     firewall: None
     window_scaling: 1
     rmin: 4096
