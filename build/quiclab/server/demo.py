@@ -6,8 +6,6 @@ import datetime
 import os
 from urllib.parse import urlencode
 
-import httpbin
-from asgiref.wsgi import WsgiToAsgi
 from starlette.applications import Starlette
 from starlette.responses import PlainTextResponse, Response
 from starlette.routing import Mount, Route, WebSocketRoute
@@ -32,7 +30,6 @@ async def homepage(request):
     await request.send_push_promise("/style.css")
     return templates.TemplateResponse("index.html", {"request": request})
 
-
 async def data(request):
     """
     HTTP echo endpoint.
@@ -40,6 +37,14 @@ async def data(request):
     with open("/data/data.log", "r") as f:
         content = f.read()
     media_type = "text/html"
+    return Response(content, media_type=media_type)
+
+async def echo(request):
+    """
+    HTTP echo endpoint.
+    """
+    content = await request.body()
+    media_type = request.headers.get("content-type")
     return Response(content, media_type=media_type)
 
 
@@ -134,8 +139,8 @@ starlette = Starlette(
     routes=[
         Route("/", homepage),
         Route("/{size:int}", padding),
+        Route("/echo", echo, methods=["POST"]),
         Route("/data.log", data, methods=["GET"]),
-        Mount("/httpbin", WsgiToAsgi(httpbin.app)),
         Route("/logs", logs),
         WebSocketRoute("/ws", ws),
         Mount(STATIC_URL, StaticFiles(directory=STATIC_ROOT, html=True)),
