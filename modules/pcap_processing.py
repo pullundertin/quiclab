@@ -326,19 +326,13 @@ def get_statistics():
 
     def get_medians(df):
 
-        def calculate_median_for_column(columns):
-            median_values = pd.DataFrame()
-            for column in columns:
-                # Convert column to numeric type
-                df[column] = pd.to_numeric(df[column], errors='coerce')
-
-                # Calculate the median of column column grouped by 'mode'
-                median_values = df.groupby(
-                    'mode')[column].median().reset_index()
-            return median_values
-
-        median_values = calculate_median_for_column(
-            ['tcp_hs', 'quic_hs', 'tcp_conn', 'quic_conn'])
+        # Group by 'mode' and calculate median across multiple columns
+        median_values = df.groupby('mode').agg({
+            'quic_hs': 'median',
+            'tcp_hs': 'median',
+            'quic_conn': 'median',
+            'tcp_conn': 'median'
+        }).reset_index()
         return median_values
 
     statistics_df = get_pcap_statistics()
