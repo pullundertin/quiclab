@@ -51,7 +51,7 @@ def check_if_packet_contains_protocol(packet, key):
 
 
 def get_tcp_handshake_time(json_file):
-    tcp_handshake_durations = []
+    tcp_handshake_duration = None
 
     json_objects = read_json_objects_from_file(json_file)
     for packet in json_objects:
@@ -61,14 +61,14 @@ def get_tcp_handshake_time(json_file):
             if results:
                 frame_time_relative = float(
                     results[0]['layers']['frame']['frame_frame_time_relative'])
-                tcp_handshake_durations.append(frame_time_relative)
+                tcp_handshake_duration = (frame_time_relative)
                 break
 
-    return tcp_handshake_durations
+    return tcp_handshake_duration
 
 
 def get_tcp_connection_time(json_file):
-    tcp_connection_durations = []
+    tcp_connection_duration = None
     fin_ack_seq = None
 
     packets = read_json_objects_from_file(json_file)
@@ -100,14 +100,14 @@ def get_tcp_connection_time(json_file):
         if src_ip == '172.1.0.101' and seq_raw_packet == fin_ack_seq:
             time_relative = float(
                 packet['layers']['frame']['frame_frame_time_relative'])
-            tcp_connection_durations.append(time_relative)
+            tcp_connection_duration = (time_relative)
             break
 
-    return tcp_connection_durations
+    return tcp_connection_duration
 
 
 def get_quic_connection_time(json_file):
-    quic_connection_durations = []
+    quic_connection_duration = None
 
     json_objects = read_json_objects_from_file(json_file)
     for packet in json_objects:
@@ -118,9 +118,9 @@ def get_quic_connection_time(json_file):
                 frame_time_relative = float(
                     packet['layers']['frame']['frame_frame_time_relative'])
                 if frame_type == '29':
-                    quic_connection_durations.append(frame_time_relative)
+                    quic_connection_duration = (frame_time_relative)
 
-    return quic_connection_durations
+    return quic_connection_duration
 
 
 def search_key_value(json_objects, search_key, search_value):
@@ -155,7 +155,7 @@ def search_key_value_recursive(obj, search_key, search_value, root):
 
 
 def get_quic_handshake_time(json_file):
-    quic_handshake_durations = []
+    quic_handshake_duration = None
 
     json_objects = read_json_objects_from_file(json_file)
     for packet in json_objects:
@@ -166,10 +166,10 @@ def get_quic_handshake_time(json_file):
             if results:
                 frame_time_relative = float(
                     results[0]['layers']['frame']['frame_frame_time_relative'])
-                quic_handshake_durations.append(frame_time_relative)
+                quic_handshake_duration = (frame_time_relative)
                 break
 
-    return quic_handshake_durations
+    return quic_handshake_duration
 
 
 def get_tcp_rtt_statistics(json_file):
@@ -247,10 +247,12 @@ def get_quic_dcid(json_file):
     quic_dcid = None
     quic_dcid_ascii = None
     packets = read_json_objects_from_file(json_file)
-    if check_if_packet_contains_protocol(packets[1], 'quic'):
-        quic_dcid_string = packets[1]['layers']['quic']['quic_quic_dcid']
-        quic_dcid_ascii = quic_dcid_string.replace(":", "")
-        quic_dcid = bytes(quic_dcid_ascii, 'utf-8').hex()
+    for packet in packets:
+        if check_if_packet_contains_protocol(packet, 'quic') and 'quic_quic_dcid' in packet['layers']['quic']:
+            quic_dcid_string = packet['layers']['quic']['quic_quic_dcid']
+            quic_dcid_ascii = quic_dcid_string.replace(":", "")
+            quic_dcid = bytes(quic_dcid_ascii, 'utf-8').hex()
+            break
     return quic_dcid, quic_dcid_ascii
 
 
@@ -322,24 +324,25 @@ def get_statistics():
             statistics_df.at[index, 'quic_smoothed_rtt'] = smoothed_rtt_values
         return statistics_df
 
-    def get_medians(statistics_df):
+    def get_medians(df):
 
-        # Convert lists with multiple values to NaN for numeric calculations
-        def replace_lists(x):
-            return np.nan if isinstance(x, list) and len(x) > 1 else x
+        def calculate_median_for_column(columns):
+            median_values = pd.DataFrame()
+            for column in columns:
+                # Convert column to numeric type
+                df[column] = pd.to_numeric(df[column], errors='coerce')
 
-        df = statistics_df.apply(lambda x: x.apply(replace_lists))
-        # Group by 'mode' column and calculate median for specified columns
+                # Calculate the median of column column grouped by 'mode'
+                median_values = df.groupby(
+                    'mode')[column].median().reset_index()
+            return median_values
 
-        def nan_median(x):
-            if x.isnull().all():
-                return np.nan
-            return np.nanmedian(x)
-
-        median_values = df.groupby('mode').agg(
-            lambda x: nan_median(x)).reset_index()
+        median_values = calculate_median_for_column(
+            ['tcp_hs', 'quic_hs', 'tcp_conn', 'quic_conn'])
         return median_values
 
     statistics_df = get_pcap_statistics()
     statistics_df = get_qlog_statistics(statistics_df)
-    return statistics_df, None
+    median_df = pd.DataFrame()
+    median_df = get_medians(statistics_df)
+    return statistics_df, median_df
