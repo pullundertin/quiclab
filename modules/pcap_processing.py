@@ -4,8 +4,9 @@ import logging
 import json
 from modules.commands import run_command
 from modules.prerequisites import read_configuration
-from modules.mapping import get_mode_of_file
+from modules.mapping import get_test_configuration_of_json_file
 import numpy as np
+import yaml
 
 
 PCAP_PATH = read_configuration().get("PCAP_PATH")
@@ -72,20 +73,21 @@ def get_tcp_connection_time(json_file):
 
     packets = read_json_objects_from_file(json_file)
     for packet in packets:
-        layers = packet.get('layers', {})
-        ip_layer = layers.get('ip', {})
-        tcp_layer = layers.get('tcp', {})
+        if check_if_packet_contains_protocol(packet, 'tcp'):
+            layers = packet.get('layers', {})
+            ip_layer = layers.get('ip', {})
+            tcp_layer = layers.get('tcp', {})
 
-        src_ip = ip_layer.get('ip_ip_src')
-        flags_fin = tcp_layer.get('tcp_tcp_flags_fin')
-        seq_raw = tcp_layer.get('tcp_tcp_seq_raw')
-        ack_raw = tcp_layer.get('tcp_tcp_ack_raw')
+            src_ip = ip_layer.get('ip_ip_src')
+            flags_fin = tcp_layer.get('tcp_tcp_flags_fin')
+            seq_raw = tcp_layer.get('tcp_tcp_seq_raw')
+            ack_raw = tcp_layer.get('tcp_tcp_ack_raw')
 
-        if src_ip == '172.3.0.5' and flags_fin:
-            fin_ack_seq = ack_raw
-            break
-        else:
-            continue  # No FIN packet found
+            if src_ip == '172.3.0.5' and flags_fin:
+                fin_ack_seq = ack_raw
+                break
+            else:
+                continue  # No FIN packet found
 
     for packet in packets:
         layers = packet.get('layers', {})
@@ -175,17 +177,18 @@ def get_tcp_rtt_statistics(json_file):
 
     json_objects = read_json_objects_from_file(json_file)
     for packet in json_objects:
-        layers = packet.get('layers', {})
-        ip_layer = layers.get('ip', {})
-        tcp_layer = layers.get('tcp', {})
+        if check_if_packet_contains_protocol(packet, 'tcp'):
+            layers = packet.get('layers', {})
+            ip_layer = layers.get('ip', {})
+            tcp_layer = layers.get('tcp', {})
 
-        if (
-            'ip' in layers and
-            ip_layer.get('ip_ip_src') == '172.3.0.5' and
-            'tcp' in layers and
-            'tcp_tcp_analysis_ack_rtt' in tcp_layer
-        ):
-            rtt_values.append(float(tcp_layer['tcp_tcp_analysis_ack_rtt']))
+            if (
+                'ip' in layers and
+                ip_layer.get('ip_ip_src') == '172.3.0.5' and
+                'tcp' in layers and
+                'tcp_tcp_analysis_ack_rtt' in tcp_layer
+            ):
+                rtt_values.append(float(tcp_layer['tcp_tcp_analysis_ack_rtt']))
 
     return rtt_values
 
@@ -193,6 +196,7 @@ def get_tcp_rtt_statistics(json_file):
 def get_quic_rtt_statistics():
     min_rtt_values = []
     smoothed_rtt_values = []
+    quic_implementation = None
     for qlog_file in traverse_qlog_directory():
         try:
             with open(qlog_file, 'r') as f:
@@ -200,6 +204,7 @@ def get_quic_rtt_statistics():
                 qlog_data = json.loads(data)
 
             if isinstance(qlog_data, dict) and 'traces' in qlog_data:
+
                 for packet in qlog_data['traces']:
                     for event in packet.get('events', []):
                         data = event.get('data', {})
@@ -214,6 +219,7 @@ def get_quic_rtt_statistics():
         # ndjson format - quicgo
         except json.JSONDecodeError:
             with open(qlog_file, 'r') as f:
+                quic_implementation = 'quicgo'
                 ndqlog_data = f.read()
                 # Split the data into lines and parse each line as JSON
                 for line in ndqlog_data.strip().split('\n'):
@@ -224,41 +230,119 @@ def get_quic_rtt_statistics():
                                 qlog_data["data"]["min_rtt"]/1000)
                             smoothed_rtt_values.append(
                                 qlog_data["data"]["smoothed_rtt"]/1000)
-    return min_rtt_values, smoothed_rtt_values
+    return quic_implementation, min_rtt_values, smoothed_rtt_values
+
+
+def add_configuration_parameters(json_file):
+
+    data = {}
+    config = get_test_configuration_of_json_file(json_file)
+    for column in config:
+        data[column] = config[column]
+
+    return data
+
+
+def get_quic_dcid(json_file):
+    quic_dcid = None
+
+    packets = read_json_objects_from_file(json_file)
+    if check_if_packet_contains_protocol(packets[1], 'quic'):
+        quic_dcid_string = packets[1]['layers']['quic']['quic_quic_dcid']
+        quic_dcid_ascii = quic_dcid_string.replace(":", "")
+        quic_dcid = bytes(quic_dcid_ascii, 'utf-8').hex()
+    return quic_dcid
 
 
 def get_statistics():
-    files = traverse_pcap_directory()
-    statistics_data = []
+    def get_pcap_statistics():
+        files = traverse_pcap_directory()
+        statistics_data = []
+        for json_file in files:
+            data = add_configuration_parameters(json_file)
+            data['tcp_rtt'] = get_tcp_rtt_statistics(json_file)
+            data['tcp_hs'] = get_tcp_handshake_time(json_file)
+            data['tcp_conn'] = get_tcp_connection_time(json_file)
+            data['quic_hs'] = get_quic_handshake_time(json_file)
+            data['quic_conn'] = get_quic_connection_time(json_file)
+            data['dcid'] = get_quic_dcid(json_file)
+            data['quic_min_rtt'] = None
+            data['quic_smoothed_rtt'] = None
 
-    for json_file in files:
-        data = {}
-        data['mode'] = get_mode_of_file(json_file)
+            statistics_data.append(data)
 
-        data['tcp_rtt'] = get_tcp_rtt_statistics(json_file)
-        data['tcp_hs'] = get_tcp_handshake_time(json_file)
-        data['tcp_conn'] = get_tcp_connection_time(json_file)
-        data['quic_min_rtt'], data['quic_smoothed_rtt'] = get_quic_rtt_statistics()
-        data['quic_hs'] = get_quic_handshake_time(json_file)
-        data['quic_conn'] = get_quic_connection_time(json_file)
+        # Creating DataFrame directly from statistics_data
+        return pd.DataFrame(statistics_data)
 
-        statistics_data.append(data)
+    def get_qlog_statistics(statistics_df):
 
-    statistics_df = pd.DataFrame(statistics_data)
+        files = traverse_qlog_directory()
+        min_rtt_values = []
+        smoothed_rtt_values = []
 
-    # Convert lists with multiple values to NaN for numeric calculations
-    def replace_lists(x):
-        return np.nan if isinstance(x, list) and len(x) > 1 else x
+        def get_dataframe_index_of_qlog_file(qlog_file):
+            for index, row in statistics_df.iterrows():
+                if row['dcid'] != None and row['dcid'] in qlog_file:
+                    return index
 
-    df = statistics_df.apply(lambda x: x.apply(replace_lists))
-    # Group by 'mode' column and calculate median for specified columns
+        for qlog_file in files:
+            min_rtt_values = []
+            smoothed_rtt_values = []
+            try:
+                with open(qlog_file, 'r') as f:
+                    data = f.read()
+                    qlog_data = json.loads(data)
 
-    def nan_median(x):
-        if x.isnull().all():
-            return np.nan
-        return np.nanmedian(x)
+                if isinstance(qlog_data, dict) and 'traces' in qlog_data:
 
-    median_values = df.groupby('mode').agg(
-        lambda x: nan_median(x)).reset_index()
+                    for packet in qlog_data['traces']:
+                        for event in packet.get('events', []):
+                            data = event.get('data', {})
+                            min_rtt = data.get('min_rtt')
+                            smoothed_rtt = data.get('smoothed_rtt')
 
-    return statistics_df, median_values
+                            if min_rtt is not None:
+                                min_rtt_values.append(min_rtt / 1000)
+                            if smoothed_rtt is not None:
+                                smoothed_rtt_values.append(smoothed_rtt / 1000)
+
+            # ndjson format - quicgo
+            except json.JSONDecodeError:
+                with open(qlog_file, 'r') as f:
+                    ndqlog_data = f.read()
+                    # Split the data into lines and parse each line as JSON
+                    for line in ndqlog_data.strip().split('\n'):
+                        qlog_data = json.loads(line)
+                        if "data" in qlog_data:
+                            if "min_rtt" in qlog_data["data"]:
+                                min_rtt_values.append(
+                                    qlog_data["data"]["min_rtt"]/1000)
+                                smoothed_rtt_values.append(
+                                    qlog_data["data"]["smoothed_rtt"]/1000)
+
+            index = get_dataframe_index_of_qlog_file(qlog_file)
+            statistics_df.at[index, 'quic_min_rtt'] = min_rtt_values
+            statistics_df.at[index, 'quic_smoothed_rtt'] = smoothed_rtt_values
+        return statistics_df
+
+    def get_medians(statistics_df):
+
+        # Convert lists with multiple values to NaN for numeric calculations
+        def replace_lists(x):
+            return np.nan if isinstance(x, list) and len(x) > 1 else x
+
+        df = statistics_df.apply(lambda x: x.apply(replace_lists))
+        # Group by 'mode' column and calculate median for specified columns
+
+        def nan_median(x):
+            if x.isnull().all():
+                return np.nan
+            return np.nanmedian(x)
+
+        median_values = df.groupby('mode').agg(
+            lambda x: nan_median(x)).reset_index()
+        return median_values
+
+    statistics_df = get_pcap_statistics()
+    statistics_df = get_qlog_statistics(statistics_df)
+    return statistics_df, None
