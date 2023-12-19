@@ -13,30 +13,6 @@ common_fields:
   migration: false
 
 cases:
-  - mode: http
-    delay: 10ms
-  - mode: quicgo
-    delay: 10ms
-  - mode: aioquic
-    delay: 10ms
-
-  - mode: http
-    delay: 20ms
-  - mode: quicgo
-    delay: 20ms
-  - mode: aioquic
-    delay: 20ms
-
-  - mode: http
-    delay: 30ms
-  - mode: quicgo
-    delay: 30ms
-  - mode: aioquic
-    delay: 30ms
-
-  - mode: http
-    delay: 40ms
-  - mode: quicgo
-    delay: 40ms
-  - mode: aioquic
-    delay: 40ms
+  mode: [http, quicgo, aioquic]
+  delay: [10ms, 20ms, 30ms, 40ms]
+  

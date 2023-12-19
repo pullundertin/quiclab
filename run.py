@@ -47,13 +47,23 @@ def run_test_case(iteration_prefix, test_case):
 
 def run_tests():
     test_case_settings = read_test_cases()
-    test_cases = test_case_settings.get('cases')
-    iterations = test_case_settings.get('iterations')
+    common_fields = test_case_settings['common_fields']
 
-    for index, test_case in enumerate(test_cases, start=1):
-        for iteration in range(iterations):
-            iteration_prefix = f"case_{index}_iteration_{iteration+1}_"
-            run_test_case(iteration_prefix, test_case)
+    modes = test_case_settings['cases']['mode']
+    delays = test_case_settings['cases']['delay']
+    iterations = test_case_settings.get('iterations')
+    index = 1
+    for mode in (modes):
+        for delay in (delays):
+            for iteration in range(iterations):
+                iteration_prefix = f"case_{index}_iteration_{iteration+1}_"
+                test_case = {
+                    'mode': mode,
+                    'delay': delay,
+                    **common_fields
+                }
+                run_test_case(iteration_prefix, test_case)
+                index += 1
 
 
 def evaluate_test_results():
