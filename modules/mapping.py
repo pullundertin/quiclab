@@ -9,4 +9,5 @@ def get_test_configuration_of_json_file(json_file):
     # Mapping configuration to json_files
     for index, case_configurations in enumerate(config['cases'], start=1):
         if f'case_{index}_' in json_file:
+            case_configurations.update(config['common_fields'])
             return case_configurations
