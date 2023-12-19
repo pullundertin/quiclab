@@ -6,7 +6,7 @@ from modules.pcap_processing import convert_pcap_to_json, get_statistics
 from modules.commands import rsync, run_client, traffic_control, run_server, run_server_tracing, stop_server, stop_server_tracing
 from modules.logs import log_config
 from modules.prerequisites import reset_workdir, read_test_cases
-from modules.heatmap import show_handshake_heatmap, show_connection_heatmap
+from modules.heatmap import show_heatmaps
 import os
 import argparse
 
@@ -60,8 +60,7 @@ def evaluate_test_results():
     statistics, medians = get_statistics()
     statistics.to_csv('shared/statistics/statistics.csv', index=False)
     medians.to_csv('shared/statistics/medians.csv', index=False)
-    show_handshake_heatmap(medians)
-    show_connection_heatmap(medians)
+    show_heatmaps(medians, 'delay')
 
 
 if __name__ == "__main__":
