@@ -112,13 +112,19 @@ def get_quic_connection_time(json_file):
     json_objects = read_json_objects_from_file(json_file)
     for packet in json_objects:
         if check_if_packet_contains_protocol(packet, 'quic'):
+            quic_connection_start = float(
+                packet['layers']['frame']['frame_frame_time_relative'])
+            break
+    for packet in json_objects:
+        if check_if_packet_contains_protocol(packet, 'quic'):
             quic_data = packet.get('layers', {}).get('quic', {})
             if quic_data and 'quic_quic_frame_type' in quic_data:
                 frame_type = quic_data['quic_quic_frame_type']
                 frame_time_relative = float(
                     packet['layers']['frame']['frame_frame_time_relative'])
                 if frame_type == '29':
-                    quic_connection_duration = (frame_time_relative)
+                    quic_connection_end = (frame_time_relative)
+                    quic_connection_duration = quic_connection_end - quic_connection_start
 
     return quic_connection_duration
 
@@ -156,17 +162,23 @@ def search_key_value_recursive(obj, search_key, search_value, root):
 
 def get_quic_handshake_time(json_file):
     quic_handshake_duration = None
-
+    quic_handshake_start = None
+    quic_handshake_end = None
     json_objects = read_json_objects_from_file(json_file)
+    for packet in json_objects:
+        if check_if_packet_contains_protocol(packet, 'quic'):
+            quic_handshake_start = float(
+                packet['layers']['frame']['frame_frame_time_relative'])
+            break
     for packet in json_objects:
         if check_if_packet_contains_protocol(packet, 'quic'):
             results = search_key_value(
                 json_objects, 'tls_tls_handshake_type', '20')
 
             if results:
-                frame_time_relative = float(
+                quic_handshake_end = float(
                     results[0]['layers']['frame']['frame_frame_time_relative'])
-                quic_handshake_duration = (frame_time_relative)
+                quic_handshake_duration = quic_handshake_end - quic_handshake_start
                 break
 
     return quic_handshake_duration
