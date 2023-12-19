@@ -6,7 +6,7 @@ import numpy as np
 
 def calculate_percentage(df, metric, quic_column, tcp_column, dependend_variable):
     df[metric] = df.apply(lambda row: row[quic_column] / df.loc[(df['mode'] == 'http') & (
-        df[dependend_variable] == row[dependend_variable]), tcp_column].values[0] * 100 if row['mode'] in ['aioquic', 'quicgo'] else np.nan, axis=1)
+        df[dependend_variable] == row[dependend_variable]), tcp_column].values[0] * 100 if row['mode'] not in ['http'] else np.nan, axis=1)
     return df
 
 
