@@ -99,7 +99,8 @@ def get_tcp_connection_time(json_file):
         if src_ip == '172.1.0.101' and seq_raw_packet == fin_ack_seq:
             time_relative = float(
                 packet['layers']['frame']['frame_frame_time_relative'])
-            tcp_connection_duration = (time_relative)
+            if time_relative > 0:
+                tcp_connection_duration = (time_relative)
             break
 
     return tcp_connection_duration
