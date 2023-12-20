@@ -35,7 +35,6 @@ def save_heatmap(z_value, name, metric):
 def show_heatmaps(df):
     test_case_settings = read_test_cases()
     metric = find_keys_with_list_values(test_case_settings)
-    print('Metric', metric)
     df = calculate_percentage(df, 'percentage_hs', 'quic_hs', 'tcp_hs', metric)
     df = calculate_percentage(df, 'percentage_conn',
                               'quic_conn', 'tcp_conn', metric)

@@ -1,12 +1,14 @@
 import subprocess
 import logging
 from modules.prerequisites import get_docker_container, read_configuration
+from datetime import datetime
 
 
 client_1, router_1, router_2, server = get_docker_container()
 SSH_PUBLIC_KEY_PATH = read_configuration().get("SSH_PUBLIC_KEY_PATH")
 WORKDIR = read_configuration().get("WORKDIR")
 REMOTE_HOST = read_configuration().get("REMOTE_HOST")
+REMOTE_DIR = read_configuration().get("REMOTE_DIR")
 PCAP_PATH = read_configuration().get("PCAP_PATH")
 
 
@@ -21,7 +23,14 @@ def run_command(command):
 
 
 def rsync():
-    command = f"rsync -ahP --delete {WORKDIR}/ '-e ssh -i {SSH_PUBLIC_KEY_PATH}' {REMOTE_HOST}"
+    command = f"rsync -ahP --delete {WORKDIR}/ '-e ssh -i {SSH_PUBLIC_KEY_PATH}' {REMOTE_HOST}:{REMOTE_DIR}"
+    run_command(command)
+
+def rsync_permanent(permanent_storage_dir):
+    current_datetime = datetime.now()
+    formatted_datetime = current_datetime.strftime('%y%m%d_%H%M%S')
+    command = f"rsync -ahP {WORKDIR}/ '-e ssh -i {SSH_PUBLIC_KEY_PATH}' {REMOTE_HOST}:{permanent_storage_dir}/{formatted_datetime}/"
+    print(f'\n\nResults have been stored to {permanent_storage_dir}{formatted_datetime}.')
     run_command(command)
 
 
