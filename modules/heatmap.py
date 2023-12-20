@@ -40,7 +40,7 @@ def tests_contain_tcp_only(test_case_settings):
     modes = test_case_settings['cases']['mode']
     return len(modes) == 1 and modes[0] == 'tcp'
 
-def show_heatmaps(df):
+def show_heatmaps(df, args):
     test_case_settings = read_test_cases()
     if tests_contain_tcp_only(test_case_settings):
         return
@@ -53,7 +53,8 @@ def show_heatmaps(df):
     df = calculate_percentage(df, 'percentage_hs', 'quic_hs', 'tcp_hs', metric)
     df = calculate_percentage(df, 'percentage_conn',
                             'quic_conn', 'tcp_conn', metric)
-    print(df)
+    if args.results:
+        print(df)
     filtered_df = exclude_tcp_mode_from_heatmap(df)
     percentage_hs = generate_heatmap('percentage_hs', filtered_df, metric)
     percentage_conn = generate_heatmap('percentage_conn', filtered_df, metric)
