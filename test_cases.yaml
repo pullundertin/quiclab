@@ -1,7 +1,9 @@
 iterations: 1
 
-common_fields:
+cases:
+  mode: [http, quicgo, aioquic]
   size: 0.001M
+  delay: 10ms
   delay_deviation: 0
   loss: 0
   rate: 10
@@ -12,7 +14,4 @@ common_fields:
   rmax: 62901456
   migration: false
 
-cases:
-  mode: [http, quicgo, aioquic]
-  delay: [10ms, 20ms, 30ms, 40ms]
   

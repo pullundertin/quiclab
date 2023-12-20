@@ -47,20 +47,41 @@ def run_test_case(iteration_prefix, test_case):
 
 def run_tests():
     test_case_settings = read_test_cases()
-    common_fields = test_case_settings['common_fields']
+    # Function to search for keys with list values
+    def find_keys_with_list_values(data):
+        key_with_list = None
+        for key, value in data['cases'].items():
+            if isinstance(value, list) and key != 'mode':
+                key_with_list = key
+        return key_with_list
 
+    # Search for keys with list values
+    independent_variable = find_keys_with_list_values(test_case_settings)
+    if independent_variable != None:
+        independent_variables = test_case_settings['cases'][independent_variable]
+    cases = test_case_settings['cases']
     modes = test_case_settings['cases']['mode']
-    delays = test_case_settings['cases']['delay']
     iterations = test_case_settings.get('iterations')
     index = 1
-    for mode in (modes):
-        for delay in (delays):
+    if independent_variable != None:
+        for mode in (modes):
+            for element in (independent_variables):
+                for iteration in range(iterations):
+                    iteration_prefix = f"case_{index}_iteration_{iteration+1}_"
+                    test_case = {
+                        **cases,
+                        'mode': mode,
+                        independent_variable: element,
+                    }
+                    run_test_case(iteration_prefix, test_case)
+                    index += 1
+    else:
+        for mode in (modes):
             for iteration in range(iterations):
                 iteration_prefix = f"case_{index}_iteration_{iteration+1}_"
                 test_case = {
+                    **cases,
                     'mode': mode,
-                    'delay': delay,
-                    **common_fields
                 }
                 run_test_case(iteration_prefix, test_case)
                 index += 1
@@ -70,7 +91,8 @@ def evaluate_test_results():
     statistics, medians = get_statistics()
     statistics.to_csv('shared/statistics/statistics.csv', index=False)
     medians.to_csv('shared/statistics/medians.csv', index=False)
-    show_heatmaps(medians, 'delay')
+    # TODO find_keys_in_mapping --> independent_variable 
+    show_heatmaps(medians, 'loss')
 
 
 if __name__ == "__main__":
