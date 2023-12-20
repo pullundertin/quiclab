@@ -1,6 +1,6 @@
 import time
 import logging
-from modules.prerequisites import read_test_cases
+from modules.prerequisites import read_test_cases, save_test_cases_config_to_file
 
 from concurrent.futures import ThreadPoolExecutor
 from concurrent.futures import wait
@@ -48,8 +48,11 @@ def generate_test_cases(test_case_settings):
 
     return test_cases
 
+
 def run_tests():
     test_case_settings = read_test_cases()
+    save_test_cases_config_to_file(test_case_settings)
+
     test_cases = generate_test_cases(test_case_settings)
 
     for index, (iteration_prefix, test_case) in enumerate(test_cases, start=1):

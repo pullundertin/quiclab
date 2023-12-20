@@ -45,6 +45,12 @@ def read_test_cases():
         test_cases = yaml.safe_load(file)
     return test_cases
 
+def save_test_cases_config_to_file(test_case_settings):
+    TEST_CASE_CONFIG = read_configuration().get("TEST_CASE_CONFIG")
+    with open(TEST_CASE_CONFIG, 'w') as file:
+        yaml.dump(test_case_settings, file, default_flow_style=False)
+
+
 
 def read_configuration():
     with open('./.env', 'r') as file:
