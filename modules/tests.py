@@ -7,12 +7,13 @@ from concurrent.futures import wait
 from modules.commands import run_client, traffic_control, run_server, run_server_tracing, stop_server, stop_server_tracing
 
 
-def find_keys_with_list_values(data):
+def find_keys_with_list_values(test_case_settings):
     key_with_list = None
-    for key, value in data['cases'].items():
+    for key, value in test_case_settings['cases'].items():
         if isinstance(value, list) and key != 'mode':
             key_with_list = key
     return key_with_list
+
 
 def generate_test_cases(test_case_settings):
     independent_variable = find_keys_with_list_values(test_case_settings)
@@ -58,6 +59,7 @@ def run_tests():
     for index, (iteration_prefix, test_case) in enumerate(test_cases, start=1):
         run_test_case(iteration_prefix, test_case)
 
+
 def get_test_configuration_of_json_file(json_file):
     test_case_settings = read_test_cases()
     test_cases = generate_test_cases(test_case_settings)
@@ -65,6 +67,7 @@ def get_test_configuration_of_json_file(json_file):
     for index, (iteration_prefix, test_case) in enumerate(test_cases, start=1):
         if iteration_prefix in json_file:
             return test_case
+
 
 def run_test_case(iteration_prefix, test_case):
     try:

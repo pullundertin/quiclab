@@ -25,14 +25,14 @@ def arguments():
     return args
 
 
-
 def evaluate_test_results():
-    convert_pcap_to_json()
+
     statistics, medians = get_statistics()
     statistics.to_csv('shared/statistics/statistics.csv', index=False)
     medians.to_csv('shared/statistics/medians.csv', index=False)
     show_boxplot(statistics)
     show_heatmaps(medians)
+
 
 def store_results(args):
     if args.store:
@@ -40,6 +40,7 @@ def store_results(args):
         rsync_permanent(args.store)
     else:
         rsync()
+
 
 if __name__ == "__main__":
     log_config()
@@ -50,13 +51,12 @@ if __name__ == "__main__":
 
         reset_workdir()
         run_tests()
- 
+        convert_pcap_to_json()
+
     else:
         logging.info("Executing evaluation only")
-
 
     evaluate_test_results()
     store_results(args)
 
     logging.info("All tasks are completed.")
-
