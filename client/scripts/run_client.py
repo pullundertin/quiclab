@@ -14,12 +14,11 @@ logging.basicConfig(filename=os.getenv('LOG_PATH'), level=logging.INFO,
 
 
 def arguments():
-    # python /scripts/run_client.py --mode http --window_scaling 1 --rmin 4096 --rdef 131072 --rmax 6291456
     # Create an ArgumentParser object
     parser = argparse.ArgumentParser(description='QuicLab Test Environment')
 
     parser.add_argument('-m', '--mode', type=str,
-                        help='modes: http, aioquic, quicgo')
+                        help='modes: tcp, aioquic, quicgo')
 
     parser.add_argument('-w', '--window_scaling', type=str,
                         help='enable/disable receiver window scaling')
@@ -86,21 +85,21 @@ def quicgo():
     run_command(command)
 
 
-def http(args):
+def tcp(args):
     tcp_settings(args)
     URL = "https://172.3.0.5:443/data.log"
     request = (URL + ' ') * 1
     os.environ['SSLKEYLOGFILE'] = os.getenv('KEYS_PATH')
     # {URL} -o /dev/null {URL} -o /dev/null"
     command = f"curl -k {URL} -o /dev/null"
-    logging.info(f"{os.getenv('HOST')}: sending http request...")
+    logging.info(f"{os.getenv('HOST')}: sending tcp request...")
     run_command(command)
 
 
 def client_request(args):
 
-    if args.mode == "http":
-        http(args)
+    if args.mode == "tcp":
+        tcp(args)
     elif args.mode == "aioquic":
         aioquic()
     elif args.mode == "quicgo":

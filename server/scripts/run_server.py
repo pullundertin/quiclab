@@ -12,7 +12,7 @@ def arguments():
     parser = argparse.ArgumentParser(description='QuicLab Test Environment')
 
     parser.add_argument('-m', '--mode', type=str,
-                        help='modes: http, aioquic, quicgo')
+                        help='modes: tcp, aioquic, quicgo')
 
     args = parser.parse_args()
 
@@ -35,9 +35,9 @@ def quicgo():
     run_command(command)
 
 
-def http():
+def tcp():
     command = "nginx"
-    logging.info(f"{os.getenv('HOST')}: starting http server...")
+    logging.info(f"{os.getenv('HOST')}: starting tcp server...")
     run_command(command)
 
 
@@ -49,8 +49,8 @@ if __name__ == "__main__":
 
             args = arguments()
 
-            if args.mode == "http":
-                http()
+            if args.mode == "tcp":
+                tcp()
             elif args.mode == "aioquic":
                 aioquic()
             elif args.mode == "quicgo":

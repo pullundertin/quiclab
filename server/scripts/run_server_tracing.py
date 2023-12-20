@@ -13,7 +13,7 @@ def arguments():
     parser = argparse.ArgumentParser(description='QuicLab Test Environment')
 
     parser.add_argument('-m', '--mode', type=str,
-                        help='modes: http, aioquic, quicgo')
+                        help='modes: tcp, aioquic, quicgo')
     parser.add_argument('-s', '--size', type=str,
                         help='size of the file to download')
     parser.add_argument('--iteration', type=str,
@@ -102,7 +102,7 @@ if __name__ == "__main__":
         args = arguments()
 
         with ThreadPoolExecutor() as executor:
-            if args.mode == 'http':
+            if args.mode == 'tcp':
                 thread_1 = executor.submit(tcpprobe)
             thread_2 = executor.submit(tcpdump, args.iteration)
             thread_3 = executor.submit(generate_data, file_path, args.size)

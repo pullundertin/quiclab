@@ -11,16 +11,16 @@ def arguments():
     parser = argparse.ArgumentParser(description='QuicLab Test Environment')
 
     parser.add_argument('-m', '--mode', type=str,
-                        help='modes: http, aioquic, quicgo')
+                        help='modes: tcp, aioquic, quicgo')
 
     args = parser.parse_args()
 
     return args
 
 
-def http():
+def tcp():
     command = f"pkill nginx"
-    logging.info(f"{os.getenv('HOST')}: stopping http server..")
+    logging.info(f"{os.getenv('HOST')}: stopping tcp server..")
     run_command(command)
 
 
@@ -47,8 +47,8 @@ if __name__ == "__main__":
 
         args = arguments()
 
-        if args.mode == "http":
-            http()
+        if args.mode == "tcp":
+            tcp()
         elif args.mode == "aioquic":
             aioquic()
         elif args.mode == "quicgo":

@@ -13,7 +13,7 @@ def arguments():
     parser = argparse.ArgumentParser(description='QuicLab Test Environment')
 
     parser.add_argument('-m', '--mode', type=str,
-                        help='modes: http, aioquic, quicgo')
+                        help='modes: tcp, aioquic, quicgo')
     parser.add_argument('--iteration', type=str,
                         help='number of iteration')
 
@@ -59,7 +59,7 @@ if __name__ == "__main__":
     try:
         with ThreadPoolExecutor() as executor:
             thread_1 = executor.submit(tcpdump)
-            if args.mode == 'http':
+            if args.mode == 'tcp':
                 thread_2 = executor.submit(tcpprobe, args.iteration)
                 wait([thread_2])
             wait([thread_1])
