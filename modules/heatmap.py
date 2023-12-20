@@ -35,19 +35,25 @@ def save_heatmap(z_value, name, metric):
 
     plt.savefig(f"{HEATMAPS_DIR}/{name}.png", dpi=300, bbox_inches='tight')
 
+def tests_contain_http_only(test_case_settings):
+    # Check if the list contains only 'http' and this is the only element
+    modes = test_case_settings['cases']['mode']
+    return len(modes) == 1 and modes[0] == 'http'
 
 def show_heatmaps(df):
     test_case_settings = read_test_cases()
+    if tests_contain_http_only(test_case_settings):
+        return
+    
     metric = find_keys_with_list_values(test_case_settings)
+    
     if metric is None:
         metric = 'generic_heatmap'
 
-    print(df)
     df = calculate_percentage(df, 'percentage_hs', 'quic_hs', 'tcp_hs', metric)
-    print(df)
     df = calculate_percentage(df, 'percentage_conn',
                             'quic_conn', 'tcp_conn', metric)
-    # print(df)
+    print(df)
     filtered_df = exclude_http_mode_from_heatmap(df)
     percentage_hs = generate_heatmap('percentage_hs', filtered_df, metric)
     percentage_conn = generate_heatmap('percentage_conn', filtered_df, metric)
