@@ -2,7 +2,8 @@
 import seaborn as sns
 import matplotlib.pyplot as plt
 import numpy as np
-
+from modules.tests import find_keys_with_list_values
+from modules.prerequisites import read_test_cases
 
 def calculate_percentage(df, metric, quic_column, tcp_column, dependend_variable):
     df[metric] = df.apply(lambda row: row[quic_column] / df.loc[(df['mode'] == 'http') & (
@@ -31,8 +32,10 @@ def save_heatmap(z_value, name, metric):
     plt.savefig(f"shared/heatmaps/{name}.png", dpi=300, bbox_inches='tight')
 
 
-def show_heatmaps(df, metric):
-
+def show_heatmaps(df):
+    test_case_settings = read_test_cases()
+    metric = find_keys_with_list_values(test_case_settings)
+    print('Metric', metric)
     df = calculate_percentage(df, 'percentage_hs', 'quic_hs', 'tcp_hs', metric)
     df = calculate_percentage(df, 'percentage_conn',
                               'quic_conn', 'tcp_conn', metric)

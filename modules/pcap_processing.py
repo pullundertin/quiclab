@@ -4,9 +4,8 @@ import logging
 import json
 from modules.commands import run_command
 from modules.prerequisites import read_configuration
-from modules.mapping import get_test_configuration_of_json_file
-import numpy as np
-import yaml
+from modules.tests import get_test_configuration_of_json_file
+
 
 
 PCAP_PATH = read_configuration().get("PCAP_PATH")
