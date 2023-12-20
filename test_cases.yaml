@@ -1,4 +1,4 @@
-iterations: 1
+iterations: 3
 
 cases:
   mode: [http, quicgo, aioquic]
@@ -6,12 +6,13 @@ cases:
   delay: 10ms
   delay_deviation: 0
   loss: 0
-  rate: [10]
+  rate: 10
   firewall: None
   window_scaling: 1
   rmin: 4096
   rdef: 131072
   rmax: 62901456
   migration: false
+  generic_heatmap: ''
 
   

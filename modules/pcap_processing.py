@@ -337,7 +337,7 @@ def get_statistics():
 
     def get_medians(df):
         group_columns = ['mode', 'size', 'delay', 'delay_deviation', 'loss',
-                         'rate', 'firewall', 'window_scaling', 'rmin', 'rmax', 'rdef', 'migration']
+                         'rate', 'firewall', 'window_scaling', 'rmin', 'rmax', 'rdef', 'migration', 'generic_heatmap']
         # Group by group_columns and calculate median across multiple columns
         median_values = df.groupby(group_columns).agg({
             'quic_hs': 'median',

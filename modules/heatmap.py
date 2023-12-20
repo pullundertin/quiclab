@@ -4,9 +4,13 @@ import matplotlib.pyplot as plt
 import numpy as np
 from modules.tests import find_keys_with_list_values
 from modules.prerequisites import read_test_cases
+from modules.prerequisites import read_configuration
 
-def calculate_percentage(df, metric, quic_column, tcp_column, dependend_variable):
-    df[metric] = df.apply(lambda row: row[quic_column] / df.loc[(df['mode'] == 'http') & (
+HEATMAPS_DIR = read_configuration().get("HEATMAPS_DIR")
+
+
+def calculate_percentage(df, new_column_name, quic_column, tcp_column, dependend_variable):
+    df[new_column_name] = df.apply(lambda row: row[quic_column] / df.loc[(df['mode'] == 'http') & (
         df[dependend_variable] == row[dependend_variable]), tcp_column].values[0] * 100 if row['mode'] not in ['http'] else np.nan, axis=1)
     return df
 
@@ -29,16 +33,21 @@ def save_heatmap(z_value, name, metric):
     plt.ylabel(metric)
     plt.show()
 
-    plt.savefig(f"shared/heatmaps/{name}.png", dpi=300, bbox_inches='tight')
+    plt.savefig(f"{HEATMAPS_DIR}/{name}.png", dpi=300, bbox_inches='tight')
 
 
 def show_heatmaps(df):
     test_case_settings = read_test_cases()
     metric = find_keys_with_list_values(test_case_settings)
-    df = calculate_percentage(df, 'percentage_hs', 'quic_hs', 'tcp_hs', metric)
-    df = calculate_percentage(df, 'percentage_conn',
-                              'quic_conn', 'tcp_conn', metric)
+    if metric is None:
+        metric = 'generic_heatmap'
+
     print(df)
+    df = calculate_percentage(df, 'percentage_hs', 'quic_hs', 'tcp_hs', metric)
+    print(df)
+    df = calculate_percentage(df, 'percentage_conn',
+                            'quic_conn', 'tcp_conn', metric)
+    # print(df)
     filtered_df = exclude_http_mode_from_heatmap(df)
     percentage_hs = generate_heatmap('percentage_hs', filtered_df, metric)
     percentage_conn = generate_heatmap('percentage_conn', filtered_df, metric)
