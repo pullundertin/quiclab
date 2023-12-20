@@ -19,6 +19,8 @@ def arguments():
                         help='run full execution')
     parser.add_argument('--store', type=str,
                         help='directory for permanent storage')
+    parser.add_argument('--results', action='store_true',
+                        help='print resulting dataframe')
 
     args = parser.parse_args()
 
@@ -31,7 +33,7 @@ def evaluate_test_results():
     statistics.to_csv('shared/statistics/statistics.csv', index=False)
     medians.to_csv('shared/statistics/medians.csv', index=False)
     show_boxplot(statistics)
-    show_heatmaps(medians)
+    show_heatmaps(medians, args)
 
 
 def store_results(args):
