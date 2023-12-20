@@ -1,4 +1,3 @@
-import yaml
 import time
 import logging
 from modules.prerequisites import read_test_cases
@@ -35,7 +34,7 @@ def generate_test_cases(test_case_settings):
                         independent_variable: element,
                     }
                     test_cases.append((iteration_prefix, test_case))
-                    index += 1
+                index += 1
     else:
         for mode in modes:
             for iteration in range(iterations):
@@ -45,7 +44,7 @@ def generate_test_cases(test_case_settings):
                     'mode': mode,
                 }
                 test_cases.append((iteration_prefix, test_case))
-                index += 1
+            index += 1
 
     return test_cases
 
@@ -61,14 +60,14 @@ def get_test_configuration_of_json_file(json_file):
     test_cases = generate_test_cases(test_case_settings)
 
     for index, (iteration_prefix, test_case) in enumerate(test_cases, start=1):
-        if f'case_{index}_' in json_file:
+        if iteration_prefix in json_file:
             return test_case
 
 def run_test_case(iteration_prefix, test_case):
     try:
         with ThreadPoolExecutor() as executor:
             logging.info(
-                f"//////   TEST CASE {iteration_prefix}{test_case['mode']} ///////")
+                f"//////   TEST {iteration_prefix}{test_case['mode']} ///////")
             executor.submit(run_server, test_case)
             time.sleep(1)
             executor.submit(run_server_tracing, test_case, iteration_prefix)

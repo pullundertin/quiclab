@@ -7,6 +7,7 @@ import yaml
 def reset_workdir():
     WORKDIR = read_configuration().get("WORKDIR")
     folders = [
+        f'{WORKDIR}/boxplots',
         f'{WORKDIR}/heatmaps',
         f'{WORKDIR}/keys',
         f'{WORKDIR}/pcap',

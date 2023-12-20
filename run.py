@@ -5,6 +5,7 @@ from modules.commands import rsync, rsync_permanent
 from modules.logs import log_config
 from modules.prerequisites import reset_workdir
 from modules.heatmap import show_heatmaps
+from modules.boxplot import show_boxplot
 from modules.tests import run_tests
 import os
 import argparse
@@ -30,6 +31,7 @@ def evaluate_test_results():
     statistics, medians = get_statistics()
     statistics.to_csv('shared/statistics/statistics.csv', index=False)
     medians.to_csv('shared/statistics/medians.csv', index=False)
+    show_boxplot(statistics)
     show_heatmaps(medians)
 
 def store_results(args):
