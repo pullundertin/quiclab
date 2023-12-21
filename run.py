@@ -7,6 +7,7 @@ from modules.prerequisites import reset_workdir, read_configuration, get_test_ob
 from modules.heatmap import show_heatmaps
 from modules.boxplot import show_boxplot
 from modules.tests import run_tests
+from modules.converter import process_tcp_probe_logs
 import os
 import argparse
 
@@ -61,6 +62,7 @@ if __name__ == "__main__":
         save_test_cases_config_to_log_file()
         run_tests(test)
         convert_pcap_to_json()
+        process_tcp_probe_logs()
 
     else:
         logging.info("Executing evaluation only")

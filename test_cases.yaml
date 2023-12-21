@@ -1,7 +1,7 @@
-iterations: 2
+iterations: 1
 
 cases:
-  mode: [tcp, aioquic]
+  mode: [tcp]
   size: 0.001M
   delay: 10ms
   delay_deviation: 0

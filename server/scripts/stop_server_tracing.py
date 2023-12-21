@@ -4,7 +4,6 @@ import logging
 import argparse
 from concurrent.futures import ThreadPoolExecutor
 from concurrent.futures import wait
-from modules.converter import convert_log_to_csv
 from modules.logs import log_config
 from modules.commands import run_command
 
@@ -29,10 +28,6 @@ def tcpprobe(file_name_prefix):
                            stdout=output_file, stderr=output_file, check=True)
         logging.info(f"{os.getenv('HOST')}: tcpprobe written to file.")
 
-    def process_trace_data():
-        convert_log_to_csv()
-        logging.info(f"{os.getenv('HOST')}: tcpprobe converted.")
-
     def disable_tcptrace():
         with open(tcp_probe_enable_path, "w") as enable_file:
             enable_file.write("0")
@@ -42,7 +37,6 @@ def tcpprobe(file_name_prefix):
     output_file_path = f"/shared/tcpprobe/{file_name_prefix}tcptrace.log"
     tcp_probe_enable_path = "/sys/kernel/debug/tracing/events/tcp/enable"
     cat_trace_file_and_write_to_file()
-    process_trace_data()
     disable_tcptrace()
 
 

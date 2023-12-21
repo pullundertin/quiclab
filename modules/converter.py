@@ -1,6 +1,12 @@
 import pandas as pd
 import re
 import os
+from modules.prerequisites import read_configuration
+import warnings
+import logging
+
+# Disable all warnings
+warnings.simplefilter(action='ignore', category=FutureWarning)
 
 
 def extract_values_from_log(input_file):
@@ -238,14 +244,16 @@ def process_all_input_files(tcpprobe_directory, selected_columns):
 
 ip_pattern = '172.3.'
 MSS = 1460
+TCPPROBE_PATH = read_configuration().get("TCPPROBE_PATH")
 
 
-def convert_log_to_csv():
+def process_tcp_probe_logs():
 
     pd.options.mode.chained_assignment = None
 
-    tcpprobe_directory = "/shared/tcpprobe/"
     selected_columns = ['time', 'cwnd_bytes', 'rcv_wnd_bytes', 'min_wnd_bytes', 'cwnd_mss', 'rcv_wnd_mss', 'min_wnd_mss', 'ssthresh_mss',  'cum_rcv_wnd_bytes',
                         'data_sent_bytes', 'cum_data_sent_bytes', 'ack_sent_bytes', 'cum_ack_sent_bytes']
 
-    process_all_input_files(tcpprobe_directory, selected_columns)
+    process_all_input_files(TCPPROBE_PATH, selected_columns)
+
+    logging.info(f"tcp_probe files processed.")
