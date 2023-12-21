@@ -4,7 +4,6 @@ import logging
 import json
 from modules.commands import run_command
 from modules.prerequisites import read_configuration
-from modules.tests import get_test_configuration_of_json_file
 
 
 PCAP_PATH = read_configuration().get("PCAP_PATH")
@@ -244,16 +243,6 @@ def get_quic_rtt_data():
     return quic_implementation, min_rtt_values, smoothed_rtt_values
 
 
-def add_configuration_parameters(json_file, test):
-
-    data = {}
-    config = get_test_configuration_of_json_file(json_file, test)
-    for column in config:
-        data[column] = config[column]
-
-    return data
-
-
 def get_quic_dcid(json_file):
     quic_dcid = None
     quic_dcid_ascii = None
@@ -294,11 +283,7 @@ def get_test_results(test):
 
     def get_pcap_data():
         files = traverse_pcap_directory()
-        pcap_data = []
         iterate_over_json_files_and_get_associated_test_case(files)
-
-        # Creating DataFrame directly from pcap_data
-        return pcap_data
 
     def get_qlog_data(test_results):
 
@@ -362,9 +347,7 @@ def get_test_results(test):
     #     }).reset_index()
     #     return median_values
 
-    test_results = get_pcap_data()
-    print(test_results)
+    get_pcap_data()
     # test_results = get_qlog_data(test_results)
     # median_df = pd.DataFrame()
     # median_df = get_medians(test_results)
-    return test_results

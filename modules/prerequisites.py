@@ -36,13 +36,14 @@ class TestCases:
     def map_json_file_to_test_case(self, json):
         matching_test_case = None
         # Extracting Number and Iteration from the JSON file name using regular expressions
-        match = re.match(r'.*Case_(\d+)_', json)
+        match = re.match(r'.*Case_(\d+)_Iteration_(\d+)_', json)
         if match:
             extracted_number = int(match.group(1))
+            extracted_iteration = int(match.group(2))
 
             # Searching for the matching TestCase object
             matching_test_case = next((test_case for test_case in self.test_cases if test_case.number ==
-                                      extracted_number), None)
+                                      extracted_number and test_case.iteration == extracted_iteration), None)
 
         return matching_test_case
 
@@ -50,8 +51,8 @@ class TestCases:
 class TestCase:
     def __init__(self, number, config):
         self.number = number
-        self.iteration = None
-        self.file_name_prefix = None
+        self.iteration = config['iteration']
+        self.file_name_prefix = f"Case_{self.number}_Iteration_{self.iteration}_"
         self.mode = config['mode']
         self.size = config['size']
         self.delay = config['delay']
@@ -114,27 +115,9 @@ class TestCase:
         QUIC-GO Connection Time: {self.quicgo_conn}
         """
 
-    def set_iteration(self, iteration):
-        self.iteration = iteration
-        self.file_name_prefix = f"Case_{self.number}_Iteration_{self.iteration}_"
-
     def store_test_results_for(self, test_results):
         for key, value in test_results.items():
             setattr(self, key, value)
-
-        # self.tcp_rtt = test_results['tcp_rtt']
-        # self.tcp_hs = test_results['tcp_hs']
-        # self.tcp_conn = test_results['tcp_conn']
-        # self.quic_min_rtt = test_results['']
-        # self.quic_smoothed_rtt = test_results['']
-        # self.aioquic_hs = test_results['']
-        # self.aioquic_conn = test_results['']
-        # self.quicgo_hs = test_results['']
-        # self.quicgo_conn = test_results['']
-        # self.quic_hs = test_results['']
-        # self.quic_conn = test_results['']
-        # self.dcid = test_results['']
-        # self.dcid_hex = test_results['']
 
 
 def reset_workdir():
@@ -188,6 +171,7 @@ def get_test_object():
 def decompress_test_cases(test):
     control_parameter = test.control_parameter
     test_cases_compressed = test.test_cases_compressed
+    iterations = test.iterations
     modes = test_cases_compressed['mode']
     index = 1
     test_cases = TestCases()
@@ -196,13 +180,15 @@ def decompress_test_cases(test):
         control_parameter_values = test.test_cases_compressed[control_parameter]
         for mode in modes:
             for element in control_parameter_values:
-                test_case = {
-                    **test_cases_compressed,
-                    'mode': mode,
-                    control_parameter: element,
-                }
+                for iteration in range(iterations):
+                    test_case = {
+                        **test_cases_compressed,
+                        'iteration': iteration + 1,
+                        'mode': mode,
+                        control_parameter: element,
+                    }
 
-                test_cases.add_test_case(TestCase(index, test_case))
+                    test_cases.add_test_case(TestCase(index, test_case))
                 index += 1
     else:
         for mode in modes:
