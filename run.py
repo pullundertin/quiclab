@@ -33,9 +33,11 @@ def arguments():
 
 def evaluate_test_results(test_results_dataframe, median_dataframe, test):
     control_parameter = test.control_parameter
+    iterations = test.iterations
     show_boxplot(test_results_dataframe, control_parameter)
     show_heatmaps(median_dataframe, control_parameter, args)
-    t_test(test_results_dataframe, control_parameter)
+    if iterations > 3:
+        t_test(test_results_dataframe, control_parameter)
 
 
 def store_results(test_results_dataframe, median_dataframe, args):

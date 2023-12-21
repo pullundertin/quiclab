@@ -10,7 +10,6 @@ def t_test(df, control_parameter):
         # Filter the DataFrame based on the current unique value
         filtered_df = df[df[control_parameter] == value]
         # hs_df = combine_quic_and_tcp_values_for(filtered_df, 'hs', value)
-
         tcp_series = filtered_df[filtered_df['mode'] == 'tcp']
         tcp_hs_samples = tcp_series['tcp_hs'].tolist()
         tcp_conn_samples = tcp_series['tcp_conn'].tolist()
@@ -34,6 +33,7 @@ def t_test(df, control_parameter):
 
 
 def perform_t_test(samples_1, samples_2, name):
+
     # Perform independent t-test
     t_statistic, p_value = ttest_ind(
         samples_1, samples_2)

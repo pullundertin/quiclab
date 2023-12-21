@@ -1,9 +1,9 @@
-iterations: 2
+iterations: 10
 
 cases:
   mode: [tcp, aioquic, quicgo]
-  size: 0.001M
-  delay: [10ms, 20ms]
+  size: [0.001M, 0.2M]
+  delay: 20ms
   delay_deviation: 0
   loss: 0
   rate: 10
