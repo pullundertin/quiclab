@@ -10,8 +10,10 @@ def get_medians(df):
         'aioquic_hs': 'median',
         'quicgo_hs': 'median',
         'tcp_hs': 'median',
+        'quic_hs': 'median',
         'aioquic_conn': 'median',
         'quicgo_conn': 'median',
+        'quic_conn': 'median',
         'tcp_conn': 'median'
     }).reset_index()
     return median_df

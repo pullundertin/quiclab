@@ -30,9 +30,9 @@ def arguments():
     return args
 
 
-def evaluate_test_results(test_results, medians):
-    show_boxplot(test_results)
-    show_heatmaps(medians, args)
+def evaluate_test_results(test_results_dataframe, median_dataframe, test):
+    show_boxplot(test_results_dataframe, test)
+    show_heatmaps(median_dataframe, test, args)
 
 
 def store_results(test_results, medians, args):
@@ -45,11 +45,6 @@ def store_results(test_results, medians, args):
     else:
         rsync()
 
-
-# def clean_dataframe(df):
-#     df['quic_hs'] = df['aioquic_hs'].combine_first(df['quicgo_hs'])
-#     df['quic_conn'] = df['aioquic_conn'].combine_first(df['quicgo_conn'])
-#     return df
 
 def create_dataframe_from_object(test):
     list_of_df = []
@@ -86,12 +81,9 @@ if __name__ == "__main__":
         logging.info("Executing evaluation only")
 
     get_test_results(test)
-    df = create_dataframe_from_object(test)
-
-    median_df = do_statistics(df)
-    print(median_df)
-    # test_results = clean_dataframe(test_results)
-    # evaluate_test_results(test_results, medians)
+    test_results_dataframe = create_dataframe_from_object(test)
+    median_dataframe = do_statistics(test_results_dataframe)
+    evaluate_test_results(test_results_dataframe, median_dataframe, test)
     # store_results(None, None, args)
 
     logging.info("All tasks are completed.")

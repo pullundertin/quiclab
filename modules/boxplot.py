@@ -96,9 +96,8 @@ def perform_t_test(samples_1, samples_2, name):
         file.write(output)
 
 
-def show_boxplot(df, control_parameter):
-    """Create and display separate boxplots for handshake and connection times."""
-
+def show_boxplot(test_results_dataframe, test):
+    control_parameter = test.control_parameter
     create_boxplots_for_each_value_of_independent_variable(
-        df, control_parameter)
-    # t_test(df, control_parameter)
+        test_results_dataframe, control_parameter)
+    # t_test(test_results_dataframe, control_parameter)

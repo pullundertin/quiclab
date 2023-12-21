@@ -34,33 +34,30 @@ def save_heatmap(z_value, name, control_parameter):
     plt.savefig(f"{HEATMAPS_DIR}/{name}.png", dpi=300, bbox_inches='tight')
 
 
-def tests_contain_tcp_only(test_case_settings):
-    # Check if the list contains only 'tcp' and this is the only element
-    modes = test_case_settings['cases']['mode']
-    return len(modes) == 1 and modes[0] == 'tcp'
+def tests_contain_tcp_only(median_dataframe):
+    return (median_dataframe['mode'] == 'tcp').all()
 
 
-def show_heatmaps(df, args):
-    test_case_settings = get_test_object()
-    if tests_contain_tcp_only(test_case_settings):
+def show_heatmaps(median_dataframe, test, args):
+    if tests_contain_tcp_only(median_dataframe):
         return
-
-    control_parameter = get_control_parameter(test_case_settings)
+    control_parameter = test.control_parameter
 
     if control_parameter is None:
         control_parameter = 'generic_heatmap'
 
-    df = calculate_percentage(
-        df, 'percentage_hs', 'quic_hs', 'tcp_hs', control_parameter)
-    df = calculate_percentage(df, 'percentage_conn',
-                              'quic_conn', 'tcp_conn', control_parameter)
+    median_dataframe = calculate_percentage(
+        median_dataframe, 'percentage_hs', 'quic_hs', 'tcp_hs', control_parameter)
+    median_dataframe = calculate_percentage(median_dataframe, 'percentage_conn',
+                                            'quic_conn', 'tcp_conn', control_parameter)
     if args.results:
-        print(df)
-    filtered_df = exclude_tcp_mode_from_heatmap(df)
+        print(median_dataframe)
+    filtered_median_dataframe = exclude_tcp_mode_from_heatmap(
+        median_dataframe)
     percentage_hs = generate_heatmap(
-        'percentage_hs', filtered_df, control_parameter)
+        'percentage_hs', filtered_median_dataframe, control_parameter)
     percentage_conn = generate_heatmap(
-        'percentage_conn', filtered_df, control_parameter)
+        'percentage_conn', filtered_median_dataframe, control_parameter)
 
     save_heatmap(percentage_hs, 'Handshake', control_parameter)
     save_heatmap(percentage_conn, 'Connection', control_parameter)
