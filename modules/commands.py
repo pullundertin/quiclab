@@ -37,31 +37,31 @@ def rsync_permanent(permanent_storage_dir):
 
 
 def run_client(test_case):
-    command = f"python /scripts/run_client.py --mode {test_case.config['mode']} --window_scaling {test_case.config['window_scaling']} --rmin {test_case.config['rmin']} --rdef {test_case.config['rdef']} --rmax {test_case.config['rmax']} --migration {test_case.config['migration']} --file_name_prefix {test_case.file_name_prefix}"
+    command = f"python /scripts/run_client.py --mode {test_case.mode} --window_scaling {test_case.window_scaling} --rmin {test_case.rmin} --rdef {test_case.rdef} --rmax {test_case.rmax} --migration {test_case.migration} --file_name_prefix {test_case.file_name_prefix}"
     client_1.exec_run(command)
 
 
 def traffic_control(test_case):
-    command = f"python /scripts/traffic_control.py --delay {test_case.config['delay']} --delay_deviation {test_case.config['delay_deviation']} --loss {test_case.config['loss']} --rate {test_case.config['rate']} --firewall {test_case.config['firewall']}"
+    command = f"python /scripts/traffic_control.py --delay {test_case.delay} --delay_deviation {test_case.delay_deviation} --loss {test_case.loss} --rate {test_case.rate} --firewall {test_case.firewall}"
     router_1.exec_run(command)
     router_2.exec_run(command)
 
 
 def run_server(test_case):
-    command = f"python /scripts/run_server.py --mode {test_case.config['mode']}"
+    command = f"python /scripts/run_server.py --mode {test_case.mode}"
     server.exec_run(command)
 
 
 def run_server_tracing(test_case):
-    command = f"python /scripts/run_server_tracing.py --mode {test_case.config['mode']} --size {test_case.config['size']} --file_name_prefix {test_case.file_name_prefix}"
+    command = f"python /scripts/run_server_tracing.py --mode {test_case.mode} --size {test_case.size} --file_name_prefix {test_case.file_name_prefix}"
     server.exec_run(command)
 
 
 def stop_server(test_case):
-    command = f"python /scripts/stop_server.py --mode {test_case.config['mode']}"
+    command = f"python /scripts/stop_server.py --mode {test_case.mode}"
     server.exec_run(command)
 
 
 def stop_server_tracing(test_case):
-    command = f"python /scripts/stop_server_tracing.py --mode {test_case.config['mode']} --file_name_prefix {test_case.file_name_prefix}"
+    command = f"python /scripts/stop_server_tracing.py --mode {test_case.mode} --file_name_prefix {test_case.file_name_prefix}"
     server.exec_run(command)

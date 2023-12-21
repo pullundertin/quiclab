@@ -67,8 +67,10 @@ if __name__ == "__main__":
     else:
         logging.info("Executing evaluation only")
 
-    # test_results = get_test_results(test)
-    # print(test_cases)
+    # print(test_case)
+    test_results = get_test_results(test)
+    print(test)
+    # print(test_results)
     # print(control_parameter)
     # test_results = clean_dataframe(test_results)
     # evaluate_test_results(test_results, medians)

@@ -3,13 +3,14 @@ import logging
 import docker
 import yaml
 import shutil
+import re
 
 
 class Test:
     def __init__(self):
         self.iterations = None
         self.test_cases_compressed = None
-        self.test_cases_decompressed = None
+        self.test_cases_decompressed = TestCases()
         self.control_parameter = None
 
     def __str__(self):
@@ -25,23 +26,115 @@ class TestCases:
 
     def __str__(self):
         test_cases = "\n".join(str(test_case) for test_case in self.test_cases)
-        return f"Test Cases:\n{test_cases}"
+        return f"\n{test_cases}"
+
+    # def find_test_case_by_number(self, number):
+    #     matching_test_case = next(
+    #         (tc for tc in self.test_cases if tc.number == number), None)
+    #     return matching_test_case
+
+    def map_json_file_to_test_case(self, json):
+        matching_test_case = None
+        # Extracting Number and Iteration from the JSON file name using regular expressions
+        match = re.match(r'.*Case_(\d+)_', json)
+        if match:
+            extracted_number = int(match.group(1))
+
+            # Searching for the matching TestCase object
+            matching_test_case = next((test_case for test_case in self.test_cases if test_case.number ==
+                                      extracted_number), None)
+
+        return matching_test_case
 
 
 class TestCase:
     def __init__(self, number, config):
         self.number = number
-        self.config = config
         self.iteration = None
-        self.test_results = None
         self.file_name_prefix = None
+        self.mode = config['mode']
+        self.size = config['size']
+        self.delay = config['delay']
+        self.delay_deviation = config['delay_deviation']
+        self.loss = config['loss']
+        self.rate = config['rate']
+        self.firewall = config['firewall']
+        self.window_scaling = config['window_scaling']
+        self.rmin = config['rmin']
+        self.rdef = config['rdef']
+        self.rmax = config['rmax']
+        self.migration = config['migration']
+        self.generic_heatmap = config['generic_heatmap']
+        self.tcp_rtt = None
+        self.tcp_hs = None
+        self.tcp_conn = None
+        self.quic_min_rtt = None
+        self.quic_smoothed_rtt = None
+        self.aioquic_hs = None
+        self.aioquic_conn = None
+        self.quicgo_hs = None
+        self.quicgo_conn = None
+        self.quic_hs = None
+        self.quic_conn = None
+        self.dcid = None
+        self.dcid_hex = None
 
     def __str__(self):
-        return f"Test Case: {self.number}, Iteration: {self.iteration}, Settings: {self.config}"
+        return f"""
+        Test Case: {self.number}, 
+        Iteration: {self.iteration}, 
+
+        Settings: 
+        Mode: {self.mode}
+        Size: {self.size}
+        Delay: {self.delay}
+        Delay Deviation: {self.delay_deviation}
+        Loss: {self.loss}
+        Rate: {self.rate}
+        Firewall: {self.firewall}
+        Window Scaling: {self.window_scaling}
+        Receive Window Min: {self.rmin}
+        Receive Window Default: {self.rdef}
+        Receive Window Max: {self.rmax}
+        Connection Migration: {self.migration}
+        Generic: {self.generic_heatmap}
+
+        Test Results:
+        TCP RTT: {self.tcp_rtt}
+        TCP Handshake Time: {self.tcp_hs}
+        TCP Connection Time: {self.tcp_conn}
+
+        QUIC DCID: {self.dcid}
+        QUIC DCID hex: {self.dcid_hex}
+        QUIC Min RTT: {self.quic_min_rtt}
+        QUIC Smoothed RTT: {self.quic_smoothed_rtt}
+        AIOQUIC Handshake Time: {self.aioquic_hs}
+        QUIC-GO Handshake Time: {self.quicgo_hs}
+        AIOQUIC Connection Time: {self.aioquic_conn}
+        QUIC-GO Connection Time: {self.quicgo_conn}
+        """
 
     def set_iteration(self, iteration):
         self.iteration = iteration
         self.file_name_prefix = f"Case_{self.number}_Iteration_{self.iteration}_"
+
+    def store_test_results_for(self, test_results):
+        for key, value in test_results.items():
+            setattr(self, key, value)
+
+        # self.tcp_rtt = test_results['tcp_rtt']
+        # self.tcp_hs = test_results['tcp_hs']
+        # self.tcp_conn = test_results['tcp_conn']
+        # self.quic_min_rtt = test_results['']
+        # self.quic_smoothed_rtt = test_results['']
+        # self.aioquic_hs = test_results['']
+        # self.aioquic_conn = test_results['']
+        # self.quicgo_hs = test_results['']
+        # self.quicgo_conn = test_results['']
+        # self.quic_hs = test_results['']
+        # self.quic_conn = test_results['']
+        # self.dcid = test_results['']
+        # self.dcid_hex = test_results['']
 
 
 def reset_workdir():
@@ -89,7 +182,6 @@ def get_test_object():
     test.test_cases_compressed = test_configuration['cases']
     test.control_parameter = get_control_parameter(test.test_cases_compressed)
     test.test_cases_decompressed = decompress_test_cases(test)
-    # print(test.__str__())
     return test
 
 

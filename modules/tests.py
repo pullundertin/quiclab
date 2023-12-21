@@ -34,7 +34,7 @@ def run_test_case(test_case):
     try:
         with ThreadPoolExecutor() as executor:
             logging.info(
-                f"//////   {test_case.file_name_prefix}{test_case.config['mode']} ///////")
+                f"//////   {test_case.file_name_prefix}{test_case.mode} ///////")
             executor.submit(run_server, test_case)
             time.sleep(1)
             executor.submit(run_server_tracing, test_case)

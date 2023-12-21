@@ -106,11 +106,7 @@ def get_tcp_connection_time(json_file):
 
 
 def get_quic_connection_time(json_file):
-    quic_implementation = get_test_configuration_of_json_file(json_file)[
-        'mode']
-    aioquic_connection_duration = None
-    quicgo_connection_duration = None
-
+    quic_connection_duration = None
     json_objects = read_json_objects_from_file(json_file)
     for packet in json_objects:
         if check_if_packet_contains_protocol(packet, 'quic'):
@@ -126,12 +122,9 @@ def get_quic_connection_time(json_file):
                     packet['layers']['frame']['frame_frame_time_relative'])
                 if frame_type == '29':
                     quic_connection_end = (frame_time_relative)
-                    if quic_implementation == 'aioquic':
-                        aioquic_connection_duration = quic_connection_end - quic_connection_start
-                    elif quic_implementation == 'quicgo':
-                        quicgo_connection_duration = quic_connection_end - quic_connection_start
+                    quic_connection_duration = quic_connection_end - quic_connection_start
 
-    return aioquic_connection_duration, quicgo_connection_duration
+    return quic_connection_duration
 
 
 def search_key_value(json_objects, search_key, search_value):
@@ -166,10 +159,7 @@ def search_key_value_recursive(obj, search_key, search_value, root):
 
 
 def get_quic_handshake_time(json_file):
-    quic_implementation = get_test_configuration_of_json_file(json_file)[
-        'mode']
-    aioquic_handshake_duration = None
-    quicgo_handshake_duration = None
+    quic_handshake_duration = None
     quic_handshake_start = None
     quic_handshake_end = None
     json_objects = read_json_objects_from_file(json_file)
@@ -186,13 +176,11 @@ def get_quic_handshake_time(json_file):
             if results:
                 quic_handshake_end = float(
                     results[0]['layers']['frame']['frame_frame_time_relative'])
-                if quic_implementation == 'aioquic':
-                    aioquic_handshake_duration = quic_handshake_end - quic_handshake_start
-                elif quic_implementation == 'quicgo':
-                    quicgo_handshake_duration = quic_handshake_end - quic_handshake_start
+
+                quic_handshake_duration = quic_handshake_end - quic_handshake_start
                 break
 
-    return aioquic_handshake_duration, quicgo_handshake_duration
+    return quic_handshake_duration
 
 
 def get_tcp_rtt_data(json_file):
@@ -280,26 +268,37 @@ def get_quic_dcid(json_file):
 
 
 def get_test_results(test):
+
+    def populate_test_case_with_test_results_from_json(json_file, test_case):
+
+        data = {}
+        data['tcp_rtt'] = get_tcp_rtt_data(json_file)
+        data['tcp_hs'] = get_tcp_handshake_time(json_file)
+        data['tcp_conn'] = get_tcp_connection_time(json_file)
+
+        if test_case.mode == 'aioquic':
+            data['aioquic_hs'] = get_quic_handshake_time(json_file)
+            data['aioquic_conn'] = get_quic_connection_time(json_file)
+        elif test_case.mode == 'quicgo':
+            data['quicgo_hs'] = get_quic_handshake_time(json_file)
+            data['quicgo_conn'] = get_quic_connection_time(json_file)
+
+        test_case.store_test_results_for(data)
+
+    def iterate_over_json_files_and_get_associated_test_case(files):
+        for json_file in files:
+            test_case = test.test_cases_decompressed.map_json_file_to_test_case(
+                json_file)
+            populate_test_case_with_test_results_from_json(
+                json_file, test_case)
+
     def get_pcap_data():
         files = traverse_pcap_directory()
         pcap_data = []
-        for json_file in files:
-            data = add_configuration_parameters(json_file, test)
-            data['tcp_rtt'] = get_tcp_rtt_data(json_file)
-            data['tcp_hs'] = get_tcp_handshake_time(json_file)
-            data['tcp_conn'] = get_tcp_connection_time(json_file)
-            data['aioquic_hs'], data['quicgo_hs'] = get_quic_handshake_time(
-                json_file)
-            data['aioquic_conn'], data['quicgo_conn'] = get_quic_connection_time(
-                json_file)
-            data['dcid'], data['dcid_hex'] = get_quic_dcid(json_file)
-            data['quic_min_rtt'] = None
-            data['quic_smoothed_rtt'] = None
-
-            pcap_data.append(data)
+        iterate_over_json_files_and_get_associated_test_case(files)
 
         # Creating DataFrame directly from pcap_data
-        return pd.DataFrame(pcap_data)
+        return pcap_data
 
     def get_qlog_data(test_results):
 
@@ -364,7 +363,8 @@ def get_test_results(test):
     #     return median_values
 
     test_results = get_pcap_data()
-    test_results = get_qlog_data(test_results)
+    print(test_results)
+    # test_results = get_qlog_data(test_results)
     # median_df = pd.DataFrame()
     # median_df = get_medians(test_results)
     return test_results
