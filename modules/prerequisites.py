@@ -28,15 +28,10 @@ class TestCases:
         test_cases = "\n".join(str(test_case) for test_case in self.test_cases)
         return f"\n{test_cases}"
 
-    # def find_test_case_by_number(self, number):
-    #     matching_test_case = next(
-    #         (tc for tc in self.test_cases if tc.number == number), None)
-    #     return matching_test_case
-
-    def map_json_file_to_test_case(self, json):
+    def map_json_file_to_test_case(self, json_file):
         matching_test_case = None
         # Extracting Number and Iteration from the JSON file name using regular expressions
-        match = re.match(r'.*Case_(\d+)_Iteration_(\d+)_', json)
+        match = re.match(r'.*Case_(\d+)_Iteration_(\d+)_', json_file)
         if match:
             extracted_number = int(match.group(1))
             extracted_iteration = int(match.group(2))
@@ -45,6 +40,15 @@ class TestCases:
             matching_test_case = next((test_case for test_case in self.test_cases if test_case.number ==
                                       extracted_number and test_case.iteration == extracted_iteration), None)
 
+        return matching_test_case
+
+    def map_qlog_file_to_test_case_by_dcid(self, qlog_file):
+        matching_test_case = None
+        for test_case in self.test_cases:
+            dcid = test_case.dcid
+            dcid_hex = test_case.dcid_hex
+            if dcid != None and (dcid in qlog_file or dcid_hex in qlog_file):
+                matching_test_case = test_case
         return matching_test_case
 
 
@@ -109,15 +113,21 @@ class TestCase:
         QUIC DCID hex: {self.dcid_hex}
         QUIC Min RTT: {self.quic_min_rtt}
         QUIC Smoothed RTT: {self.quic_smoothed_rtt}
-        AIOQUIC Handshake Time: {self.aioquic_hs}
-        QUIC-GO Handshake Time: {self.quicgo_hs}
-        AIOQUIC Connection Time: {self.aioquic_conn}
-        QUIC-GO Connection Time: {self.quicgo_conn}
+        QUIC Handshake Time: {self.quic_hs}
+        QUIC Connection Time: {self.quic_conn}
+        # AIOQUIC Handshake Time: {self.aioquic_hs}
+        # QUIC-GO Handshake Time: {self.quicgo_hs}
+        # AIOQUIC Connection Time: {self.aioquic_conn}
+        # QUIC-GO Connection Time: {self.quicgo_conn}
         """
 
     def store_test_results_for(self, test_results):
         for key, value in test_results.items():
             setattr(self, key, value)
+
+    def update_quic_rtt_data_from_qlog(self, min_rtt_values, smoothed_rtt_values):
+        self.quic_min_rtt = min_rtt_values
+        self.quic_smoothed_rtt = smoothed_rtt_values
 
 
 def reset_workdir():

@@ -9,18 +9,6 @@ def run_tests(test):
     def iterate_over_decompressed_test_cases_in_test_object():
         for test_case in (test.test_cases_decompressed.test_cases):
             run_test_case(test_case)
-    # def iterate_over_decompressed_test_cases_in_test_object():
-    #     for test_case in (test.test_cases_decompressed.test_cases):
-    #         repeat_the_same_test_case_for_number_of_iterations(test_case)
-
-    # def repeat_the_same_test_case_for_number_of_iterations(test_case):
-    #     for iteration in range(test.iterations):
-    #         add_current_number_of_iteration_to_test_case_object(
-    #             test_case, iteration)
-    #         run_test_case(test_case)
-
-    # def add_current_number_of_iteration_to_test_case_object(test_case, iteration):
-    #     test_case.set_iteration(iteration + 1)
 
     iterate_over_decompressed_test_cases_in_test_object()
 

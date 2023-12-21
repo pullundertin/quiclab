@@ -67,13 +67,11 @@ if __name__ == "__main__":
     else:
         logging.info("Executing evaluation only")
 
-    # print(test_case)
     get_test_results(test)
     print(test)
-    # print(test_results)
-    # print(control_parameter)
+
     # test_results = clean_dataframe(test_results)
     # evaluate_test_results(test_results, medians)
-    store_results(None, None, args)
+    # store_results(None, None, args)
 
     logging.info("All tasks are completed.")

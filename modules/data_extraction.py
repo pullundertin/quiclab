@@ -265,6 +265,9 @@ def get_test_results(test):
         data['tcp_hs'] = get_tcp_handshake_time(json_file)
         data['tcp_conn'] = get_tcp_connection_time(json_file)
 
+        data['quic_hs'] = get_quic_handshake_time(json_file)
+        data['quic_conn'] = get_quic_connection_time(json_file)
+
         if test_case.mode == 'aioquic':
             data['aioquic_hs'] = get_quic_handshake_time(json_file)
             data['aioquic_conn'] = get_quic_connection_time(json_file)
@@ -272,6 +275,7 @@ def get_test_results(test):
             data['quicgo_hs'] = get_quic_handshake_time(json_file)
             data['quicgo_conn'] = get_quic_connection_time(json_file)
 
+        data['dcid'], data['dcid_hex'] = get_quic_dcid(json_file)
         test_case.store_test_results_for(data)
 
     def iterate_over_json_files_and_get_associated_test_case(files):
@@ -285,16 +289,16 @@ def get_test_results(test):
         files = traverse_pcap_directory()
         iterate_over_json_files_and_get_associated_test_case(files)
 
-    def get_qlog_data(test_results):
+    def get_qlog_data():
 
         files = traverse_qlog_directory()
         min_rtt_values = []
         smoothed_rtt_values = []
 
         def get_dataframe_index_of_qlog_file(qlog_file):
-            for index, row in test_results.iterrows():
-                if row['dcid'] != None and (row['dcid'] in qlog_file or row['dcid_hex'] in qlog_file):
-                    return index
+            test_case = test.test_cases_decompressed.map_qlog_file_to_test_case_by_dcid(
+                qlog_file)
+            return test_case
 
         for qlog_file in files:
             min_rtt_values = []
@@ -328,26 +332,9 @@ def get_test_results(test):
                                 smoothed_rtt_values.append(
                                     qlog_data["data"]["smoothed_rtt"]/1000)
 
-            index = get_dataframe_index_of_qlog_file(qlog_file)
-            test_results.at[index, 'quic_min_rtt'] = min_rtt_values
-            test_results.at[index, 'quic_smoothed_rtt'] = smoothed_rtt_values
-        return test_results
-
-    # def get_medians(df):
-    #     group_columns = ['mode', 'size', 'delay', 'delay_deviation', 'loss',
-    #                      'rate', 'firewall', 'window_scaling', 'rmin', 'rmax', 'rdef', 'migration', 'generic_heatmap']
-    #     # Group by group_columns and calculate median across multiple columns
-    #     median_values = df.groupby(group_columns).agg({
-    #         'aioquic_hs': 'median',
-    #         'quicgo_hs': 'median',
-    #         'tcp_hs': 'median',
-    #         'aioquic_conn': 'median',
-    #         'quicgo_conn': 'median',
-    #         'tcp_conn': 'median'
-    #     }).reset_index()
-    #     return median_values
+            test_case = get_dataframe_index_of_qlog_file(qlog_file)
+            test_case.update_quic_rtt_data_from_qlog(
+                min_rtt_values, smoothed_rtt_values)
 
     get_pcap_data()
-    # test_results = get_qlog_data(test_results)
-    # median_df = pd.DataFrame()
-    # median_df = get_medians(test_results)
+    get_qlog_data()
