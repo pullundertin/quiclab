@@ -38,10 +38,9 @@ def tests_contain_tcp_only(median_dataframe):
     return (median_dataframe['mode'] == 'tcp').all()
 
 
-def show_heatmaps(median_dataframe, test, args):
+def show_heatmaps(median_dataframe, control_parameter, args):
     if tests_contain_tcp_only(median_dataframe):
         return
-    control_parameter = test.control_parameter
 
     if control_parameter is None:
         control_parameter = 'generic_heatmap'

@@ -9,6 +9,7 @@ from modules.boxplot import show_boxplot
 from modules.tests import run_tests
 from modules.converter import process_tcp_probe_logs
 from modules.statistics import do_statistics
+from modules.t_test import t_test
 import os
 import argparse
 import pandas as pd
@@ -31,14 +32,17 @@ def arguments():
 
 
 def evaluate_test_results(test_results_dataframe, median_dataframe, test):
-    show_boxplot(test_results_dataframe, test)
-    show_heatmaps(median_dataframe, test, args)
+    control_parameter = test.control_parameter
+    show_boxplot(test_results_dataframe, control_parameter)
+    show_heatmaps(median_dataframe, control_parameter, args)
+    t_test(test_results_dataframe, control_parameter)
 
 
-def store_results(test_results, medians, args):
-    # TEST_RESULTS_DIR = read_configuration().get('TEST_RESULTS_DIR')
-    # test_results.to_csv(f'{TEST_RESULTS_DIR}/test_results.csv', index=False)
-    # medians.to_csv(f'{TEST_RESULTS_DIR}/medians.csv', index=False)
+def store_results(test_results_dataframe, median_dataframe, args):
+    TEST_RESULTS_DIR = read_configuration().get('TEST_RESULTS_DIR')
+    test_results_dataframe.to_csv(
+        f'{TEST_RESULTS_DIR}/test_results.csv', index=False)
+    median_dataframe.to_csv(f'{TEST_RESULTS_DIR}/medians.csv', index=False)
     if args.store:
         rsync()
         rsync_permanent(args.store)
@@ -84,6 +88,6 @@ if __name__ == "__main__":
     test_results_dataframe = create_dataframe_from_object(test)
     median_dataframe = do_statistics(test_results_dataframe)
     evaluate_test_results(test_results_dataframe, median_dataframe, test)
-    # store_results(None, None, args)
+    store_results(test_results_dataframe, median_dataframe, args)
 
     logging.info("All tasks are completed.")
