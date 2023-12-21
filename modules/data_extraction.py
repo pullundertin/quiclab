@@ -7,7 +7,6 @@ from modules.prerequisites import read_configuration
 from modules.tests import get_test_configuration_of_json_file
 
 
-
 PCAP_PATH = read_configuration().get("PCAP_PATH")
 KEYS_PATH = read_configuration().get("KEYS_PATH")
 QLOG_PATH_CLIENT = read_configuration().get("QLOG_PATH_CLIENT")
@@ -107,7 +106,10 @@ def get_tcp_connection_time(json_file):
 
 
 def get_quic_connection_time(json_file):
-    quic_connection_duration = None
+    quic_implementation = get_test_configuration_of_json_file(json_file)[
+        'mode']
+    aioquic_connection_duration = None
+    quicgo_connection_duration = None
 
     json_objects = read_json_objects_from_file(json_file)
     for packet in json_objects:
@@ -124,9 +126,12 @@ def get_quic_connection_time(json_file):
                     packet['layers']['frame']['frame_frame_time_relative'])
                 if frame_type == '29':
                     quic_connection_end = (frame_time_relative)
-                    quic_connection_duration = quic_connection_end - quic_connection_start
+                    if quic_implementation == 'aioquic':
+                        aioquic_connection_duration = quic_connection_end - quic_connection_start
+                    elif quic_implementation == 'quicgo':
+                        quicgo_connection_duration = quic_connection_end - quic_connection_start
 
-    return quic_connection_duration
+    return aioquic_connection_duration, quicgo_connection_duration
 
 
 def search_key_value(json_objects, search_key, search_value):
@@ -161,7 +166,10 @@ def search_key_value_recursive(obj, search_key, search_value, root):
 
 
 def get_quic_handshake_time(json_file):
-    quic_handshake_duration = None
+    quic_implementation = get_test_configuration_of_json_file(json_file)[
+        'mode']
+    aioquic_handshake_duration = None
+    quicgo_handshake_duration = None
     quic_handshake_start = None
     quic_handshake_end = None
     json_objects = read_json_objects_from_file(json_file)
@@ -178,13 +186,16 @@ def get_quic_handshake_time(json_file):
             if results:
                 quic_handshake_end = float(
                     results[0]['layers']['frame']['frame_frame_time_relative'])
-                quic_handshake_duration = quic_handshake_end - quic_handshake_start
+                if quic_implementation == 'aioquic':
+                    aioquic_handshake_duration = quic_handshake_end - quic_handshake_start
+                elif quic_implementation == 'quicgo':
+                    quicgo_handshake_duration = quic_handshake_end - quic_handshake_start
                 break
 
-    return quic_handshake_duration
+    return aioquic_handshake_duration, quicgo_handshake_duration
 
 
-def get_tcp_rtt_statistics(json_file):
+def get_tcp_rtt_data(json_file):
     rtt_values = []
 
     json_objects = read_json_objects_from_file(json_file)
@@ -205,7 +216,7 @@ def get_tcp_rtt_statistics(json_file):
     return rtt_values
 
 
-def get_quic_rtt_statistics():
+def get_quic_rtt_data():
     min_rtt_values = []
     smoothed_rtt_values = []
     quic_implementation = None
@@ -245,10 +256,10 @@ def get_quic_rtt_statistics():
     return quic_implementation, min_rtt_values, smoothed_rtt_values
 
 
-def add_configuration_parameters(json_file):
+def add_configuration_parameters(json_file, test):
 
     data = {}
-    config = get_test_configuration_of_json_file(json_file)
+    config = get_test_configuration_of_json_file(json_file, test)
     for column in config:
         data[column] = config[column]
 
@@ -268,34 +279,36 @@ def get_quic_dcid(json_file):
     return quic_dcid, quic_dcid_ascii
 
 
-def get_statistics():
-    def get_pcap_statistics():
+def get_test_results(test):
+    def get_pcap_data():
         files = traverse_pcap_directory()
-        statistics_data = []
+        pcap_data = []
         for json_file in files:
-            data = add_configuration_parameters(json_file)
-            data['tcp_rtt'] = get_tcp_rtt_statistics(json_file)
+            data = add_configuration_parameters(json_file, test)
+            data['tcp_rtt'] = get_tcp_rtt_data(json_file)
             data['tcp_hs'] = get_tcp_handshake_time(json_file)
             data['tcp_conn'] = get_tcp_connection_time(json_file)
-            data['quic_hs'] = get_quic_handshake_time(json_file)
-            data['quic_conn'] = get_quic_connection_time(json_file)
+            data['aioquic_hs'], data['quicgo_hs'] = get_quic_handshake_time(
+                json_file)
+            data['aioquic_conn'], data['quicgo_conn'] = get_quic_connection_time(
+                json_file)
             data['dcid'], data['dcid_hex'] = get_quic_dcid(json_file)
             data['quic_min_rtt'] = None
             data['quic_smoothed_rtt'] = None
 
-            statistics_data.append(data)
+            pcap_data.append(data)
 
-        # Creating DataFrame directly from statistics_data
-        return pd.DataFrame(statistics_data)
+        # Creating DataFrame directly from pcap_data
+        return pd.DataFrame(pcap_data)
 
-    def get_qlog_statistics(statistics_df):
+    def get_qlog_data(test_results):
 
         files = traverse_qlog_directory()
         min_rtt_values = []
         smoothed_rtt_values = []
 
         def get_dataframe_index_of_qlog_file(qlog_file):
-            for index, row in statistics_df.iterrows():
+            for index, row in test_results.iterrows():
                 if row['dcid'] != None and (row['dcid'] in qlog_file or row['dcid_hex'] in qlog_file):
                     return index
 
@@ -332,24 +345,26 @@ def get_statistics():
                                     qlog_data["data"]["smoothed_rtt"]/1000)
 
             index = get_dataframe_index_of_qlog_file(qlog_file)
-            statistics_df.at[index, 'quic_min_rtt'] = min_rtt_values
-            statistics_df.at[index, 'quic_smoothed_rtt'] = smoothed_rtt_values
-        return statistics_df
+            test_results.at[index, 'quic_min_rtt'] = min_rtt_values
+            test_results.at[index, 'quic_smoothed_rtt'] = smoothed_rtt_values
+        return test_results
 
-    def get_medians(df):
-        group_columns = ['mode', 'size', 'delay', 'delay_deviation', 'loss',
-                         'rate', 'firewall', 'window_scaling', 'rmin', 'rmax', 'rdef', 'migration', 'generic_heatmap']
-        # Group by group_columns and calculate median across multiple columns
-        median_values = df.groupby(group_columns).agg({
-            'quic_hs': 'median',
-            'tcp_hs': 'median',
-            'quic_conn': 'median',
-            'tcp_conn': 'median'
-        }).reset_index()
-        return median_values
+    # def get_medians(df):
+    #     group_columns = ['mode', 'size', 'delay', 'delay_deviation', 'loss',
+    #                      'rate', 'firewall', 'window_scaling', 'rmin', 'rmax', 'rdef', 'migration', 'generic_heatmap']
+    #     # Group by group_columns and calculate median across multiple columns
+    #     median_values = df.groupby(group_columns).agg({
+    #         'aioquic_hs': 'median',
+    #         'quicgo_hs': 'median',
+    #         'tcp_hs': 'median',
+    #         'aioquic_conn': 'median',
+    #         'quicgo_conn': 'median',
+    #         'tcp_conn': 'median'
+    #     }).reset_index()
+    #     return median_values
 
-    statistics_df = get_pcap_statistics()
-    statistics_df = get_qlog_statistics(statistics_df)
-    median_df = pd.DataFrame()
-    median_df = get_medians(statistics_df)
-    return statistics_df, median_df
+    test_results = get_pcap_data()
+    test_results = get_qlog_data(test_results)
+    # median_df = pd.DataFrame()
+    # median_df = get_medians(test_results)
+    return test_results

@@ -14,15 +14,15 @@ def arguments():
 
     parser.add_argument('-m', '--mode', type=str,
                         help='modes: tcp, aioquic, quicgo')
-    parser.add_argument('--iteration', type=str,
-                        help='number of iteration')
+    parser.add_argument('--file_name_prefix', type=str,
+                        help='prefix for tcpprobe files')
 
     args = parser.parse_args()
 
     return args
 
 
-def tcpprobe(iteration):
+def tcpprobe(file_name_prefix):
     def cat_trace_file_and_write_to_file():
         with open(output_file_path, "w") as output_file:
             subprocess.run(["cat", trace_file_path],
@@ -39,7 +39,7 @@ def tcpprobe(iteration):
             logging.info(f"{os.getenv('HOST')}: tcpprobe disabled.")
 
     trace_file_path = "/sys/kernel/debug/tracing/trace"
-    output_file_path = f"/shared/tcpprobe/{iteration}tcptrace.log"
+    output_file_path = f"/shared/tcpprobe/{file_name_prefix}tcptrace.log"
     tcp_probe_enable_path = "/sys/kernel/debug/tracing/events/tcp/enable"
     cat_trace_file_and_write_to_file()
     process_trace_data()
@@ -60,7 +60,7 @@ if __name__ == "__main__":
         with ThreadPoolExecutor() as executor:
             thread_1 = executor.submit(tcpdump)
             if args.mode == 'tcp':
-                thread_2 = executor.submit(tcpprobe, args.iteration)
+                thread_2 = executor.submit(tcpprobe, args.file_name_prefix)
                 wait([thread_2])
             wait([thread_1])
             exit()

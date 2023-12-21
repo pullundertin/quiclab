@@ -30,8 +30,8 @@ def arguments():
                         help='maximum recieve window in bytes')
     parser.add_argument('--migration', choices=['True', 'False'],
                         help='enable/disable connection migration simulation')
-    parser.add_argument('--iteration', type=str,
-                        help='number of iteration')
+    parser.add_argument('--file_name_prefix', type=str,
+                        help='prefix for pcap files')
 
     args = parser.parse_args()
 
@@ -58,7 +58,7 @@ def tcp_settings(args):
 
 
 def tcpdump(args):
-    command = f"tcpdump -i eth0 -w $PCAP_PATH/{args.iteration}client_1.pcap -n"
+    command = f"tcpdump -i eth0 -w $PCAP_PATH/{args.file_name_prefix}client_1.pcap -n"
     logging.info(f"{os.getenv('HOST')}: tcpdump started.")
     run_command(command)
 

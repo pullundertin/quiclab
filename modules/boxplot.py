@@ -3,8 +3,6 @@ import seaborn as sns
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
-from modules.tests import find_keys_with_list_values
-from modules.prerequisites import read_test_cases
 from modules.prerequisites import read_configuration
 from scipy.stats import ttest_ind
 
@@ -27,10 +25,10 @@ def plot_boxplot(df, ax, x_data, y_data, title, xlabel, ylabel):
     ax.set_ylabel(ylabel)
 
 
-def create_boxplots_for_each_value_of_independent_variable(df, metric):
-    for value in df[metric].unique():
+def create_boxplots_for_each_value_of_independent_variable(df, control_parameter):
+    for value in df[control_parameter].unique():
         # Filter the DataFrame based on the current unique value
-        filtered_df = df[df[metric] == value]
+        filtered_df = df[df[control_parameter] == value]
 
         hs_df = combine_quic_and_tcp_values_for(filtered_df, 'hs', value)
         conn_df = combine_quic_and_tcp_values_for(filtered_df, 'conn', value)
@@ -38,9 +36,9 @@ def create_boxplots_for_each_value_of_independent_variable(df, metric):
         fig, axes = plt.subplots(2, 1, figsize=(8, 10))
 
         plot_boxplot(hs_df, axes[0], 'mode', f'time_{value}',
-                     f'QUIC vs TCP Handshake | {metric} = {value}', 'Implementations', 'Time')
+                     f'QUIC vs TCP Handshake | {control_parameter} = {value}', 'Implementations', 'Time')
         plot_boxplot(conn_df, axes[1], 'mode', f'time_{value}',
-                     f'QUIC vs TCP Connection | {metric} = {value}', 'Implementations', 'Time')
+                     f'QUIC vs TCP Connection | {control_parameter} = {value}', 'Implementations', 'Time')
 
         plt.tight_layout()
         plt.savefig(f"{BOXPLOTS_DIR}/boxplots_{value}.png",
@@ -48,42 +46,42 @@ def create_boxplots_for_each_value_of_independent_variable(df, metric):
         plt.show()
 
 
-def t_test(df, metric):
-    for value in df[metric].unique():
+def t_test(df, control_parameter):
+    for value in df[control_parameter].unique():
         # Filter the DataFrame based on the current unique value
-        filtered_df = df[df[metric] == value]
+        filtered_df = df[df[control_parameter] == value]
         # hs_df = combine_quic_and_tcp_values_for(filtered_df, 'hs', value)
 
         tcp_series = filtered_df[filtered_df['mode'] == 'tcp']
         tcp_hs_samples = tcp_series['tcp_hs'].tolist()
         tcp_conn_samples = tcp_series['tcp_conn'].tolist()
 
-        tcp_series = filtered_df[filtered_df['mode'] == 'aioquic']
-        aioquic_quic_hs_samples = tcp_series['quic_hs'].tolist()
-        aioquic_quic_conn_samples = tcp_series['quic_conn'].tolist()
+        aioquic_series = filtered_df[filtered_df['mode'] == 'aioquic']
+        aioquic_quic_hs_samples = aioquic_series['aioquic_hs'].tolist()
+        aioquic_quic_conn_samples = aioquic_series['aioquic_conn'].tolist()
 
-        tcp_series = filtered_df[filtered_df['mode'] == 'quicgo']
-        quicgo_quic_hs_samples = tcp_series['quic_hs'].tolist()
-        quicgo_quic_conn_samples = tcp_series['quic_conn'].tolist()
+        quicgo_series = filtered_df[filtered_df['mode'] == 'quicgo']
+        quicgo_quic_hs_samples = quicgo_series['quicgo_hs'].tolist()
+        quicgo_quic_conn_samples = quicgo_series['quicgo_conn'].tolist()
 
         perform_t_test(tcp_hs_samples, aioquic_quic_hs_samples,
-                       f'Handshake TCP vs Aioquic | {metric} = {value}')
+                       f'Handshake TCP vs Aioquic | {control_parameter} = {value}')
         perform_t_test(tcp_hs_samples, quicgo_quic_hs_samples,
-                       f'Handshake TCP vs Quicgo | {metric} = {value}')
+                       f'Handshake TCP vs Quicgo | {control_parameter} = {value}')
         perform_t_test(tcp_conn_samples, aioquic_quic_conn_samples,
-                       f'Connection TCP vs Aioquic | {metric} = {value}')
+                       f'Connection TCP vs Aioquic | {control_parameter} = {value}')
         perform_t_test(tcp_conn_samples, quicgo_quic_conn_samples,
-                       f'Connection TCP vs Quicgo | {metric} = {value}')
+                       f'Connection TCP vs Quicgo | {control_parameter} = {value}')
 
 
 def perform_t_test(samples_1, samples_2, name):
     # Perform independent t-test
     t_statistic, p_value = ttest_ind(
         samples_1, samples_2)
-    
+
     # Set your desired alpha level
-    ALPHA = read_configuration().get("ALPHA")  
-    
+    ALPHA = read_configuration().get("ALPHA")
+
     if p_value < ALPHA:
         evaluation = f"Reject null hypothesis: There is a significant difference between the groups {name}."
     else:
@@ -98,9 +96,9 @@ def perform_t_test(samples_1, samples_2, name):
         file.write(output)
 
 
-def show_boxplot(df):
+def show_boxplot(df, control_parameter):
     """Create and display separate boxplots for handshake and connection times."""
-    test_case_settings = read_test_cases()
-    metric = find_keys_with_list_values(test_case_settings)
-    # create_boxplots_for_each_value_of_independent_variable(df, metric)
-    t_test(df, metric)
+
+    create_boxplots_for_each_value_of_independent_variable(
+        df, control_parameter)
+    # t_test(df, control_parameter)

@@ -1,89 +1,50 @@
 import time
 import logging
-from modules.prerequisites import read_test_cases, save_test_cases_config_to_file
-
 from concurrent.futures import ThreadPoolExecutor
 from concurrent.futures import wait
 from modules.commands import run_client, traffic_control, run_server, run_server_tracing, stop_server, stop_server_tracing
 
 
-def find_keys_with_list_values(test_case_settings):
-    key_with_list = None
-    for key, value in test_case_settings['cases'].items():
-        if isinstance(value, list) and key != 'mode':
-            key_with_list = key
-    return key_with_list
+def run_tests(test):
+    def iterate_over_decompressed_test_cases_in_test_object():
+        for test_case in (test.test_cases_decompressed.test_cases):
+            repeat_the_same_test_case_for_number_of_iterations(test_case)
+
+    def repeat_the_same_test_case_for_number_of_iterations(test_case):
+        for iteration in range(test.iterations):
+            add_current_number_of_iteration_to_test_case_object(
+                test_case, iteration)
+            run_test_case(test_case)
+
+    def add_current_number_of_iteration_to_test_case_object(test_case, iteration):
+        test_case.set_iteration(iteration + 1)
+
+    iterate_over_decompressed_test_cases_in_test_object()
 
 
-def generate_test_cases(test_case_settings):
-    independent_variable = find_keys_with_list_values(test_case_settings)
-    iterations = test_case_settings.get('iterations')
-    cases = test_case_settings['cases']
-    modes = test_case_settings['cases']['mode']
-    index = 1
-    test_cases = []
+def get_test_configuration_of_json_file(json_file, test):
 
-    if independent_variable is not None:
-        independent_variables = test_case_settings['cases'][independent_variable]
-        for mode in modes:
-            for element in independent_variables:
-                for iteration in range(iterations):
-                    iteration_prefix = f"case_{index}_iteration_{iteration+1}_"
-                    test_case = {
-                        **cases,
-                        'mode': mode,
-                        independent_variable: element,
-                    }
-                    test_cases.append((iteration_prefix, test_case))
-                index += 1
-    else:
-        for mode in modes:
-            for iteration in range(iterations):
-                iteration_prefix = f"case_{index}_iteration_{iteration+1}_"
-                test_case = {
-                    **cases,
-                    'mode': mode,
-                }
-                test_cases.append((iteration_prefix, test_case))
-            index += 1
-
-    return test_cases
-
-
-def run_tests():
-    test_case_settings = read_test_cases()
-    save_test_cases_config_to_file(test_case_settings)
-
-    test_cases = generate_test_cases(test_case_settings)
-
-    for index, (iteration_prefix, test_case) in enumerate(test_cases, start=1):
-        run_test_case(iteration_prefix, test_case)
-
-
-def get_test_configuration_of_json_file(json_file):
-    test_case_settings = read_test_cases()
-    test_cases = generate_test_cases(test_case_settings)
-
-    for index, (iteration_prefix, test_case) in enumerate(test_cases, start=1):
+    for index, (iteration_prefix, test_case) in enumerate(test.test_cases, start=1):
         if iteration_prefix in json_file:
             return test_case
 
 
-def run_test_case(iteration_prefix, test_case):
+def run_test_case(test_case):
+
     try:
         with ThreadPoolExecutor() as executor:
             logging.info(
-                f"//////   TEST {iteration_prefix}{test_case['mode']} ///////")
+                f"//////   {test_case.file_name_prefix}{test_case.config['mode']} ///////")
             executor.submit(run_server, test_case)
             time.sleep(1)
-            executor.submit(run_server_tracing, test_case, iteration_prefix)
+            executor.submit(run_server_tracing, test_case)
             executor.submit(traffic_control, test_case)
             time.sleep(3)
             client_process = executor.submit(
-                run_client, test_case, iteration_prefix)
+                run_client, test_case)
             wait([client_process])
             stop_tracing_process = executor.submit(
-                stop_server_tracing, test_case, iteration_prefix)
+                stop_server_tracing, test_case)
             wait([stop_tracing_process])
             executor.submit(stop_server, test_case)
             logging.info(f"//////////////////////////////////////////")
