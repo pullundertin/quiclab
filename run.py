@@ -70,10 +70,12 @@ def create_dataframe_from_object(test):
 
 
 def print_all_results_to_cli(test_results_dataframe, median_dataframe):
+    columns_to_print = ['mode', 'size', 'delay', 'delay_deviation', 'loss', 'rate', 'migration',
+                        'tcp_hs', 'aioquic_hs', 'quicgo_hs', 'tcp_conn', 'aioquic_conn', 'quicgo_conn']
     if args.results:
-        print(test_results_dataframe)
+        print(test_results_dataframe[columns_to_print])
         print("\\\\\\\\\\\\\\\\ MEDIAN \\\\\\\\\\\\\\\\\\\\")
-        print(median_dataframe)
+        print(median_dataframe[columns_to_print])
 
 
 if __name__ == "__main__":
