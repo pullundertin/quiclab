@@ -2,3 +2,63 @@
 - Controller as Container
 - eigenes Controller Subnetz
 - NTP Server
+
+
+
+häufigkeitstabelle
+Ausreißer/fehlende Werte
+logs zusammenführen
+konvertierung
+
+explorative analyse = 
+-	statistische auswertung Lage- und Streumaße
+-	Tabellen, Boxplots, Histogrammen, Streudiagrammen
+
+Varianzanalyse
+ANOVA Post-Hoc Tukey Verfahren: wer weicht ab?
+
+track ss: while true; do sleep 0.001; clear; ss -i | grep cwnd >> ss_output.log ; done
+
+udp + tcp vs quic + tcp
+
+MATCH Wireshark and Tcptrace timestamp!
+Trigger congestion by introducing a second connection after short delay
+
+it's better to know and be disappointed than lo never know and always wonder
+
+UDP:
+- QUICLAB UDP
+
+TCP:
+
+
+- Auswirkungen von QUIC auf das TCP/IP modell bzw OSI 
+
+Send/ack delay
+server delay
+Reassembled 
+
+informationen aus tcpprobe nach server/client sortieren ... Check 
+
+rspp1 <--> rspp2! --> remote container steuern NO
+
+multiple Streams CHECK
+multiple Streams aioquic CHECK
+aioquic client --> 0RTT CHECK
+
+
+qlog file from server missing CHECK
+
+
+Max_data
+EC
+
+connection migration --> start another client and share the session ticket, sleep 10 CHECK
+
+
+firewall:
+on router1
+iptables -F && iptables -A FORWARD -m connbytes --connbytes-dir reply --connbytes-mode bytes --connbytes 100000:200000 -j DROP && watch iptables -nvL
+
+
+

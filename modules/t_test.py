@@ -1,11 +1,16 @@
 
 from modules.prerequisites import read_configuration
 from scipy.stats import ttest_ind
+import os
 
 T_TEST_RESULTS = read_configuration().get("T_TEST_RESULTS")
 
 
 def t_test(df, control_parameter):
+
+    if os.path.exists(T_TEST_RESULTS):
+        os.remove(T_TEST_RESULTS)
+
     for value in df[control_parameter].unique():
         # Filter the DataFrame based on the current unique value
         filtered_df = df[df[control_parameter] == value]

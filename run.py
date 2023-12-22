@@ -35,7 +35,7 @@ def evaluate_test_results(test_results_dataframe, median_dataframe, test):
     control_parameter = test.control_parameter
     iterations = test.iterations
     show_boxplot(test_results_dataframe, control_parameter)
-    show_heatmaps(median_dataframe, control_parameter, args)
+    show_heatmaps(median_dataframe, control_parameter)
     if iterations > 3:
         t_test(test_results_dataframe, control_parameter)
 
@@ -69,6 +69,13 @@ def create_dataframe_from_object(test):
     return main_df
 
 
+def print_all_results_to_cli(test_results_dataframe, median_dataframe):
+    if args.results:
+        print(test_results_dataframe)
+        print("\\\\\\\\\\\\\\\\ MEDIAN \\\\\\\\\\\\\\\\\\\\")
+        print(median_dataframe)
+
+
 if __name__ == "__main__":
     log_config()
     args = arguments()
@@ -89,6 +96,7 @@ if __name__ == "__main__":
     get_test_results(test)
     test_results_dataframe = create_dataframe_from_object(test)
     median_dataframe = do_statistics(test_results_dataframe)
+    print_all_results_to_cli(test_results_dataframe, median_dataframe)
     evaluate_test_results(test_results_dataframe, median_dataframe, test)
     store_results(test_results_dataframe, median_dataframe, args)
 
