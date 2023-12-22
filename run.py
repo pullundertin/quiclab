@@ -79,7 +79,8 @@ def print_all_results_to_cli(test_results_dataframe, median_dataframe):
 if __name__ == "__main__":
     log_config()
     args = arguments()
-    test = get_test_object()
+
+    test = get_test_object(args)
 
     if args.full:
         logging.info(f"{os.getenv('HOST')}: full execution enabled")

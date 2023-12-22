@@ -167,8 +167,16 @@ def reset_workdir():
     delete_files_in_folders(folders)
 
 
-def get_test_object():
-    with open('./test_cases.yaml', 'r') as file:
+def get_test_object(args):
+    def get_test_object_from_config_or_log_file_depending_on_full_run(args):
+        if args.full:
+            return read_configuration().get("TEST_CASES_CONFIG_FILE")
+        else:
+            return read_configuration().get("TEST_CASES_LOG_FILE")
+
+    config = get_test_object_from_config_or_log_file_depending_on_full_run(
+        args)
+    with open(config, 'r') as file:
         test_configuration = yaml.safe_load(file)
     test = Test()
     test.iterations = test_configuration['iterations']
