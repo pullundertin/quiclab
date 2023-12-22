@@ -10,6 +10,7 @@ from modules.tests import run_tests
 from modules.converter import process_tcp_probe_logs
 from modules.statistics import do_statistics
 from modules.t_test import t_test
+from modules.anova import do_anova
 import os
 import argparse
 import pandas as pd
@@ -38,6 +39,7 @@ def evaluate_test_results(test_results_dataframe, median_dataframe, test):
     show_heatmaps(median_dataframe, control_parameter)
     if iterations > 3:
         t_test(test_results_dataframe, control_parameter)
+        do_anova(test_results_dataframe)
 
 
 def store_results(test_results_dataframe, median_dataframe, args):
