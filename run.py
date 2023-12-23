@@ -11,7 +11,7 @@ from modules.converter import process_tcp_probe_logs
 from modules.statistics import do_statistics
 from modules.t_test import t_test
 from modules.anova import do_anova
-from modules.goodput import calculate_goodput
+from modules.goodput import calculate_goodput, show_goodput_graph
 from modules.progress_bar import update_program_progress_bar
 import os
 import argparse
@@ -41,6 +41,7 @@ def evaluate_test_results(test_results_dataframe, median_dataframe, test):
     if control_parameter is None:
         control_parameter = 'generic_heatmap'
     iterations = test.iterations
+    show_goodput_graph(median_dataframe, control_parameter)
     show_boxplot(test_results_dataframe, control_parameter)
     show_heatmaps(median_dataframe, control_parameter)
     if iterations > 2:

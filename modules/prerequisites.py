@@ -13,9 +13,13 @@ class Test:
         self.test_cases_compressed = None
         self.test_cases_decompressed = TestCases()
         self.control_parameter = None
+        self.total_number_of_test_cases = 0
+
+    def update_total_number_of_test_cases(self, total_number_of_test_cases):
+        setattr(self, 'total_number_of_test_cases', total_number_of_test_cases)
 
     def __str__(self):
-        return f"Iterations: {self.iterations}\nControl Parameter: {self.control_parameter}\nTest Cases: {self.test_cases_decompressed}"
+        return f"Iterations: {self.iterations}\nControl Parameter: {self.control_parameter}\nNumber of Test Cases: {self.total_number_of_test_cases}\nTest Cases: {self.test_cases_decompressed}"
 
 
 class TestCases:
@@ -185,14 +189,23 @@ def get_test_object(args):
         else:
             return read_configuration().get("TEST_CASES_LOG_FILE")
 
+    def update_total_number_of_test_cases(control_parameter):
+        array_of_modes = test.test_cases_compressed['mode']
+        array_of_control_parameters = test.test_cases_compressed[control_parameter]
+        total_number_of_test_cases = len(
+            array_of_modes) * len(array_of_control_parameters)
+        test.update_total_number_of_test_cases(total_number_of_test_cases)
+
     config = get_test_object_from_config_or_log_file_depending_on_full_run(
         args)
+
     with open(config, 'r') as file:
         test_configuration = yaml.safe_load(file)
     test = Test()
     test.iterations = test_configuration['iterations']
     test.test_cases_compressed = test_configuration['cases']
     test.control_parameter = get_control_parameter(test.test_cases_compressed)
+    update_total_number_of_test_cases(test.control_parameter)
     test.test_cases_decompressed = decompress_test_cases(test)
     return test
 
