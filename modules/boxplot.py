@@ -23,6 +23,7 @@ def plot_boxplot(df, ax, x_data, y_data, title, xlabel, ylabel):
 
 
 def create_boxplots_for_each_value_of_independent_variable(df, control_parameter):
+
     for value in df[control_parameter].unique():
         # Filter the DataFrame based on the current unique value
         filtered_df = df[df[control_parameter] == value]

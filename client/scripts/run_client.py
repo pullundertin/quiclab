@@ -63,11 +63,11 @@ def tcpdump(args):
     run_command(command)
 
 
-def aioquic():
+def aioquic(args):
     URL = "https://172.3.0.5:4433/data.log"
     max_data = 2000000
     request = (URL + ' ') * 1
-    command = f"python /aioquic/examples/http3_client.py -k {request} --secrets-log $KEYS_PATH --quic-log $QLOG_PATH_CLIENT --zero-rtt --session-ticket $TICKET_PATH"
+    command = f"python /aioquic/examples/http3_client.py -k {request} --output-dir /shared/downloads --filename {args.file_name_prefix} --secrets-log $KEYS_PATH --quic-log $QLOG_PATH_CLIENT --zero-rtt --session-ticket $TICKET_PATH"
     # command = f"python /aioquic/examples/http3_client.py -k {URL} --max-data {max_data} --secrets-log $KEYS_PATH --quic-log $QLOG_PATH_CLIENT --zero-rtt --session-ticket $TICKET_PATH"
     # command = f"python /aioquic/examples/http3_client.py -k {URL} {URL} --secrets-log $KEYS_PATH --quic-log $QLOG_PATH_CLIENT --zero-rtt --session-ticket $TICKET_PATH"
     logging.info(f"{os.getenv('HOST')}: sending aioquic request...")
@@ -75,11 +75,11 @@ def aioquic():
     run_command(command)
 
 
-def quicgo():
+def quicgo(args):
     URL = "https://172.3.0.5:6121/data.log"
     os.chdir("/quic-go/example/client")
     # TODO KEYS_PATH funktioniert nur ohne vorangestelltem Punkt!
-    command = f"go run main.go --insecure --keylog /shared/keys/client.key --qlog {URL}"
+    command = f"go run main.go --insecure --output-dir /shared/downloads --filename {args.file_name_prefix} --keylog /shared/keys/client.key --qlog {URL}"
     # command = f"go run main.go --insecure --keylog $KEYS_PATH --qlog {URL} {URL}"
     logging.info(f"{os.getenv('HOST')}: sending quic-go request...")
     run_command(command)
@@ -91,9 +91,10 @@ def tcp(args):
     request = (URL + ' ') * 1
     os.environ['SSLKEYLOGFILE'] = os.getenv('KEYS_PATH')
     # {URL} -o /dev/null {URL} -o /dev/null"
-    command = f"curl -k {URL} -o /dev/null"
+    command = f"curl -k {URL} -o /shared/downloads/{args.file_name_prefix}"
     logging.info(f"{os.getenv('HOST')}: sending tcp request...")
     run_command(command)
+    command_2 = "ls -lah "
 
 
 def client_request(args):
@@ -101,9 +102,9 @@ def client_request(args):
     if args.mode == "tcp":
         tcp(args)
     elif args.mode == "aioquic":
-        aioquic()
+        aioquic(args)
     elif args.mode == "quicgo":
-        quicgo()
+        quicgo(args)
 
 
 def kill_tcpdump():

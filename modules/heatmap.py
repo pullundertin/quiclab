@@ -38,8 +38,15 @@ def tests_contain_tcp_only(median_dataframe):
     return (median_dataframe['mode'] == 'tcp').all()
 
 
+def tests_contain_no_tcp(median_dataframe):
+    if not median_dataframe['mode'].str.contains('tcp').any():
+        return True
+    else:
+        return False
+
+
 def show_heatmaps(median_dataframe, control_parameter):
-    if tests_contain_tcp_only(median_dataframe):
+    if tests_contain_tcp_only(median_dataframe) or tests_contain_no_tcp(median_dataframe):
         return
 
     if control_parameter is None:

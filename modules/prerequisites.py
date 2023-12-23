@@ -28,7 +28,7 @@ class TestCases:
         test_cases = "\n".join(str(test_case) for test_case in self.test_cases)
         return f"\n{test_cases}"
 
-    def map_json_file_to_test_case(self, json_file):
+    def map_file_to_test_case(self, json_file):
         matching_test_case = None
         # Extracting Number and Iteration from the JSON file name using regular expressions
         match = re.match(r'.*Case_(\d+)_Iteration_(\d+)_', json_file)
@@ -70,6 +70,7 @@ class TestCase:
         self.rmax = config['rmax']
         self.migration = config['migration']
         self.generic_heatmap = config['generic_heatmap']
+        self.goodput = None
         self.tcp_rtt = None
         self.tcp_hs = None
         self.tcp_conn = None
@@ -105,6 +106,8 @@ class TestCase:
         Generic: {self.generic_heatmap}
 
         Test Results:
+        Goodput: {self.goodput}
+
         TCP RTT: {self.tcp_rtt}
         TCP Handshake Time: {self.tcp_hs}
         TCP Connection Time: {self.tcp_conn}
@@ -129,19 +132,24 @@ class TestCase:
         self.quic_min_rtt = min_rtt_values
         self.quic_smoothed_rtt = smoothed_rtt_values
 
+    def update_goodput(self, goodput):
+        setattr(self, 'goodput', goodput)
+
 
 def reset_workdir():
     WORKDIR = read_configuration().get("WORKDIR")
     folders = [
+        f'{WORKDIR}/anova',
         f'{WORKDIR}/boxplots',
+        f'{WORKDIR}/downloads',
         f'{WORKDIR}/heatmaps',
         f'{WORKDIR}/keys',
         f'{WORKDIR}/pcap',
         f'{WORKDIR}/qlog_client',
         f'{WORKDIR}/qlog_server',
-        f'{WORKDIR}/test_results',
         f'{WORKDIR}/t_test',
         f'{WORKDIR}/tcpprobe',
+        f'{WORKDIR}/test_results',
     ]
 
     def delete_file(file_path):
@@ -210,11 +218,13 @@ def decompress_test_cases(test):
                 index += 1
     else:
         for mode in modes:
-            test_case = {
-                **test_cases_compressed,
-                'mode': mode,
-            }
-            test_cases.add_test_case(TestCase(index, test_case))
+            for iteration in range(iterations):
+                test_case = {
+                    **test_cases_compressed,
+                    'iteration': iteration + 1,
+                    'mode': mode,
+                }
+                test_cases.add_test_case(TestCase(index, test_case))
             index += 1
 
     return test_cases

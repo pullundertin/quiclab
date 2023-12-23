@@ -11,6 +11,7 @@ from modules.converter import process_tcp_probe_logs
 from modules.statistics import do_statistics
 from modules.t_test import t_test
 from modules.anova import do_anova
+from modules.goodput import calculate_goodput
 import os
 import argparse
 import pandas as pd
@@ -34,24 +35,33 @@ def arguments():
 
 def evaluate_test_results(test_results_dataframe, median_dataframe, test):
     control_parameter = test.control_parameter
+    if control_parameter is None:
+        control_parameter = 'generic_heatmap'
     iterations = test.iterations
     show_boxplot(test_results_dataframe, control_parameter)
     show_heatmaps(median_dataframe, control_parameter)
-    if iterations > 3:
+    if iterations > 2:
         t_test(test_results_dataframe, control_parameter)
-        do_anova(test_results_dataframe)
+        do_anova(test_results_dataframe, control_parameter)
 
 
 def store_results(test_results_dataframe, median_dataframe, args):
-    TEST_RESULTS_DIR = read_configuration().get('TEST_RESULTS_DIR')
-    test_results_dataframe.to_csv(
-        f'{TEST_RESULTS_DIR}/test_results.csv', index=False)
-    median_dataframe.to_csv(f'{TEST_RESULTS_DIR}/medians.csv', index=False)
-    if args.store:
-        rsync()
-        rsync_permanent(args.store)
-    else:
-        rsync()
+    def write_dataframes_to_csv(test_results_dataframe, median_dataframe):
+        TEST_RESULTS_DIR = read_configuration().get('TEST_RESULTS_DIR')
+        test_results_dataframe.to_csv(
+            f'{TEST_RESULTS_DIR}/test_results.csv', index=False)
+        median_dataframe.to_csv(f'{TEST_RESULTS_DIR}/medians.csv', index=False)
+
+    def sync_shared_folders_with_remote_host(args):
+        if args.store:
+            rsync()
+            rsync_permanent(args.store)
+        else:
+            rsync()
+
+    if test_results_dataframe is not None and median_dataframe is not None:
+        write_dataframes_to_csv(test_results_dataframe, median_dataframe)
+    sync_shared_folders_with_remote_host(args)
 
 
 def create_dataframe_from_object(test):
@@ -72,7 +82,7 @@ def create_dataframe_from_object(test):
 
 
 def print_all_results_to_cli(test_results_dataframe, median_dataframe):
-    columns_to_print = ['mode', 'size', 'delay', 'delay_deviation', 'loss', 'rate', 'migration',
+    columns_to_print = ['mode', 'size', 'delay', 'delay_deviation', 'loss', 'rate', 'migration', 'goodput',
                         'tcp_hs', 'aioquic_hs', 'quicgo_hs', 'tcp_conn', 'aioquic_conn', 'quicgo_conn']
     if args.results:
         print(test_results_dataframe[columns_to_print])
@@ -81,6 +91,9 @@ def print_all_results_to_cli(test_results_dataframe, median_dataframe):
 
 
 if __name__ == "__main__":
+    test_results_dataframe = None
+    median_dataframe = None
+
     log_config()
     args = arguments()
 
@@ -99,6 +112,7 @@ if __name__ == "__main__":
         logging.info("Executing evaluation only")
 
     get_test_results(test)
+    calculate_goodput(test)
     test_results_dataframe = create_dataframe_from_object(test)
     median_dataframe = do_statistics(test_results_dataframe)
     print_all_results_to_cli(test_results_dataframe, median_dataframe)

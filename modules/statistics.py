@@ -1,21 +1,28 @@
 import pandas as pd
+import numpy as np
 
 
 def get_medians(df):
-    median_df = pd.DataFrame()
     group_columns = ['mode', 'size', 'delay', 'delay_deviation', 'loss',
                      'rate', 'firewall', 'window_scaling', 'rmin', 'rmax', 'rdef', 'migration', 'generic_heatmap']
-    # Group by group_columns and calculate median across multiple columns
-    median_df = df.groupby(group_columns).agg({
-        'aioquic_hs': 'median',
-        'quicgo_hs': 'median',
-        'tcp_hs': 'median',
-        'quic_hs': 'median',
-        'aioquic_conn': 'median',
-        'quicgo_conn': 'median',
-        'quic_conn': 'median',
-        'tcp_conn': 'median'
-    }).reset_index()
+
+    # Define a custom function to calculate median while ignoring NaN values
+    def custom_median(series):
+        return np.nanmedian(series) if not series.isnull().all() else np.nan
+
+    # Apply the custom median function using agg with skipna parameter
+    median_df = df.groupby(group_columns, as_index=False).agg({
+        'goodput': lambda x: custom_median(x),
+        'aioquic_hs': lambda x: custom_median(x),
+        'quicgo_hs': lambda x: custom_median(x),
+        'tcp_hs': lambda x: custom_median(x),
+        'quic_hs': lambda x: custom_median(x),
+        'aioquic_conn': lambda x: custom_median(x),
+        'quicgo_conn': lambda x: custom_median(x),
+        'quic_conn': lambda x: custom_median(x),
+        'tcp_conn': lambda x: custom_median(x)
+    })
+
     return median_df
 
 

@@ -43,6 +43,37 @@ def traverse_qlog_directory():
     return [os.path.join(QLOG_PATH_CLIENT, filename) for filename in os.listdir(QLOG_PATH_CLIENT) if filename.endswith('.qlog')]
 
 
+def search_key_value(json_objects, search_key, search_value):
+    results = []
+
+    for obj in json_objects:
+        result, root = search_key_value_recursive(
+            obj, search_key, search_value, obj)
+        if result is not None:
+            results.append(root)
+
+    return results
+
+
+def search_key_value_recursive(obj, search_key, search_value, root):
+    if isinstance(obj, dict):
+        if search_key in obj and obj[search_key] == search_value:
+            return obj, root
+        else:
+            for value in obj.values():
+                result, root_element = search_key_value_recursive(
+                    value, search_key, search_value, root)
+                if result is not None:
+                    return result, root_element
+    elif isinstance(obj, list):
+        for item in obj:
+            result, root_element = search_key_value_recursive(
+                item, search_key, search_value, root)
+            if result is not None:
+                return result, root_element
+    return None, None
+
+
 def check_if_packet_contains_protocol(packet, key):
     return 'layers' in packet and key in packet['layers']
 
@@ -104,57 +135,30 @@ def get_tcp_connection_time(json_file):
     return tcp_connection_duration
 
 
-def get_quic_connection_time(json_file):
-    quic_connection_duration = None
+def get_tcp_rtt_data(json_file):
+    rtt_values = []
+
     json_objects = read_json_objects_from_file(json_file)
     for packet in json_objects:
-        if check_if_packet_contains_protocol(packet, 'quic'):
-            quic_connection_start = float(
-                packet['layers']['frame']['frame_frame_time_relative'])
-            break
-    for packet in json_objects:
-        if check_if_packet_contains_protocol(packet, 'quic'):
-            quic_data = packet.get('layers', {}).get('quic', {})
-            if quic_data and 'quic_quic_frame_type' in quic_data:
-                frame_type = quic_data['quic_quic_frame_type']
-                frame_time_relative = float(
-                    packet['layers']['frame']['frame_frame_time_relative'])
-                if frame_type == '29':
-                    quic_connection_end = (frame_time_relative)
-                    quic_connection_duration = quic_connection_end - quic_connection_start
+        if check_if_packet_contains_protocol(packet, 'tcp'):
+            layers = packet.get('layers', {})
+            ip_layer = layers.get('ip', {})
+            tcp_layer = layers.get('tcp', {})
 
-    return quic_connection_duration
+            if (
+                'ip' in layers and
+                ip_layer.get('ip_ip_src') == '172.3.0.5' and
+                'tcp' in layers and
+                'tcp_tcp_analysis_ack_rtt' in tcp_layer
+            ):
+                rtt_values.append(float(tcp_layer['tcp_tcp_analysis_ack_rtt']))
+
+    return rtt_values
 
 
-def search_key_value(json_objects, search_key, search_value):
-    results = []
-
-    for obj in json_objects:
-        result, root = search_key_value_recursive(
-            obj, search_key, search_value, obj)
-        if result is not None:
-            results.append(root)
-
-    return results
-
-
-def search_key_value_recursive(obj, search_key, search_value, root):
-    if isinstance(obj, dict):
-        if search_key in obj and obj[search_key] == search_value:
-            return obj, root
-        else:
-            for value in obj.values():
-                result, root_element = search_key_value_recursive(
-                    value, search_key, search_value, root)
-                if result is not None:
-                    return result, root_element
-    elif isinstance(obj, list):
-        for item in obj:
-            result, root_element = search_key_value_recursive(
-                item, search_key, search_value, root)
-            if result is not None:
-                return result, root_element
-    return None, None
+def get_tcp_application_data_sent():
+    print('http2_http2_headers_content_length')
+    pass
 
 
 def get_quic_handshake_time(json_file):
@@ -182,25 +186,26 @@ def get_quic_handshake_time(json_file):
     return quic_handshake_duration
 
 
-def get_tcp_rtt_data(json_file):
-    rtt_values = []
-
+def get_quic_connection_time(json_file):
+    quic_connection_duration = None
     json_objects = read_json_objects_from_file(json_file)
     for packet in json_objects:
-        if check_if_packet_contains_protocol(packet, 'tcp'):
-            layers = packet.get('layers', {})
-            ip_layer = layers.get('ip', {})
-            tcp_layer = layers.get('tcp', {})
+        if check_if_packet_contains_protocol(packet, 'quic'):
+            quic_connection_start = float(
+                packet['layers']['frame']['frame_frame_time_relative'])
+            break
+    for packet in json_objects:
+        if check_if_packet_contains_protocol(packet, 'quic'):
+            quic_data = packet.get('layers', {}).get('quic', {})
+            if quic_data and 'quic_quic_frame_type' in quic_data:
+                frame_type = quic_data['quic_quic_frame_type']
+                frame_time_relative = float(
+                    packet['layers']['frame']['frame_frame_time_relative'])
+                if frame_type == '29':
+                    quic_connection_end = (frame_time_relative)
+                    quic_connection_duration = quic_connection_end - quic_connection_start
 
-            if (
-                'ip' in layers and
-                ip_layer.get('ip_ip_src') == '172.3.0.5' and
-                'tcp' in layers and
-                'tcp_tcp_analysis_ack_rtt' in tcp_layer
-            ):
-                rtt_values.append(float(tcp_layer['tcp_tcp_analysis_ack_rtt']))
-
-    return rtt_values
+    return quic_connection_duration
 
 
 def get_quic_rtt_data():
@@ -280,7 +285,7 @@ def get_test_results(test):
 
     def iterate_over_json_files_and_get_associated_test_case(files):
         for json_file in files:
-            test_case = test.test_cases_decompressed.map_json_file_to_test_case(
+            test_case = test.test_cases_decompressed.map_file_to_test_case(
                 json_file)
             populate_test_case_with_test_results_from_json(
                 json_file, test_case)
