@@ -4,6 +4,7 @@ import logging
 import json
 from modules.commands import run_command
 from modules.prerequisites import read_configuration
+from modules.progress_bar import update_program_progress_bar
 
 
 PCAP_PATH = read_configuration().get("PCAP_PATH")
@@ -15,6 +16,8 @@ pd.set_option('display.max_colwidth', None)
 
 
 def convert_pcap_to_json():
+    update_program_progress_bar('Convert PCAP to JSON')
+
     for filename in os.listdir(PCAP_PATH):
         if filename.endswith('.pcap'):
             pcap_file = os.path.join(PCAP_PATH, filename)
@@ -340,6 +343,8 @@ def get_test_results(test):
             test_case = get_dataframe_index_of_qlog_file(qlog_file)
             test_case.update_quic_rtt_data_from_qlog(
                 min_rtt_values, smoothed_rtt_values)
+
+    update_program_progress_bar('Get Test Results')
 
     get_pcap_data()
     get_qlog_data()

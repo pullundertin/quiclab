@@ -12,6 +12,7 @@ from modules.statistics import do_statistics
 from modules.t_test import t_test
 from modules.anova import do_anova
 from modules.goodput import calculate_goodput
+from modules.progress_bar import update_program_progress_bar
 import os
 import argparse
 import pandas as pd
@@ -34,6 +35,8 @@ def arguments():
 
 
 def evaluate_test_results(test_results_dataframe, median_dataframe, test):
+    update_program_progress_bar('Evaluate Test Results')
+
     control_parameter = test.control_parameter
     if control_parameter is None:
         control_parameter = 'generic_heatmap'
@@ -59,12 +62,15 @@ def store_results(test_results_dataframe, median_dataframe, args):
         else:
             rsync()
 
+    update_program_progress_bar('Store Test Results')
     if test_results_dataframe is not None and median_dataframe is not None:
         write_dataframes_to_csv(test_results_dataframe, median_dataframe)
     sync_shared_folders_with_remote_host(args)
 
 
 def create_dataframe_from_object(test):
+    update_program_progress_bar('Create Dataframe')
+
     list_of_df = []
 
     def convert_each_test_case_object_into_a_dataframe():
@@ -117,6 +123,7 @@ if __name__ == "__main__":
     median_dataframe = do_statistics(test_results_dataframe)
     print_all_results_to_cli(test_results_dataframe, median_dataframe)
     evaluate_test_results(test_results_dataframe, median_dataframe, test)
+
     store_results(test_results_dataframe, median_dataframe, args)
 
     logging.info("All tasks are completed.")

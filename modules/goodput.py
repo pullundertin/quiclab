@@ -1,5 +1,6 @@
 import os
 from modules.prerequisites import read_configuration
+from modules.progress_bar import update_program_progress_bar
 
 DOWNLOADS_DIR = read_configuration().get("DOWNLOADS_DIR")
 
@@ -23,6 +24,8 @@ def get_connection_time(test_case):
 
 
 def calculate_goodput(test):
+    update_program_progress_bar('Calculate Goodput')
+
     for file in os.listdir(DOWNLOADS_DIR):
         file_path = os.path.join(DOWNLOADS_DIR, file)
         if os.path.isfile(file_path):

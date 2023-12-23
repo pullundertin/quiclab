@@ -4,6 +4,7 @@ import docker
 import yaml
 import shutil
 import re
+from modules.progress_bar import update_program_progress_bar
 
 
 class Test:
@@ -137,6 +138,8 @@ class TestCase:
 
 
 def reset_workdir():
+    update_program_progress_bar('Reset')
+
     WORKDIR = read_configuration().get("WORKDIR")
     folders = [
         f'{WORKDIR}/anova',
@@ -243,6 +246,8 @@ def get_control_parameter(test_cases):
 
 
 def save_test_cases_config_to_log_file():
+    update_program_progress_bar('Save Config')
+
     TEST_CASES_CONFIG_FILE = read_configuration().get("TEST_CASES_CONFIG_FILE")
     TEST_CASES_LOG_FILE = read_configuration().get("TEST_CASES_LOG_FILE")
     shutil.copy(TEST_CASES_CONFIG_FILE, TEST_CASES_LOG_FILE)

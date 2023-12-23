@@ -2,6 +2,7 @@ import pandas as pd
 import re
 import os
 from modules.prerequisites import read_configuration
+from modules.progress_bar import update_program_progress_bar
 import warnings
 import logging
 
@@ -248,6 +249,7 @@ TCPPROBE_PATH = read_configuration().get("TCPPROBE_PATH")
 
 
 def process_tcp_probe_logs():
+    update_program_progress_bar('Process TCP Probe Logs')
 
     pd.options.mode.chained_assignment = None
 

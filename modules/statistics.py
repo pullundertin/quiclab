@@ -1,5 +1,6 @@
 import pandas as pd
 import numpy as np
+from modules.progress_bar import update_program_progress_bar
 
 
 def get_medians(df):
@@ -27,6 +28,8 @@ def get_medians(df):
 
 
 def do_statistics(df):
+    update_program_progress_bar('Do Statistics')
+
     median_df = get_medians(df)
 
     return median_df
