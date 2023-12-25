@@ -49,18 +49,20 @@ def create_boxplots_for_each_value_of_independent_variable(df, test):
 
     def filter_dataframe_based_on_mode_and_control_parameter(df, mode, control_parameter):
             filtered_df = df[df['mode'] == mode]
-            filtered_df_hs = (filtered_df[[control_parameter, f'{mode}_hs']])
-            filtered_df_conn = (filtered_df[[control_parameter, f'{mode}_conn']])
-            return filtered_df_hs, filtered_df_conn
+            filtered_df = (filtered_df[[control_parameter, f'{mode}_hs', f'{mode}_conn', 'goodput']])
+            return filtered_df
     
-    def create_boxplot_for_single_mode(filtered_df_hs, filtered_df_conn, mode, control_parameter):
-            fig, axes = plt.subplots(2, 1, figsize=(8, 10))
+    def create_boxplot_for_single_mode(filtered_df, mode, control_parameter):
+            fig, axes = plt.subplots(3, 1, figsize=(8, 10))
 
-            create_boxplot(filtered_df_hs, axes[0], control_parameter, f'{mode}_hs',
+            create_boxplot(filtered_df, axes[0], control_parameter, f'{mode}_hs',
                         f'{mode} handshake with different values for {control_parameter}', control_parameter, 'time')
             
-            create_boxplot(filtered_df_conn, axes[1], control_parameter, f'{mode}_conn',
+            create_boxplot(filtered_df, axes[1], control_parameter, f'{mode}_conn',
                         f'{mode} connection with different values for {control_parameter}', control_parameter, 'time')
+            
+            create_boxplot(filtered_df, axes[2], control_parameter, 'goodput',
+                        f'{mode} goodput with different values for {control_parameter}', control_parameter, 'B/s')
 
             plt.tight_layout()
             plt.savefig(f"{BOXPLOTS_DIR}/boxplot_{mode}_{control_parameter}.png",
@@ -73,8 +75,8 @@ def create_boxplots_for_each_value_of_independent_variable(df, test):
 
     if single_mode_test:
         if check_if_test_performs_on_a_series_of_control_parameter(control_parameter_values):
-            filtered_df_hs, filtered_df_conn = filter_dataframe_based_on_mode_and_control_parameter(df, single_mode_test, control_parameter)
-            create_boxplot_for_single_mode(filtered_df_hs, filtered_df_conn, single_mode_test, control_parameter)
+            filtered_df = filter_dataframe_based_on_mode_and_control_parameter(df, single_mode_test, control_parameter)
+            create_boxplot_for_single_mode(filtered_df, single_mode_test, control_parameter)
         else:
             print("no boxplot")
 
