@@ -12,6 +12,7 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"path/filepath"
 	"sync"
 
 	"github.com/quic-go/quic-go"
@@ -25,6 +26,8 @@ import (
 func main() {
 	verbose := flag.Bool("v", false, "verbose")
 	quiet := flag.Bool("q", false, "don't print the data")
+	output := flag.String("output-dir", "/shared/downloads", "output directory")
+	output_file := flag.String("filename", "data.log", "filename")
 	keyLogFile := flag.String("keylog", "", "key log file")
 	insecure := flag.Bool("insecure", false, "skip certificate verification")
 	enableQlog := flag.Bool("qlog", false, "output a qlog (in the same directory)")
@@ -95,7 +98,14 @@ func main() {
 			logger.Infof("Got response for %s: %#v", addr, rsp)
 
 			body := &bytes.Buffer{}
-			_, err = io.Copy(body, rsp.Body)
+			outputPath := filepath.Join(*output, *output_file)
+			file, err := os.Create(outputPath)
+			if err != nil {
+				log.Fatal("Error creating file: %s", err)
+			}
+			defer file.Close()
+
+			_, err = io.Copy(file, rsp.Body)
 			if err != nil {
 				log.Fatal(err)
 			}

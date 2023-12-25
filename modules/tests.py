@@ -10,11 +10,10 @@ def run_tests(test):
     update_program_progress_bar('Run Tests')
 
     def iterate_over_decompressed_test_cases_in_test_object():
-        number_of_test_cases = len(test.test_cases_decompressed.test_cases)
         test_cases = test.test_cases_decompressed.test_cases
         number_of_iterations = test.iterations
         for test_case in (test_cases):
-            update_test_progress_bar(test_case.number, number_of_test_cases,
+            update_test_progress_bar(test_case.number, test.total_number_of_test_cases,
                                      test_case.iteration, number_of_iterations)
             run_test_case(test_case)
 
