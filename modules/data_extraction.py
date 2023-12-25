@@ -121,19 +121,20 @@ def get_tcp_connection_time(json_file):
                 continue  # No FIN packet found
 
     for packet in packets:
-        layers = packet.get('layers', {})
-        ip_layer = layers.get('ip', {})
-        tcp_layer = layers.get('tcp', {})
+        if check_if_packet_contains_protocol(packet, 'tcp'):
+            layers = packet.get('layers', {})
+            ip_layer = layers.get('ip', {})
+            tcp_layer = layers.get('tcp', {})
 
-        src_ip = ip_layer.get('ip_ip_src')
-        seq_raw_packet = tcp_layer.get('tcp_tcp_seq_raw')
+            src_ip = ip_layer.get('ip_ip_src')
+            seq_raw_packet = tcp_layer.get('tcp_tcp_seq_raw')
 
-        if src_ip == '172.1.0.101' and seq_raw_packet == fin_ack_seq:
-            time_relative = float(
-                packet['layers']['frame']['frame_frame_time_relative'])
-            if time_relative > 0:
-                tcp_connection_duration = (time_relative)
-            break
+            if src_ip == '172.1.0.101' and seq_raw_packet == fin_ack_seq:
+                time_relative = float(
+                    packet['layers']['frame']['frame_frame_time_relative'])
+                if time_relative > 0:
+                    tcp_connection_duration = (time_relative)
+                break
 
     return tcp_connection_duration
 
