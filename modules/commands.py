@@ -37,7 +37,7 @@ def rsync_permanent(permanent_storage_dir):
 
 
 def run_client(test_case):
-    command = f"python /scripts/run_client.py --mode {test_case.mode} --window_scaling {test_case.window_scaling} --rmin {test_case.rmin} --rdef {test_case.rdef} --rmax {test_case.rmax} --migration {test_case.migration} --file_name_prefix {test_case.file_name_prefix}"
+    command = f"python /scripts/run_client.py --mode {test_case.mode} --window_scaling {test_case.window_scaling} --rmin {test_case.rmin} --rdef {test_case.rdef} --rmax {test_case.rmax} --migration {test_case.migration} --parallel {test_case.parallel} --file_name_prefix {test_case.file_name_prefix}"
     client_1.exec_run(command)
 
 

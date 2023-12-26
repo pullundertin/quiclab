@@ -75,6 +75,7 @@ class TestCase:
         self.rdef = config['rdef']
         self.rmax = config['rmax']
         self.migration = config['migration']
+        self.parallel = config['parallel']
         self.generic_heatmap = config['generic_heatmap']
         self.goodput = None
         self.tcp_rtt = None
@@ -109,6 +110,7 @@ class TestCase:
         Receive Window Default: {self.rdef}
         Receive Window Max: {self.rmax}
         Connection Migration: {self.migration}
+        Parallel Download: {self.parallel}
         Generic: {self.generic_heatmap}
 
         Test Results:

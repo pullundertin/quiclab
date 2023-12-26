@@ -30,6 +30,8 @@ def arguments():
                         help='maximum recieve window in bytes')
     parser.add_argument('--migration', choices=['True', 'False'],
                         help='enable/disable connection migration simulation')
+    parser.add_argument('--parallel', choices=['True', 'False'],
+                        help='enable/disable parallel downloads')
     parser.add_argument('--file_name_prefix', type=str,
                         help='prefix for pcap files')
 
@@ -88,13 +90,16 @@ def quicgo(args):
 def tcp(args):
     tcp_settings(args)
     URL = "https://172.3.0.5:443/data.log"
-    request = (URL + ' ') * 1
+    
     os.environ['SSLKEYLOGFILE'] = os.getenv('KEYS_PATH')
-    # {URL} -o /dev/null {URL} -o /dev/null"
-    command = f"curl -k {URL} -o /shared/downloads/{args.file_name_prefix}"
-    logging.info(f"{os.getenv('HOST')}: sending tcp request...")
+    if args.parallel == 'True':
+        command = f"curl -k -Z {URL} -o /shared/downloads/{args.file_name_prefix}1 {URL} -o /shared/downloads/{args.file_name_prefix}2 {URL} -o /shared/downloads/{args.file_name_prefix}3"
+        logging.info(f"{os.getenv('HOST')}: sending parallel tcp request...")
+    else:
+        command = f"curl -k {URL} -o /shared/downloads/{args.file_name_prefix}"
+        logging.info(f"{os.getenv('HOST')}: sending tcp request...")
     run_command(command)
-    command_2 = "ls -lah "
+
 
 
 def client_request(args):

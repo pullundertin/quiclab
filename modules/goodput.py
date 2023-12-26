@@ -3,6 +3,7 @@ import pandas as pd
 import matplotlib.pyplot as plt
 from modules.prerequisites import read_configuration
 from modules.progress_bar import update_program_progress_bar
+import re
 
 DOWNLOADS_DIR = read_configuration().get("DOWNLOADS_DIR")
 
@@ -10,9 +11,15 @@ DOWNLOADS_DIR = read_configuration().get("DOWNLOADS_DIR")
 def get_associated_test_case(file_path, test):
     return test.test_cases_decompressed.map_file_to_test_case(file_path)
 
+def ends_with_number(file_path):
+    pattern = r'\d$'
+    return bool(re.search(pattern, file_path))
 
 def get_download_size_of_file(file_path):
-    return os.path.getsize(file_path)
+    if ends_with_number(file_path):
+        return os.path.getsize(file_path)
+    else:    
+        return os.path.getsize(file_path)
 
 
 def get_connection_time(test_case):
@@ -50,11 +57,38 @@ def show_goodput_graph(df, control_parameter):
 def calculate_goodput(test):
     update_program_progress_bar('Calculate Goodput')
 
+    file_sizes = {}  # Dictionary to store file sizes for files with the same prefix
+
     for file in os.listdir(DOWNLOADS_DIR):
         file_path = os.path.join(DOWNLOADS_DIR, file)
         if os.path.isfile(file_path):
             test_case = get_associated_test_case(file_path, test)
             download_size = get_download_size_of_file(file_path)
-            connection_time = get_connection_time(test_case)
-            goodput = download_size / connection_time
-            test_case.update_goodput(goodput)
+            
+            if ends_with_number(file):  # Check if the file ends with a number
+                prefix = re.split(r'\d+$', file)[0]  # Get the prefix before the number
+                if prefix in file_sizes:
+                    file_sizes[prefix] += download_size
+                else:
+                    file_sizes[prefix] = download_size
+            else:
+                print('download_size, single:', download_size)
+                connection_time = get_connection_time(test_case)
+                goodput = download_size / connection_time
+                test_case.update_goodput(goodput)
+
+    # Process the summed file sizes or perform any other required operations here
+    for prefix, download_size in file_sizes.items():
+        print('download_size, multi:', download_size)
+        connection_time = get_connection_time(test_case)
+        goodput = download_size / connection_time
+        test_case.update_goodput(goodput)
+
+    # for file in os.listdir(DOWNLOADS_DIR):
+    #     file_path = os.path.join(DOWNLOADS_DIR, file)
+    #     if os.path.isfile(file_path):
+    #         test_case = get_associated_test_case(file_path, test)
+    #         download_size = get_download_size_of_file(file_path)
+    #         connection_time = get_connection_time(test_case)
+    #         goodput = download_size / connection_time
+    #         test_case.update_goodput(goodput)
