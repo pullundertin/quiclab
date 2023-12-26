@@ -5,22 +5,22 @@ import yaml
 import shutil
 import re
 from modules.progress_bar import update_program_progress_bar
+from itertools import product
 
 
 class Test:
     def __init__(self):
         self.iterations = None
-        self.test_cases_compressed = None
+        self.test_cases_compressed = {}
         self.test_cases_decompressed = TestCases()
         self.control_parameter = None
-        self.control_parameter_values = None
         self.total_number_of_test_cases = 0
 
     def update_total_number_of_test_cases(self, total_number_of_test_cases):
         setattr(self, 'total_number_of_test_cases', total_number_of_test_cases)
 
     def __str__(self):
-        return f"Iterations: {self.iterations}\nControl Parameter: {self.control_parameter}, Control Parameter Values: {self.control_parameter_values}\nNumber of Test Cases: {self.total_number_of_test_cases}\nTest Cases: {self.test_cases_decompressed}"
+        return f"Iterations: {self.iterations}\nControl Parameter: {self.control_parameter}\nNumber of Test Cases: {self.total_number_of_test_cases}\nTest Cases: {self.test_cases_decompressed}"
 
 
 class TestCases:
@@ -190,23 +190,6 @@ def get_test_object(args):
         else:
             return read_configuration().get("TEST_CASES_LOG_FILE")
 
-    def update_total_number_of_test_cases(control_parameter):
-        def get_number_of_modes(test):
-            array_of_modes = test.test_cases_compressed['mode']
-            number_of_modes = len(array_of_modes)
-            return number_of_modes
-        
-        def get_number_of_control_parameter_values(control_parameter):
-            if control_parameter is not None:
-                array_of_control_parameters = test.test_cases_compressed[control_parameter]
-                number_of_control_parameter_values = len(array_of_control_parameters)
-            else:
-                number_of_control_parameter_values = 1
-            return number_of_control_parameter_values
-        
-        total_number_of_test_cases = get_number_of_modes(test) * get_number_of_control_parameter_values(control_parameter)
-        test.update_total_number_of_test_cases(total_number_of_test_cases)
-
     config = get_test_object_from_config_or_log_file_depending_on_full_run(
         args)
 
@@ -215,8 +198,7 @@ def get_test_object(args):
     test = Test()
     test.iterations = test_configuration['iterations']
     test.test_cases_compressed = test_configuration['cases']
-    test.control_parameter, test.control_parameter_values = get_control_parameter(test.test_cases_compressed)
-    update_total_number_of_test_cases(test.control_parameter)
+    test.control_parameter = get_control_parameter(test.test_cases_compressed)
     test.test_cases_decompressed = decompress_test_cases(test)
     return test
 
@@ -226,47 +208,53 @@ def decompress_test_cases(test):
     test_cases_compressed = test.test_cases_compressed
     iterations = test.iterations
     modes = test_cases_compressed['mode']
-    index = 1
+    test_case_number = 0
     test_cases = TestCases()
+    if len(control_parameter) > 0:
+        # Generate combinations of data values
+        data_combinations = list(product(*control_parameter.values()))
 
-    if control_parameter is not None:
-        control_parameter_values = test.test_cases_compressed[control_parameter]
-        for mode in modes:
-            for element in control_parameter_values:
-                for iteration in range(iterations):
-                    test_case = {
-                        **test_cases_compressed,
-                        'iteration': iteration + 1,
-                        'mode': mode,
-                        control_parameter: element,
-                    }
+        # Create the final list of combinations
+        result = [{'mode': mode, **dict(zip(control_parameter.keys(), values))} for mode in modes for values in data_combinations]
 
-                    test_cases.add_test_case(TestCase(index, test_case))
-                index += 1
+
+        for combo in result:
+            test_case_number += 1
+            for iteration in range(iterations):
+                test_case = {
+                    **test_cases_compressed,
+                    'iteration': iteration + 1,
+                    **combo
+                }
+                test_cases.add_test_case(TestCase(test_case_number, test_case))
+
+
     else:
         for mode in modes:
+            test_case_number += 1
             for iteration in range(iterations):
                 test_case = {
                     **test_cases_compressed,
                     'iteration': iteration + 1,
                     'mode': mode,
                 }
-                test_cases.add_test_case(TestCase(index, test_case))
-            index += 1
+                test_cases.add_test_case(TestCase(test_case_number, test_case))
+
+    test.update_total_number_of_test_cases(test_case_number)
 
     return test_cases
 
 
 def get_control_parameter(test_cases):
+    dictionary_of_control_parameters = {}
     def read_key_value_pairs_and_return_key_with_a_list_as_value():
         for key, value in test_cases.items():
             if isinstance(value, list) and key != 'mode':
-                return key, value
-
-        return None, None
-
-    control_parameter, control_parameter_values = read_key_value_pairs_and_return_key_with_a_list_as_value()
-    return control_parameter, control_parameter_values
+                dictionary_of_control_parameters[key] = value
+        return dictionary_of_control_parameters
+    
+    dictionary_of_control_parameters = read_key_value_pairs_and_return_key_with_a_list_as_value()
+    return dictionary_of_control_parameters
 
 
 def save_test_cases_config_to_log_file():

@@ -42,11 +42,11 @@ def evaluate_test_results(test_results_dataframe, median_dataframe, test):
         control_parameter = 'generic_heatmap'
     iterations = test.iterations
     show_goodput_graph(median_dataframe, control_parameter)
-    show_boxplot(test_results_dataframe, test)
-    show_heatmaps(median_dataframe, control_parameter)
-    if iterations > 2:
-        t_test(test_results_dataframe, control_parameter)
-        do_anova(test_results_dataframe, control_parameter)
+    # show_boxplot(test_results_dataframe, test)
+    # show_heatmaps(median_dataframe, control_parameter)
+    # if iterations > 2:
+    #     t_test(test_results_dataframe, control_parameter)
+    #     do_anova(test_results_dataframe, control_parameter)
 
 
 def store_results(test_results_dataframe, median_dataframe, args):
@@ -89,7 +89,7 @@ def create_dataframe_from_object(test):
 
 
 def print_all_results_to_cli(test_results_dataframe, median_dataframe):
-    columns_to_print = ['mode', 'size', 'delay', 'delay_deviation', 'loss', 'rate', 'migration', 'goodput',
+    columns_to_print = ['mode', 'size', 'delay', 'delay_deviation', 'loss', 'rate', 'firewall', 'window_scaling', 'rmin', 'rdef', 'rmax', 'migration', 'goodput',
                         'tcp_hs', 'aioquic_hs', 'quicgo_hs', 'tcp_conn', 'aioquic_conn', 'quicgo_conn']
     if args.results:
         print(test_results_dataframe[columns_to_print])
@@ -125,6 +125,6 @@ if __name__ == "__main__":
     print_all_results_to_cli(test_results_dataframe, median_dataframe)
     evaluate_test_results(test_results_dataframe, median_dataframe, test)
 
-    store_results(test_results_dataframe, median_dataframe, args)
+    # store_results(test_results_dataframe, median_dataframe, args)
 
     logging.info("All tasks are completed.")

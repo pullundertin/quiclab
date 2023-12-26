@@ -1,18 +1,18 @@
 # applies to full execution mode only !!!
-iterations: 2
+iterations: 1
 
 cases:
   mode: [tcp]
   size: 0.01M
-  delay: [20ms, 30ms]
+  delay: 20ms
   delay_deviation: 0
   loss: 0
   rate: 100
   firewall: None
   window_scaling: 1
-  rmin: 4096
-  rdef: 131072
-  rmax: 62901456
+  rmin: [2000, 4096]
+  rdef: [3000, 131072]
+  rmax: [31500000, 62901456]
   migration: false
   generic_heatmap: ''
 

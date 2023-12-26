@@ -29,22 +29,30 @@ def show_goodput_graph(df, control_parameter):
     GOODPUT_RESULTS = read_configuration().get("GOODPUT_RESULTS")
     # Group the DataFrame by 'mode'
     grouped_by_mode = df.groupby('mode')
-
+    # TODO sort results?
     # Create a scatterplot for each mode
-    plt.figure(figsize=(10, 6))
-
+    control_parameters = ['rmin', 'rdef', 'rmax']
     for mode, group_data in grouped_by_mode:
-        plt.scatter(group_data[control_parameter],
-                    group_data['goodput'], label=mode, alpha=0.7)
-        plt.plot(group_data[control_parameter], group_data['goodput'],
-                 marker='o', linestyle='-', alpha=0.5)
+        for control_parameter in control_parameters:
+            for second_variable in control_parameters:
+                unique_values_of_second_variable = None
+                if second_variable != control_parameter:
+                    unique_values_of_second_variable = group_data[second_variable].unique()
+                    print(control_parameter, second_variable, unique_values_of_second_variable)
+                    fig, axes = plt.subplots(nrows=1, ncols=len(unique_values_of_second_variable), figsize=(15, 5))
+                    for index, value in enumerate(unique_values_of_second_variable):
+                        dataframe_filtered_by_value_of_second_variable = group_data[(group_data[second_variable] == value)]
 
-    plt.xlabel(control_parameter)
-    plt.ylabel('Goodput')
-    plt.title(f'Scatterplot of {control_parameter} vs Goodput grouped by Mode')
-    plt.legend()
-    plt.grid(True)
-    plt.savefig(GOODPUT_RESULTS, dpi=300, bbox_inches='tight')
+                        axes[index].scatter(dataframe_filtered_by_value_of_second_variable[control_parameter], dataframe_filtered_by_value_of_second_variable['goodput'], label=f"{second_variable} = {value}")
+                        axes[index].set_title(f'{control_parameter} vs Goodput for {second_variable} = {value} grouped by Mode')
+                        axes[index].legend()
+                        axes[index].grid(True)
+                        axes[index].set_xlabel(control_parameter)
+                        axes[index].set_ylabel('Goodput')
+
+                    plt.tight_layout()
+                    plt.savefig(f"{GOODPUT_RESULTS}/{second_variable}_{control_parameter}.png", dpi=300, bbox_inches='tight')
+                    plt.show()  # Show each plot separately
 
 
 def calculate_goodput(test):
