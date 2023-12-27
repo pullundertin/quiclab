@@ -2,7 +2,7 @@ import time
 import logging
 from concurrent.futures import ThreadPoolExecutor
 from concurrent.futures import wait
-from modules.commands import run_client, traffic_control, run_server, run_server_tracing, stop_server, stop_server_tracing
+from modules.commands import run_client, traffic_control, run_server, run_server_tracing, stop_server, stop_server_tracing, run_prepare_data_on_client
 from modules.progress_bar import update_test_progress_bar, update_program_progress_bar
 
 
@@ -38,6 +38,8 @@ def run_test_case(test_case):
                 stop_server_tracing, test_case)
             wait([stop_tracing_process])
             executor.submit(stop_server, test_case)
+            if test_case.mode == 'lsquic':
+                executor.submit(run_prepare_data_on_client, test_case)
             logging.info(f"//////////////////////////////////////////")
     except Exception as e:
         logging.error(f"An error occurred: {e}")

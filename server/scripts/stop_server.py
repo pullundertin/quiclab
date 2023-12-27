@@ -30,6 +30,12 @@ def aioquic():
     run_command(command)
 
 
+def lsquic():
+    command = f"pkill http_server"
+    logging.info(f"{os.getenv('HOST')}: stopping lsquic server..")
+    run_command(command)
+
+
 def quicgo():
     command_2 = f"pkill -f ^/tmp/go-build"
     logging.info(f"{os.getenv('HOST')}: stopping quic-go build!..")
@@ -53,6 +59,8 @@ if __name__ == "__main__":
             aioquic()
         elif args.mode == "quicgo":
             quicgo()
+        elif args.mode == "lsquic":
+            lsquic()
 
     except Exception as e:
         logging.error(f"{os.getenv('HOST')}: Error: {str(e)}")

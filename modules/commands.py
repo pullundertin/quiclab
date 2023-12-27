@@ -41,6 +41,11 @@ def run_client(test_case):
     client_1.exec_run(command)
 
 
+def run_prepare_data_on_client(test_case):
+    command = f"python /scripts/run_prepare_data_on_client.py --mode {test_case.mode} --parallel {test_case.parallel} --file_name_prefix {test_case.file_name_prefix}"
+    client_1.exec_run(command)
+
+
 def traffic_control(test_case):
     command = f"python /scripts/traffic_control.py --delay {test_case.delay} --delay_deviation {test_case.delay_deviation} --loss {test_case.loss} --rate {test_case.rate} --firewall {test_case.firewall}"
     router_1.exec_run(command)

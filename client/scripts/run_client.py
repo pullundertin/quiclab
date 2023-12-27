@@ -1,16 +1,12 @@
 
 import time
 import os
-import subprocess
 from concurrent.futures import ThreadPoolExecutor
 from concurrent.futures import wait
+from modules.logs import log_config
+from modules.commands import run_command
 import logging
 import argparse
-
-
-# Configure logging
-logging.basicConfig(filename=os.getenv('LOG_PATH'), level=logging.INFO,
-                    format='%(asctime)s - %(levelname)s - %(message)s')
 
 
 def arguments():
@@ -18,7 +14,7 @@ def arguments():
     parser = argparse.ArgumentParser(description='QuicLab Test Environment')
 
     parser.add_argument('-m', '--mode', type=str,
-                        help='modes: tcp, aioquic, quicgo')
+                        help='modes: tcp, aioquic, quicgo, lsquic')
 
     parser.add_argument('-w', '--window_scaling', type=str,
                         help='enable/disable receiver window scaling')
@@ -42,16 +38,6 @@ def arguments():
     return args
 
 
-def run_command(command):
-    try:
-        process = subprocess.run(
-            command, check=True, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-        logging.info(f"{os.getenv('HOST')}: {process.stdout.decode()}")
-    except subprocess.CalledProcessError as e:
-        logging.info(f"Error on {os.getenv('HOST')}: {e}")
-        logging.info(f"Error {os.getenv('HOST')} output: {e.stderr.decode()}")
-
-
 def tcp_settings(args):
     command = f"sysctl -w net.ipv4.tcp_window_scaling={args.window_scaling}"
     run_command(command)
@@ -68,11 +54,16 @@ def tcpdump(args):
 def aioquic(args):
     URL = "https://172.3.0.5:4433/data.log"
     max_data = 2000000
-    request = (URL + ' ') * 1
-    command = f"python /aioquic/examples/http3_client.py -k {request} --output-dir /shared/downloads --filename {args.file_name_prefix} --secrets-log $KEYS_PATH --quic-log $QLOG_PATH_CLIENT --zero-rtt --session-ticket $TICKET_PATH"
+    if args.parallel == 'True':
+        # TODO how to downlaod multiple files
+        command = f"python /aioquic/examples/http3_client.py -k {URL} {URL} --output-dir /shared/downloads --filename {args.file_name_prefix} --secrets-log $KEYS_PATH --quic-log $QLOG_PATH_CLIENT --zero-rtt --session-ticket $TICKET_PATH"
+        logging.info(
+            f"{os.getenv('HOST')}: sending parallel aioquic request...")
+    else:
+        command = f"python /aioquic/examples/http3_client.py -k {URL} --output-dir /shared/downloads --filename {args.file_name_prefix} --secrets-log $KEYS_PATH --quic-log $QLOG_PATH_CLIENT --zero-rtt --session-ticket $TICKET_PATH"
+        logging.info(f"{os.getenv('HOST')}: sending aioquic request...")
     # command = f"python /aioquic/examples/http3_client.py -k {URL} --max-data {max_data} --secrets-log $KEYS_PATH --quic-log $QLOG_PATH_CLIENT --zero-rtt --session-ticket $TICKET_PATH"
     # command = f"python /aioquic/examples/http3_client.py -k {URL} {URL} --secrets-log $KEYS_PATH --quic-log $QLOG_PATH_CLIENT --zero-rtt --session-ticket $TICKET_PATH"
-    logging.info(f"{os.getenv('HOST')}: sending aioquic request...")
     # run_command(command)
     run_command(command)
 
@@ -81,16 +72,47 @@ def quicgo(args):
     URL = "https://172.3.0.5:6121/data.log"
     os.chdir("/quic-go/example/client")
     # TODO KEYS_PATH funktioniert nur ohne vorangestelltem Punkt!
-    command = f"go run main.go --insecure --output-dir /shared/downloads --filename {args.file_name_prefix} --keylog /shared/keys/client.key --qlog {URL}"
+    command = f"go run main.go --insecure --output-dir /shared/downloads --filename {args.file_name_prefix} --keylog /shared/files/client.key --qlog {URL}"
     # command = f"go run main.go --insecure --keylog $KEYS_PATH --qlog {URL} {URL}"
     logging.info(f"{os.getenv('HOST')}: sending quic-go request...")
+    run_command(command)
+
+
+def create_folder_in_lsquic_root(lsquic_client_directory):
+    if os.path.exists(lsquic_client_directory):
+        remove_old_files(lsquic_client_directory)
+    else:
+        os.makedirs(lsquic_client_directory)
+
+
+def remove_old_files(lsquic_client_directory):
+    for filename in os.listdir(lsquic_client_directory):
+        file_path = os.path.join(lsquic_client_directory, filename)
+        try:
+            if os.path.isfile(file_path):
+                os.unlink(file_path)
+        except Exception as e:
+            print(f"Failed to delete {file_path}. Reason: {e}")
+            logging.info(
+                f"{os.getenv('HOST')}: Failed to delete {file_path}. Reason: {e}")
+
+
+def lsquic(args):
+    lsquic_client_directory = '/lsquic/client'
+    create_folder_in_lsquic_root(lsquic_client_directory)
+    # TODO download filename, qlog
+    URL = "172.3.0.5:4444"
+    os.chdir("/lsquic/bin")
+    # TODO KEYS_PATH funktioniert nur ohne vorangestelltem Punkt!
+    command = f"./http_client -H www.example.com -s 172.3.0.5:4444 -p /data.log -7 {lsquic_client_directory} -0 {lsquic_client_directory} -G {lsquic_client_directory}"
+    logging.info(f"{os.getenv('HOST')}: sending lsquic request...")
     run_command(command)
 
 
 def tcp(args):
     tcp_settings(args)
     URL = "https://172.3.0.5:443/data.log"
-    
+
     os.environ['SSLKEYLOGFILE'] = os.getenv('KEYS_PATH')
     if args.parallel == 'True':
         command = f"curl -k -Z {URL} -o /shared/downloads/{args.file_name_prefix}1 {URL} -o /shared/downloads/{args.file_name_prefix}2 {URL} -o /shared/downloads/{args.file_name_prefix}3"
@@ -101,7 +123,6 @@ def tcp(args):
     run_command(command)
 
 
-
 def client_request(args):
 
     if args.mode == "tcp":
@@ -110,6 +131,8 @@ def client_request(args):
         aioquic(args)
     elif args.mode == "quicgo":
         quicgo(args)
+    elif args.mode == "lsquic":
+        lsquic(args)
 
 
 def kill_tcpdump():
@@ -128,6 +151,7 @@ def change_ip(old_ip, new_ip):
 
 if __name__ == "__main__":
 
+    log_config()
     args = arguments()
     with ThreadPoolExecutor() as executor:
 

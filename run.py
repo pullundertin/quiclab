@@ -112,6 +112,7 @@ if __name__ == "__main__":
         reset_workdir()
         save_test_cases_config_to_log_file()
         run_tests(test)
+        # TODO copy lsquic keys into client.key
         convert_pcap_to_json()
         process_tcp_probe_logs()
 
@@ -119,12 +120,12 @@ if __name__ == "__main__":
         logging.info("Executing evaluation only")
 
     get_test_results(test)
-    calculate_goodput(test)
-    test_results_dataframe = create_dataframe_from_object(test)
-    median_dataframe = do_statistics(test_results_dataframe)
-    print_all_results_to_cli(test_results_dataframe, median_dataframe)
-    evaluate_test_results(test_results_dataframe, median_dataframe, test)
+    # calculate_goodput(test)
+    # test_results_dataframe = create_dataframe_from_object(test)
+    # median_dataframe = do_statistics(test_results_dataframe)
+    # print_all_results_to_cli(test_results_dataframe, median_dataframe)
+    # evaluate_test_results(test_results_dataframe, median_dataframe, test)
 
-    store_results(test_results_dataframe, median_dataframe, args)
+    store_results(None, None, args)
 
     logging.info("All tasks are completed.")

@@ -2,7 +2,7 @@
 iterations: 1
 
 cases:
-  mode: [tcp, aioquic]
+  mode: [lsquic]
   size: 0.01M
   delay: [20ms]
   delay_deviation: 0
@@ -14,7 +14,7 @@ cases:
   rdef: 131072
   rmax: 62901456
   migration: false
-  parallel: true
+  parallel: false
   generic_heatmap: ''
 
   

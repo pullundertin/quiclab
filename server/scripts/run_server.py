@@ -12,7 +12,7 @@ def arguments():
     parser = argparse.ArgumentParser(description='QuicLab Test Environment')
 
     parser.add_argument('-m', '--mode', type=str,
-                        help='modes: tcp, aioquic, quicgo')
+                        help='modes: tcp, aioquic, quicgo, lsquic')
 
     args = parser.parse_args()
 
@@ -32,6 +32,12 @@ def quicgo():
     os.chdir("/quic-go/example")
     command = "go run main.go --qlog"
     logging.info(f"{os.getenv('HOST')}: starting quic-go server..")
+    run_command(command)
+
+def lsquic():
+    os.chdir("/lsquic/bin")
+    command = "./http_server -c www.example.com,/example.crt,/example.key -s 0.0.0.0:4444 -r /data"
+    logging.info(f"{os.getenv('HOST')}: starting lsquic server..")
     run_command(command)
 
 
@@ -55,6 +61,8 @@ if __name__ == "__main__":
                 aioquic()
             elif args.mode == "quicgo":
                 quicgo()
+            elif args.mode == "lsquic":
+                lsquic()
 
     except Exception as e:
         logging.error(f"{os.getenv('HOST')}: Error: {str(e)}")
