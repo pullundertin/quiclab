@@ -69,6 +69,7 @@ def aioquic(args):
     URL = "https://172.3.0.5:4433/data.log"
     max_data = 2000000
     if args.parallel == 'True':
+        # TODO: use config
         number_of_streams = 5
     else:
         number_of_streams = 1
@@ -94,13 +95,20 @@ def quicgo(args):
 def tcp(args):
     tcp_settings(args)
     URL = "https://172.3.0.5:443/data.log"
-    
+    request = f"{URL} -o /shared/downloads/{args.file_name_prefix}"
     os.environ['SSLKEYLOGFILE'] = os.getenv('KEYS_PATH')
+
     if args.parallel == 'True':
-        command = f"curl -k -Z {URL} -o /shared/downloads/{args.file_name_prefix}1 {URL} -o /shared/downloads/{args.file_name_prefix}2 {URL} -o /shared/downloads/{args.file_name_prefix}3"
+        # TODO: use config
+        number_of_streams = 5
+        sum_of_requests = ''
+        for index in range(number_of_streams):
+            sum_of_requests += f"{request}_{index} "
+
+        command = f"curl -k -Z {sum_of_requests}"
         logging.info(f"{os.getenv('HOST')}: sending parallel tcp request...")
     else:
-        command = f"curl -k {URL} -o /shared/downloads/{args.file_name_prefix}"
+        command = f"curl -k {request}"
         logging.info(f"{os.getenv('HOST')}: sending tcp request...")
     run_command(command)
 
