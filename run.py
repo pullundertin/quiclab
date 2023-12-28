@@ -90,7 +90,7 @@ def create_dataframe_from_object(test):
 
 def print_all_results_to_cli(test_results_dataframe, median_dataframe):
     # TODO: centralize
-    columns_to_print = ['mode', 'size', 'real_size', 'delay', 'delay_deviation', 'loss', 'rate', 'migration', 'parallel', 'goodput',
+    columns_to_print = ['mode', 'size', 'real_size', 'delay', 'delay_deviation', 'loss', 'rate', 'migration', 'number_of_streams', 'goodput',
                         'tcp_hs', 'aioquic_hs', 'quicgo_hs', 'tcp_conn', 'aioquic_conn', 'quicgo_conn']
     if args.results:
         print(test_results_dataframe[columns_to_print])

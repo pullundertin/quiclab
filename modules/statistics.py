@@ -6,7 +6,7 @@ from modules.progress_bar import update_program_progress_bar
 def get_medians(df):
     # TODO centralize
     group_columns = ['mode', 'size', 'real_size', 'delay', 'delay_deviation', 'loss',
-                     'rate', 'firewall', 'window_scaling', 'rmin', 'rmax', 'rdef', 'migration', 'parallel', 'generic_heatmap']
+                     'rate', 'firewall', 'window_scaling', 'rmin', 'rmax', 'rdef', 'migration', 'number_of_streams', 'generic_heatmap']
 
     # Define a custom function to calculate median while ignoring NaN values
     def custom_median(series):

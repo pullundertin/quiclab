@@ -59,7 +59,6 @@ class TestCase:
         self.iteration = config['iteration']
         self.file_name_prefix = f"Case_{self.number}_Iteration_{self.iteration}_"
         self.mode = config['mode']
-        self.parallel = config['parallel']
         self.number_of_streams = config['number_of_streams']
         self.size = self.convert_to_bytes(config['size'])
         self.real_size = self.get_real_file_size_based_on_single_or_multi_stream()
@@ -108,7 +107,6 @@ class TestCase:
         Receive Window Default: {self.rdef}
         Receive Window Max: {self.rmax}
         Connection Migration: {self.migration}
-        Parallel Download: {self.parallel}
         Number of Streams: {self.number_of_streams}
         Generic: {self.generic_heatmap}
 
@@ -138,7 +136,7 @@ class TestCase:
         return int(number * multiplier)
     
     def get_real_file_size_based_on_single_or_multi_stream(self):
-        if self.parallel:
+        if self.number_of_streams > 1:
             return self.number_of_streams * self.size
         else:
             return self.size

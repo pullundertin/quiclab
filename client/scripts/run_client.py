@@ -30,8 +30,8 @@ def arguments():
                         help='maximum recieve window in bytes')
     parser.add_argument('--migration', choices=['True', 'False'],
                         help='enable/disable connection migration simulation')
-    parser.add_argument('--parallel', choices=['True', 'False'],
-                        help='enable/disable parallel downloads')
+    parser.add_argument('--number_of_streams', type=int,
+                        help='set number of parallel streams')
     parser.add_argument('--file_name_prefix', type=str,
                         help='prefix for pcap files')
 
@@ -68,12 +68,7 @@ def tcpdump(args):
 def aioquic(args):
     URL = "https://172.3.0.5:4433/data.log"
     max_data = 2000000
-    if args.parallel == 'True':
-        # TODO: use config
-        number_of_streams = 5
-    else:
-        number_of_streams = 1
-    request = (URL + ' ') * number_of_streams
+    request = (URL + ' ') * args.number_of_streams
     command = f"python /aioquic/examples/http3_client.py -k {request} --output-dir /shared/downloads --filename {args.file_name_prefix} --secrets-log $KEYS_PATH --quic-log $QLOG_PATH_CLIENT --zero-rtt --session-ticket $TICKET_PATH"
     # command = f"python /aioquic/examples/http3_client.py -k {URL} --max-data {max_data} --secrets-log $KEYS_PATH --quic-log $QLOG_PATH_CLIENT --zero-rtt --session-ticket $TICKET_PATH"
     # command = f"python /aioquic/examples/http3_client.py -k {URL} {URL} --secrets-log $KEYS_PATH --quic-log $QLOG_PATH_CLIENT --zero-rtt --session-ticket $TICKET_PATH"
@@ -86,12 +81,7 @@ def quicgo(args):
     URL = "https://172.3.0.5:6121/data.log"
     os.chdir("/quic-go/example/client")
 
-    if args.parallel == 'True':
-        # TODO: use config
-        number_of_streams = 5
-    else:
-        number_of_streams = 1
-    request = (URL + ' ') * number_of_streams
+    request = (URL + ' ') * args.number_of_streams
 
     # TODO KEYS_PATH funktioniert nur ohne vorangestelltem Punkt!
     command = f"go run main.go --insecure --output-dir /shared/downloads --filename {args.file_name_prefix} --keylog /shared/keys/client.key --qlog {request}"
@@ -106,18 +96,14 @@ def tcp(args):
     request = f"{URL} -o /shared/downloads/{args.file_name_prefix}"
     os.environ['SSLKEYLOGFILE'] = os.getenv('KEYS_PATH')
 
-    if args.parallel == 'True':
-        # TODO: use config
-        number_of_streams = 5
+    if args.number_of_streams > 1:
         sum_of_requests = ''
-        for index in range(number_of_streams):
+        for index in range(args.number_of_streams):
             sum_of_requests += f"{request}_{index} "
-
         command = f"curl -k -Z {sum_of_requests}"
-        logging.info(f"{os.getenv('HOST')}: sending parallel tcp request...")
     else:
         command = f"curl -k {request}"
-        logging.info(f"{os.getenv('HOST')}: sending tcp request...")
+    logging.info(f"{os.getenv('HOST')}: sending tcp request...")
     run_command(command)
 
 

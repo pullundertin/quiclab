@@ -1,5 +1,5 @@
 # applies to full execution mode only !!!
-iterations: 10
+iterations: 3
 
 cases:
   mode: [tcp, aioquic, quicgo]
@@ -7,15 +7,14 @@ cases:
   delay: 20ms
   delay_deviation: 0
   loss: 0
-  rate: 100
+  rate: 1G
   firewall: None
   window_scaling: 1
   rmin: 4096
   rdef: 131072
   rmax: 62901456
   migration: false
-  parallel: [false, true]
-  number_of_streams: 5
+  number_of_streams: [1, 5]
   generic_heatmap: ''
 
   
