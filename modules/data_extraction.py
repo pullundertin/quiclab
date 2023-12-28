@@ -163,71 +163,74 @@ def get_test_results(test):
             'dcid_hex': get_quic_dcid(pcap)[1]
         }
 
-
-
-        if test_case.mode == 'aioquic':
-            data['aioquic_hs'] = get_quic_handshake_time(pcap)
-            data['aioquic_conn'] = get_quic_connection_time(pcap)
-        elif test_case.mode == 'quicgo':
-            data['quicgo_hs'] = get_quic_handshake_time(pcap)
-            data['quicgo_conn'] = get_quic_connection_time(pcap)
+        if test_case.mode in ('aioquic', 'quicgo'):
+            mode = test_case.mode
+            data[f'{mode}_hs'] = get_quic_handshake_time(pcap)
+            data[f'{mode}_conn'] = get_quic_connection_time(pcap)
 
         test_case.store_test_results_for(data)
 
 
-    def iterate_over_pcap_files_and_get_associated_test_case(files):
-        for pcap_file in files:
-            test_case = test.test_cases_decompressed.map_file_to_test_case(
-                pcap_file)
-            populate_test_case_with_test_results_from_json(
-                pcap_file, test_case)
-
     def get_pcap_data():
-        files = traverse_pcap_directory()
-        iterate_over_pcap_files_and_get_associated_test_case(files)
+        pcap_files = traverse_pcap_directory()
+
+        for pcap_file in pcap_files:
+            pcap = capture_packets(pcap_file)
+            test_case = test.test_cases_decompressed.map_file_to_test_case(pcap_file)
+            populate_test_case_with_test_results_from_json(pcap, test_case)
 
     def get_qlog_data():
 
         qlog_files = traverse_qlog_directory()
-        min_rtt_values = []
-        smoothed_rtt_values = []
 
         def get_dataframe_index_of_qlog_file(qlog_file):
             test_case = test.test_cases_decompressed.map_qlog_file_to_test_case_by_dcid(
                 qlog_file)
             return test_case
-
-        for qlog_file in qlog_files:
+        
+        def get_rtt_values_from_json_format_qlog(qlog_data):
             min_rtt_values = []
             smoothed_rtt_values = []
-            try:
-                with open(qlog_file, 'r') as f:
-                    data = f.read()
-                    qlog_data = json.loads(data)
 
-                if isinstance(qlog_data, dict) and 'traces' in qlog_data:
-                    for packet in qlog_data['traces']:
-                        for event in packet.get('events', []):
-                            data = event.get('data', {})
-                            if 'min_rtt' in data:
-                                min_rtt = data.get('min_rtt')
-                                min_rtt_values.append(min_rtt / 1000)
-                                smoothed_rtt = data.get('smoothed_rtt')
-                                smoothed_rtt_values.append(smoothed_rtt / 1000)
+            if isinstance(qlog_data, dict) and 'traces' in qlog_data:
+                for packet in qlog_data['traces']:
+                    for event in packet.get('events', []):
+                        data = event.get('data', {})
+                        if 'min_rtt' in data:
+                            min_rtt = data.get('min_rtt')
+                            min_rtt_values.append(min_rtt / 1000)
+                            smoothed_rtt = data.get('smoothed_rtt')
+                            smoothed_rtt_values.append(smoothed_rtt / 1000)
+            return min_rtt_values, smoothed_rtt_values   
 
-            # ndjson format - quicgo
-            except json.JSONDecodeError:
-                with open(qlog_file, 'r') as f:
-                    ndqlog_data = f.read()
-                    # Split the data into lines and parse each line as JSON
-                    for line in ndqlog_data.strip().split('\n'):
-                        qlog_data = json.loads(line)
-                        if "data" in qlog_data:
-                            if "min_rtt" in qlog_data["data"]:
-                                min_rtt_values.append(
-                                    qlog_data["data"]["min_rtt"]/1000)
-                                smoothed_rtt_values.append(
-                                    qlog_data["data"]["smoothed_rtt"]/1000)
+        def get_rtt_values_from_ndjson_format_qlog(file):
+            min_rtt_values = []
+            smoothed_rtt_values = []
+
+            def split_data_into_lines_and_parse_each_line_as_json(ndqlog_data):
+                for line in ndqlog_data.strip().split('\n'):
+                    qlog_data = json.loads(line)
+                    if "data" in qlog_data:
+                        if "min_rtt" in qlog_data["data"]:
+                            min_rtt_values.append(
+                                qlog_data["data"]["min_rtt"]/1000)
+                            smoothed_rtt_values.append(
+                                qlog_data["data"]["smoothed_rtt"]/1000)
+                return min_rtt_values, smoothed_rtt_values
+
+            ndqlog_data = file.read()
+            min_rtt_values, smoothed_rtt_values = split_data_into_lines_and_parse_each_line_as_json(ndqlog_data)
+
+            return min_rtt_values, smoothed_rtt_values   
+
+        for qlog_file in qlog_files:
+            with open(qlog_file, 'r') as f:
+                try:
+                    qlog_data = json.loads(f.read())
+                    min_rtt_values, smoothed_rtt_values = get_rtt_values_from_json_format_qlog(qlog_data)
+                except json.JSONDecodeError:
+                    f.seek(0)
+                    min_rtt_values, smoothed_rtt_values = get_rtt_values_from_ndjson_format_qlog(f)
 
             test_case = get_dataframe_index_of_qlog_file(qlog_file)
             test_case.update_quic_rtt_data_from_qlog(
@@ -235,11 +238,6 @@ def get_test_results(test):
 
     update_program_progress_bar('Get Test Results')
 
-    pcap_files = traverse_pcap_directory()
-
-    for pcap_file in pcap_files:
-        pcap = capture_packets(pcap_file)
-        test_case = test.test_cases_decompressed.map_file_to_test_case(pcap_file)
-        populate_test_case_with_test_results_from_json(pcap, test_case)
-
+    
+    get_pcap_data()
     get_qlog_data()

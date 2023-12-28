@@ -17,6 +17,8 @@ import os
 import argparse
 import pandas as pd
 
+TEST_CONFIG_COLUMNS = read_configuration().get("TEST_CONFIG_COLUMNS")
+TEST_RESULT_COLUMNS = read_configuration().get("TEST_RESULT_COLUMNS")
 
 def arguments():
     # Create an ArgumentParser object
@@ -89,9 +91,7 @@ def create_dataframe_from_object(test):
 
 
 def print_all_results_to_cli(test_results_dataframe, median_dataframe):
-    # TODO: centralize
-    columns_to_print = ['mode', 'size', 'real_size', 'delay', 'delay_deviation', 'loss', 'rate', 'migration', 'number_of_streams', 'goodput',
-                        'tcp_hs', 'aioquic_hs', 'quicgo_hs', 'tcp_conn', 'aioquic_conn', 'quicgo_conn']
+    columns_to_print = TEST_CONFIG_COLUMNS + TEST_RESULT_COLUMNS
     if args.results:
         print(test_results_dataframe[columns_to_print])
         print("\\\\\\\\\\\\\\\\ MEDIAN \\\\\\\\\\\\\\\\\\\\")
@@ -113,7 +113,6 @@ if __name__ == "__main__":
         reset_workdir()
         save_test_cases_config_to_log_file()
         run_tests(test)
-        # convert_pcap_to_json()
         process_tcp_probe_logs()
 
     else:
@@ -121,7 +120,6 @@ if __name__ == "__main__":
 
     get_test_results(test)
     calculate_goodput(test)
-    print(test)
     test_results_dataframe = create_dataframe_from_object(test)
     median_dataframe = do_statistics(test_results_dataframe)
     print_all_results_to_cli(test_results_dataframe, median_dataframe)
