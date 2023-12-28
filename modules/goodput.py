@@ -57,38 +57,24 @@ def show_goodput_graph(df, control_parameter):
 def calculate_goodput(test):
     update_program_progress_bar('Calculate Goodput')
 
-    file_sizes = {}  # Dictionary to store file sizes for files with the same prefix
+    def calculate_and_update_goodput(test_case, download_size):
+        connection_time = get_connection_time(test_case)
+        goodput = download_size / connection_time
+        test_case.update_goodput(goodput)
+
+    download_sizes = {}  
 
     for file in os.listdir(DOWNLOADS_DIR):
         file_path = os.path.join(DOWNLOADS_DIR, file)
         if os.path.isfile(file_path):
             test_case = get_associated_test_case(file_path, test)
-            download_size = get_download_size_of_file(file_path)
-            
-            if ends_with_number(file):  # Check if the file ends with a number
-                prefix = re.split(r'\d+$', file)[0]  # Get the prefix before the number
-                if prefix in file_sizes:
-                    file_sizes[prefix] += download_size
+            download_size = get_download_size_of_file(file_path)         
+            if test_case:
+                if test_case in download_sizes:
+                    download_sizes[test_case] += download_size
                 else:
-                    file_sizes[prefix] = download_size
-            else:
-                print('download_size, single:', download_size)
-                connection_time = get_connection_time(test_case)
-                goodput = download_size / connection_time
-                test_case.update_goodput(goodput)
+                    download_sizes[test_case] = download_size
 
-    # Process the summed file sizes or perform any other required operations here
-    for prefix, download_size in file_sizes.items():
-        print('download_size, multi:', download_size)
-        connection_time = get_connection_time(test_case)
-        goodput = download_size / connection_time
-        test_case.update_goodput(goodput)
-
-    # for file in os.listdir(DOWNLOADS_DIR):
-    #     file_path = os.path.join(DOWNLOADS_DIR, file)
-    #     if os.path.isfile(file_path):
-    #         test_case = get_associated_test_case(file_path, test)
-    #         download_size = get_download_size_of_file(file_path)
-    #         connection_time = get_connection_time(test_case)
-    #         goodput = download_size / connection_time
-    #         test_case.update_goodput(goodput)
+    for test_case, download_size in download_sizes.items():
+        calculate_and_update_goodput(test_case, download_size)
+ 

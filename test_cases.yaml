@@ -2,7 +2,7 @@
 iterations: 1
 
 cases:
-  mode: [tcp]
+  mode: [aioquic]
   size: 0.01M
   delay: 20ms
   delay_deviation: 0
@@ -10,11 +10,11 @@ cases:
   rate: 100
   firewall: None
   window_scaling: 1
-  rmin: [4096, 4096*2]
+  rmin: 4096
   rdef: 131072
   rmax: 62901456
   migration: false
-  parallel: true
+  parallel: [false, true]
   generic_heatmap: ''
 
   

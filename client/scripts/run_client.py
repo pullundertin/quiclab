@@ -68,7 +68,11 @@ def tcpdump(args):
 def aioquic(args):
     URL = "https://172.3.0.5:4433/data.log"
     max_data = 2000000
-    request = (URL + ' ') * 1
+    if args.parallel == 'True':
+        number_of_streams = 5
+    else:
+        number_of_streams = 1
+    request = (URL + ' ') * number_of_streams
     command = f"python /aioquic/examples/http3_client.py -k {request} --output-dir /shared/downloads --filename {args.file_name_prefix} --secrets-log $KEYS_PATH --quic-log $QLOG_PATH_CLIENT --zero-rtt --session-ticket $TICKET_PATH"
     # command = f"python /aioquic/examples/http3_client.py -k {URL} --max-data {max_data} --secrets-log $KEYS_PATH --quic-log $QLOG_PATH_CLIENT --zero-rtt --session-ticket $TICKET_PATH"
     # command = f"python /aioquic/examples/http3_client.py -k {URL} {URL} --secrets-log $KEYS_PATH --quic-log $QLOG_PATH_CLIENT --zero-rtt --session-ticket $TICKET_PATH"

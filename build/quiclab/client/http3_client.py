@@ -249,6 +249,7 @@ async def perform_http_request(
     include: bool,
     output_dir: Optional[str],
     filename: Optional[str],
+    index: int,  # Add index parameter here
 ) -> None:
     # perform request
     start = time.time()
@@ -280,15 +281,14 @@ async def perform_http_request(
 
     # output response
     if output_dir is not None:
-        output_path = os.path.join(
-            output_dir, filename
-        )
+        # Appending an index to the filename
+        output_filename = f"{filename}_{index}" if filename else f"response_{index}"
+
+        output_path = os.path.join(output_dir, output_filename)
         with open(output_path, "wb") as output_file:
             write_response(
                 http_events=http_events, include=include, output_file=output_file
             )
-
-
 def process_http_pushes(
     client: HttpClient,
     include: bool,
@@ -419,10 +419,11 @@ async def main(
                     data=data,
                     include=include,
                     output_dir=output_dir,
-                    filename=filename
+                    filename=filename,
+                    index=i,  # Pass the index here
                 )
-                for url in urls
-            ]
+                for i, url in enumerate(urls)
+           ]
             await asyncio.gather(*coros)
 
             # process http pushes
