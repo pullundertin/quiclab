@@ -27,17 +27,19 @@ def traverse_pcap_directory():
 def traverse_qlog_directory():
     return [os.path.join(QLOG_PATH_CLIENT, filename) for filename in os.listdir(QLOG_PATH_CLIENT) if filename.endswith('.qlog')]
 
-
-def get_tcp_handshake_time(pcap_file):
+def capture_packets(pcap_file):
     with pyshark.FileCapture(pcap_file, override_prefs={'tls.keylog_file': KEYS_PATH}) as pcap:
-        for packet in pcap:
-            if 'TCP' in packet and 'IP' in packet:
-                if hasattr(packet, 'tls') and hasattr(packet.tls, 'handshake_type'):
-                    if packet.tls.handshake_type == '20':
-                        return packet.frame_info.time_relative
+        return list(pcap)
+    
+def get_tcp_handshake_time(pcap):
+    for packet in pcap:
+        if 'TCP' in packet and 'IP' in packet:
+            if hasattr(packet, 'tls') and hasattr(packet.tls, 'handshake_type'):
+                if packet.tls.handshake_type == '20':
+                    return packet.frame_info.time_relative
 
 
-def get_tcp_connection_time(pcap_file):
+def get_tcp_connection_time(pcap):
     tcp_connection_duration = None
     fin_ack_seq = None
 
@@ -49,34 +51,32 @@ def get_tcp_connection_time(pcap_file):
         else:
             return False
 
-    def find_ack_of_server_fin_packet():
-        with pyshark.FileCapture(pcap_file, override_prefs={'tls.keylog_file': KEYS_PATH}) as pcap:
-            for packet in pcap:
-                if 'TCP' in packet and 'IP' in packet:
-                    ip_src = packet.ip.src
-                    tcp_flags = packet.tcp.flags
-                    tcp_fin_flag = check_if_fin_flag_is_set(tcp_flags)
-                    ack_raw = packet.tcp.ack_raw
+    def find_ack_of_server_fin_packet(pcap):
+        for packet in pcap:
+            if 'TCP' in packet and 'IP' in packet:
+                ip_src = packet.ip.src
+                tcp_flags = packet.tcp.flags
+                tcp_fin_flag = check_if_fin_flag_is_set(tcp_flags)
+                ack_raw = packet.tcp.ack_raw
 
-                    if ip_src == SERVER_IP and tcp_fin_flag:
-                        fin_ack_seq = ack_raw
-                        return fin_ack_seq
+                if ip_src == SERVER_IP and tcp_fin_flag:
+                    fin_ack_seq = ack_raw
+                    return fin_ack_seq
 
-    def find_packet_matching_this_ack(fin_ack_seq):
-        with pyshark.FileCapture(pcap_file, override_prefs={'tls.keylog_file': KEYS_PATH}) as pcap:
-            for packet in pcap:
-                if 'TCP' in packet and 'IP' in packet:
-                    ip_src = packet.ip.src
-                    seq_raw_packet = (packet.tcp.seq_raw)
-                    if ip_src == CLIENT_1_IP and seq_raw_packet == fin_ack_seq:
-                        time_relative = float(packet.frame_info.time_relative)
-                        if time_relative > 0:
-                            tcp_connection_duration = time_relative
-                            
-                            return tcp_connection_duration
+    def find_packet_matching_this_ack(fin_ack_seq, pcap):
+        for packet in pcap:
+            if 'TCP' in packet and 'IP' in packet:
+                ip_src = packet.ip.src
+                seq_raw_packet = (packet.tcp.seq_raw)
+                if ip_src == CLIENT_1_IP and seq_raw_packet == fin_ack_seq:
+                    time_relative = float(packet.frame_info.time_relative)
+                    if time_relative > 0:
+                        tcp_connection_duration = time_relative
+                        
+                        return tcp_connection_duration
 
-    fin_ack_seq = find_ack_of_server_fin_packet()
-    tcp_connection_duration = find_packet_matching_this_ack(fin_ack_seq)
+    fin_ack_seq = find_ack_of_server_fin_packet(pcap)
+    tcp_connection_duration = find_packet_matching_this_ack(fin_ack_seq, pcap)
     return tcp_connection_duration
     
 
@@ -84,96 +84,96 @@ def get_tcp_single_stream_connection_time(json_file):
     pass
 
 
-def get_tcp_rtt_data(pcap_file):
+def get_tcp_rtt_data(pcap):
     rtt_values = []
-    with pyshark.FileCapture(pcap_file, override_prefs={'tls.keylog_file': KEYS_PATH}) as pcap:
-        for packet in pcap:
-            if 'TCP' in packet and 'IP' in packet:
-                if hasattr(packet.tcp, 'analysis_ack_rtt'):
-                    ack_rtt = packet.tcp.analysis_ack_rtt
-                    ip_src = packet.ip.src
-                    if (ip_src == SERVER_IP):
-                        rtt_values.append(float(ack_rtt))
+    for packet in pcap:
+        if 'TCP' in packet and 'IP' in packet:
+            if hasattr(packet.tcp, 'analysis_ack_rtt'):
+                ack_rtt = packet.tcp.analysis_ack_rtt
+                ip_src = packet.ip.src
+                if (ip_src == SERVER_IP):
+                    rtt_values.append(float(ack_rtt))
 
     return rtt_values
 
 
 
-def get_quic_handshake_time(pcap_file):
+def get_quic_handshake_time(pcap):
     quic_handshake_start = None
     quic_handshake_end = None
     quic_handshake_duration = None
-    with pyshark.FileCapture(pcap_file, override_prefs={'tls.keylog_file': KEYS_PATH}) as pcap:
-        for packet in pcap:
-            if 'QUIC' in packet:
-                quic_handshake_start = float(packet.frame_info.time_relative)
-                break
-        for packet in pcap:
-            if 'QUIC' in packet:
-                if hasattr(packet, 'quic') and hasattr(packet.quic, 'tls_handshake_type'):
-                    if packet.quic.tls_handshake_type == '20':
-                        quic_handshake_end = float(packet.frame_info.time_relative)
-                        quic_handshake_duration = quic_handshake_end - quic_handshake_start
-                        break
+    for packet in pcap:
+        if 'QUIC' in packet:
+            quic_handshake_start = float(packet.frame_info.time_relative)
+            break
+    for packet in pcap:
+        if 'QUIC' in packet:
+            if hasattr(packet, 'quic') and hasattr(packet.quic, 'tls_handshake_type'):
+                if packet.quic.tls_handshake_type == '20':
+                    quic_handshake_end = float(packet.frame_info.time_relative)
+                    quic_handshake_duration = quic_handshake_end - quic_handshake_start
+                    break
     return quic_handshake_duration
 
 
-def get_quic_connection_time(pcap_file):
+def get_quic_connection_time(pcap):
     quic_connection_start = None
     quic_connection_end = None
     quic_connection_duration = None
 
-    with pyshark.FileCapture(pcap_file, override_prefs={'tls.keylog_file': KEYS_PATH}) as pcap:
-        for packet in pcap:
-            if 'QUIC' in packet:
-                quic_connection_start = float(packet.frame_info.time_relative)
-                break
-        for packet in pcap:
-            if 'QUIC' in packet:
-                if hasattr(packet, 'quic') and hasattr(packet.quic, 'frame_type'):
-                    if packet.quic.frame_type == '29':
-                        quic_connection_end = float(packet.frame_info.time_relative)
-                        quic_connection_duration = quic_connection_end - quic_connection_start
-                        break
+    for packet in pcap:
+        if 'QUIC' in packet:
+            quic_connection_start = float(packet.frame_info.time_relative)
+            break
+    for packet in pcap:
+        if 'QUIC' in packet:
+            if hasattr(packet, 'quic') and hasattr(packet.quic, 'frame_type'):
+                if packet.quic.frame_type == '29':
+                    quic_connection_end = float(packet.frame_info.time_relative)
+                    quic_connection_duration = quic_connection_end - quic_connection_start
+                    break
       
     return quic_connection_duration
 
 
 
-def get_quic_dcid(pcap_file):
+def get_quic_dcid(pcap):
     quic_dcid = None
     quic_dcid_ascii = None
-    with pyshark.FileCapture(pcap_file, override_prefs={'tls.keylog_file': KEYS_PATH}) as pcap:
-        for packet in pcap:
-            if 'QUIC' in packet and hasattr(packet.quic, 'dcid'):
-                quic_dcid_string = packet.quic.dcid
-                quic_dcid_ascii = quic_dcid_string.replace(":", "")
-                quic_dcid = bytes(quic_dcid_ascii, 'utf-8').hex()
-                break
+    for packet in pcap:
+        if 'QUIC' in packet and hasattr(packet.quic, 'dcid'):
+            quic_dcid_string = packet.quic.dcid
+            quic_dcid_ascii = quic_dcid_string.replace(":", "")
+            quic_dcid = bytes(quic_dcid_ascii, 'utf-8').hex()
+            break
     return quic_dcid, quic_dcid_ascii
 
 
 def get_test_results(test):
 
-    def populate_test_case_with_test_results_from_json(pcap_file, test_case):
+    def populate_test_case_with_test_results_from_json(pcap, test_case):
         
-        data = {}
-        data['tcp_rtt'] = get_tcp_rtt_data(pcap_file)
-        data['tcp_hs'] = get_tcp_handshake_time(pcap_file)
-        data['tcp_conn'] = get_tcp_connection_time(pcap_file)
+        data = {
+            'tcp_rtt': get_tcp_rtt_data(pcap),
+            'tcp_hs': get_tcp_handshake_time(pcap),
+            'tcp_conn': get_tcp_connection_time(pcap),
+            'quic_hs': get_quic_handshake_time(pcap),
+            'quic_conn': get_quic_connection_time(pcap),
+            'dcid': get_quic_dcid(pcap)[0],
+            'dcid_hex': get_quic_dcid(pcap)[1]
+        }
 
-        data['quic_hs'] = get_quic_handshake_time(pcap_file)
-        data['quic_conn'] = get_quic_connection_time(pcap_file)
+
 
         if test_case.mode == 'aioquic':
-            data['aioquic_hs'] = get_quic_handshake_time(pcap_file)
-            data['aioquic_conn'] = get_quic_connection_time(pcap_file)
+            data['aioquic_hs'] = get_quic_handshake_time(pcap)
+            data['aioquic_conn'] = get_quic_connection_time(pcap)
         elif test_case.mode == 'quicgo':
-            data['quicgo_hs'] = get_quic_handshake_time(pcap_file)
-            data['quicgo_conn'] = get_quic_connection_time(pcap_file)
+            data['quicgo_hs'] = get_quic_handshake_time(pcap)
+            data['quicgo_conn'] = get_quic_connection_time(pcap)
 
-        data['dcid'], data['dcid_hex'] = get_quic_dcid(pcap_file)
         test_case.store_test_results_for(data)
+
 
     def iterate_over_pcap_files_and_get_associated_test_case(files):
         for pcap_file in files:
@@ -188,7 +188,7 @@ def get_test_results(test):
 
     def get_qlog_data():
 
-        files = traverse_qlog_directory()
+        qlog_files = traverse_qlog_directory()
         min_rtt_values = []
         smoothed_rtt_values = []
 
@@ -197,7 +197,7 @@ def get_test_results(test):
                 qlog_file)
             return test_case
 
-        for qlog_file in files:
+        for qlog_file in qlog_files:
             min_rtt_values = []
             smoothed_rtt_values = []
             try:
@@ -235,5 +235,11 @@ def get_test_results(test):
 
     update_program_progress_bar('Get Test Results')
 
-    get_pcap_data()
+    pcap_files = traverse_pcap_directory()
+
+    for pcap_file in pcap_files:
+        pcap = capture_packets(pcap_file)
+        test_case = test.test_cases_decompressed.map_file_to_test_case(pcap_file)
+        populate_test_case_with_test_results_from_json(pcap, test_case)
+
     get_qlog_data()
