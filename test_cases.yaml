@@ -2,15 +2,15 @@
 iterations: 1
 
 cases:
-  mode: [tcp, aioquic]
+  mode: [tcp]
   size: 0.01M
-  delay: [20ms]
+  delay: 20ms
   delay_deviation: 0
   loss: 0
   rate: 100
   firewall: None
   window_scaling: 1
-  rmin: 4096
+  rmin: [4096, 4096*2]
   rdef: 131072
   rmax: 62901456
   migration: false
