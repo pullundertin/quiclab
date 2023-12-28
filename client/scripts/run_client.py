@@ -85,8 +85,16 @@ def aioquic(args):
 def quicgo(args):
     URL = "https://172.3.0.5:6121/data.log"
     os.chdir("/quic-go/example/client")
+
+    if args.parallel == 'True':
+        # TODO: use config
+        number_of_streams = 5
+    else:
+        number_of_streams = 1
+    request = (URL + ' ') * number_of_streams
+
     # TODO KEYS_PATH funktioniert nur ohne vorangestelltem Punkt!
-    command = f"go run main.go --insecure --output-dir /shared/downloads --filename {args.file_name_prefix} --keylog /shared/keys/client.key --qlog {URL}"
+    command = f"go run main.go --insecure --output-dir /shared/downloads --filename {args.file_name_prefix} --keylog /shared/keys/client.key --qlog {request}"
     # command = f"go run main.go --insecure --keylog $KEYS_PATH --qlog {URL} {URL}"
     logging.info(f"{os.getenv('HOST')}: sending quic-go request...")
     run_command(command)
