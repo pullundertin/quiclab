@@ -1,8 +1,8 @@
 # applies to full execution mode only !!!
-iterations: 1
+iterations: 10
 
 cases:
-  mode: [quicgo]
+  mode: [tcp, aioquic, quicgo]
   size: 0.01M
   delay: 20ms
   delay_deviation: 0

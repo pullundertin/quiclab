@@ -27,7 +27,7 @@ func main() {
 	verbose := flag.Bool("v", false, "verbose")
 	quiet := flag.Bool("q", false, "don't print the data")
 	output := flag.String("output-dir", "/shared/downloads", "output directory")
-	output_file := flag.String("filename", "data.log", "filename")
+	outputFile := flag.String("filename", "data.log", "filename")
 	keyLogFile := flag.String("keylog", "", "key log file")
 	insecure := flag.Bool("insecure", false, "skip certificate verification")
 	enableQlog := flag.Bool("qlog", false, "output a qlog (in the same directory)")
@@ -46,14 +46,13 @@ func main() {
 	var keyLog io.Writer
 
 	if len(*keyLogFile) > 0 {
-    		f, err := os.OpenFile(*keyLogFile, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
-    		if err != nil {
-        		log.Fatal(err)
-    	}
-    	defer f.Close()
-    	keyLog = f
-}
-
+		f, err := os.OpenFile(*keyLogFile, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
+		if err != nil {
+			log.Fatal(err)
+		}
+		defer f.Close()
+		keyLog = f
+	}
 
 	pool, err := x509.SystemCertPool()
 	if err != nil {
@@ -88,9 +87,9 @@ func main() {
 
 	var wg sync.WaitGroup
 	wg.Add(len(urls))
-	for _, addr := range urls {
+	for idx, addr := range urls {
 		logger.Infof("GET %s", addr)
-		go func(addr string) {
+		go func(addr string, index int) {
 			rsp, err := hclient.Get(addr)
 			if err != nil {
 				log.Fatal(err)
@@ -98,10 +97,10 @@ func main() {
 			logger.Infof("Got response for %s: %#v", addr, rsp)
 
 			body := &bytes.Buffer{}
-			outputPath := filepath.Join(*output, *output_file)
+			outputPath := filepath.Join(*output, fmt.Sprintf("%s_%d", *outputFile, index))
 			file, err := os.Create(outputPath)
 			if err != nil {
-				log.Fatal("Error creating file: %s", err)
+				log.Fatalf("Error creating file: %s", err)
 			}
 			defer file.Close()
 
@@ -116,7 +115,8 @@ func main() {
 				logger.Infof("%s", body.Bytes())
 			}
 			wg.Done()
-		}(addr)
+		}(addr, idx)
 	}
 	wg.Wait()
 }
+
