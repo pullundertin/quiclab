@@ -1,6 +1,6 @@
 
 import logging
-from modules.data_extraction import convert_pcap_to_json, get_test_results
+from modules.data_extraction import get_test_results
 from modules.commands import rsync, rsync_permanent
 from modules.logs import log_config
 from modules.prerequisites import reset_workdir, read_configuration, get_test_object, save_test_cases_config_to_log_file
@@ -113,7 +113,7 @@ if __name__ == "__main__":
         reset_workdir()
         save_test_cases_config_to_log_file()
         run_tests(test)
-        convert_pcap_to_json()
+        # convert_pcap_to_json()
         process_tcp_probe_logs()
 
     else:

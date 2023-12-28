@@ -96,6 +96,7 @@ class TestCase:
         Settings: 
         Mode: {self.mode}
         Size: {self.size}
+        Number of Streams: {self.number_of_streams}
         Real Size (Multistream): {self.real_size}
         Delay: {self.delay}
         Delay Deviation: {self.delay_deviation}
@@ -107,7 +108,6 @@ class TestCase:
         Receive Window Default: {self.rdef}
         Receive Window Max: {self.rmax}
         Connection Migration: {self.migration}
-        Number of Streams: {self.number_of_streams}
         Generic: {self.generic_heatmap}
 
         Test Results:
