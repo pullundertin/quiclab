@@ -59,7 +59,10 @@ class TestCase:
         self.iteration = config['iteration']
         self.file_name_prefix = f"Case_{self.number}_Iteration_{self.iteration}_"
         self.mode = config['mode']
-        self.size = config['size']
+        self.parallel = config['parallel']
+        self.number_of_streams = config['number_of_streams']
+        self.size = self.convert_to_bytes(config['size'])
+        self.real_size = self.get_real_file_size_based_on_single_or_multi_stream()
         self.delay = config['delay']
         self.delay_deviation = config['delay_deviation']
         self.loss = config['loss']
@@ -70,7 +73,6 @@ class TestCase:
         self.rdef = config['rdef']
         self.rmax = config['rmax']
         self.migration = config['migration']
-        self.parallel = config['parallel']
         self.generic_heatmap = config['generic_heatmap']
         self.goodput = None
         self.tcp_rtt = None
@@ -95,6 +97,7 @@ class TestCase:
         Settings: 
         Mode: {self.mode}
         Size: {self.size}
+        Real Size (Multistream): {self.real_size}
         Delay: {self.delay}
         Delay Deviation: {self.delay_deviation}
         Loss: {self.loss}
@@ -106,6 +109,7 @@ class TestCase:
         Receive Window Max: {self.rmax}
         Connection Migration: {self.migration}
         Parallel Download: {self.parallel}
+        Number of Streams: {self.number_of_streams}
         Generic: {self.generic_heatmap}
 
         Test Results:
@@ -126,6 +130,18 @@ class TestCase:
         # AIOQUIC Connection Time: {self.aioquic_conn}
         # QUIC-GO Connection Time: {self.quicgo_conn}
         """
+
+    def convert_to_bytes(self, value):
+        units = {'K': 1024, 'M': 1024 ** 2, 'G': 1024 ** 3}
+        multiplier = units.get(value[-1].upper(), 1)
+        number = float(value[:-1])
+        return int(number * multiplier)
+    
+    def get_real_file_size_based_on_single_or_multi_stream(self):
+        if self.parallel:
+            return self.number_of_streams * self.size
+        else:
+            return self.size
 
     def store_test_results_for(self, test_results):
         for key, value in test_results.items():

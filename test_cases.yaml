@@ -15,6 +15,7 @@ cases:
   rmax: 62901456
   migration: false
   parallel: [false, true]
+  number_of_streams: 5
   generic_heatmap: ''
 
   
