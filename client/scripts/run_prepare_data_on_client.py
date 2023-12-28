@@ -70,7 +70,6 @@ def copy_keys_to_client_key_file(lsquic_client_directory, common_client_keys_fil
     # Open the destination file in append mode
     with open(common_client_keys_file, write_mode) as destination_file:
         # Append the source text to the destination file
-        destination_file.write('\n')  # Add a newline for separation (optional)
         destination_file.write(keys)
 
 

@@ -104,7 +104,7 @@ def lsquic(args):
     URL = "172.3.0.5:4444"
     os.chdir("/lsquic/bin")
     # TODO KEYS_PATH funktioniert nur ohne vorangestelltem Punkt!
-    command = f"./http_client -H www.example.com -s 172.3.0.5:4444 -p /data.log -7 {lsquic_client_directory} -0 {lsquic_client_directory} -G {lsquic_client_directory}"
+    command = f"./http_client -H www.example.com -s 172.3.0.5:4444 -p /data.log -l qlog=debug -L crit -7 {lsquic_client_directory} -0 {lsquic_client_directory}/lsquic_ticket.txt -G {lsquic_client_directory}"
     logging.info(f"{os.getenv('HOST')}: sending lsquic request...")
     run_command(command)
 

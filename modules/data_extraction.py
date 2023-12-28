@@ -283,6 +283,9 @@ def get_test_results(test):
         elif test_case.mode == 'quicgo':
             data['quicgo_hs'] = get_quic_handshake_time(json_file)
             data['quicgo_conn'] = get_quic_connection_time(json_file)
+        elif test_case.mode == 'lsquic':
+            data['lsquic_hs'] = get_quic_handshake_time(json_file)
+            data['lsquic_conn'] = get_quic_connection_time(json_file)
 
         data['dcid'], data['dcid_hex'] = get_quic_dcid(json_file)
         test_case.store_test_results_for(data)

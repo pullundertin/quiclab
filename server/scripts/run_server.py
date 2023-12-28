@@ -34,9 +34,10 @@ def quicgo():
     logging.info(f"{os.getenv('HOST')}: starting quic-go server..")
     run_command(command)
 
+
 def lsquic():
     os.chdir("/lsquic/bin")
-    command = "./http_server -c www.example.com,/example.crt,/example.key -s 0.0.0.0:4444 -r /data"
+    command = "./http_server -c www.example.com,/example.crt,/example.key -s 0.0.0.0:4444 -G /lsquic -r /data"
     logging.info(f"{os.getenv('HOST')}: starting lsquic server..")
     run_command(command)
 
