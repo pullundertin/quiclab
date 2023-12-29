@@ -71,6 +71,15 @@ def store_results(test_results_dataframe, median_dataframe, args):
     sync_shared_folders_with_remote_host(args)
 
 
+def split_single_stream_connection_times_into_separate_columns(test_results_dataframe):
+    df_normalized = pd.json_normalize(test_results_dataframe['tcp_single_conn'])
+
+    # Rename columns by adding 'Stream ' prefix
+    df_normalized.columns = [f"Stream {col}" for col in df_normalized.columns]
+
+    # Concatenate original DataFrame and normalized DataFrame
+    return pd.concat([test_results_dataframe.reset_index(drop=True), df_normalized.reset_index(drop=True)], axis=1).fillna('')
+
 def create_dataframe_from_object(test):
     update_program_progress_bar('Create Dataframe')
 
@@ -87,6 +96,8 @@ def create_dataframe_from_object(test):
 
     convert_each_test_case_object_into_a_dataframe()
     main_df = add_each_dataframe_as_new_row_to_a_main_dataframe()
+    main_df = split_single_stream_connection_times_into_separate_columns(main_df)
+
     return main_df
 
 
@@ -94,8 +105,9 @@ def print_all_results_to_cli(test_results_dataframe, median_dataframe):
     columns_to_print = TEST_CONFIG_COLUMNS + TEST_RESULT_COLUMNS
     if args.results:
         print(test_results_dataframe[columns_to_print])
-        print("\\\\\\\\\\\\\\\\ MEDIAN \\\\\\\\\\\\\\\\\\\\")
-        print(median_dataframe[columns_to_print])
+        divider = '\\' * 60 + ' MEDIAN ' + '\\' * 60
+        print(divider)
+        print(median_dataframe)
 
 
 if __name__ == "__main__":
@@ -121,10 +133,10 @@ if __name__ == "__main__":
     get_test_results(test)
     calculate_goodput(test)
     test_results_dataframe = create_dataframe_from_object(test)
-    median_dataframe = do_statistics(test_results_dataframe)
+    median_dataframe = do_statistics(test_results_dataframe)    
     print_all_results_to_cli(test_results_dataframe, median_dataframe)
-    evaluate_test_results(test_results_dataframe, median_dataframe, test)
+    # evaluate_test_results(test_results_dataframe, median_dataframe, test)
 
-    store_results(test_results_dataframe, median_dataframe, args)
+    # store_results(test_results_dataframe, median_dataframe, args)
 
     logging.info("All tasks are completed.")

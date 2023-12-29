@@ -15,11 +15,11 @@ def ends_with_number(file_path):
     pattern = r'\d$'
     return bool(re.search(pattern, file_path))
 
-def get_download_size_of_file(file_path):
-    if ends_with_number(file_path):
-        return os.path.getsize(file_path)
-    else:    
-        return os.path.getsize(file_path)
+# def get_download_size_of_file(file_path):
+#     if ends_with_number(file_path):
+#         return os.path.getsize(file_path)
+#     else:    
+#         return os.path.getsize(file_path)
 
 
 def get_connection_time(test_case):
@@ -62,19 +62,25 @@ def calculate_goodput(test):
         goodput = download_size / connection_time
         test_case.update_goodput(goodput)
 
+    def get_total_size_of_multi_stream_download(test_case, download_sizes):
+        if test_case in download_sizes:
+            download_sizes[test_case] += download_size
+        else:
+            download_sizes[test_case] = download_size
+        return download_sizes
+
     download_sizes = {}  
 
     for file in os.listdir(DOWNLOADS_DIR):
         file_path = os.path.join(DOWNLOADS_DIR, file)
         if os.path.isfile(file_path):
             test_case = get_associated_test_case(file_path, test)
-            download_size = get_download_size_of_file(file_path)         
+            download_size = os.path.getsize(file_path)         
             if test_case:
-                if test_case in download_sizes:
-                    download_sizes[test_case] += download_size
-                else:
-                    download_sizes[test_case] = download_size
+                download_sizes = get_total_size_of_multi_stream_download(test_case, download_sizes)
+                
 
     for test_case, download_size in download_sizes.items():
         calculate_and_update_goodput(test_case, download_size)
+
  

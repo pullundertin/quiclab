@@ -77,6 +77,7 @@ class TestCase:
         self.tcp_rtt = None
         self.tcp_hs = None
         self.tcp_conn = None
+        self.tcp_single_conn = None
         self.quic_min_rtt = None
         self.quic_smoothed_rtt = None
         self.aioquic_hs = None
@@ -116,6 +117,7 @@ class TestCase:
         TCP RTT: {self.tcp_rtt}
         TCP Handshake Time: {self.tcp_hs}
         TCP Connection Time: {self.tcp_conn}
+        TCP Connection Time for each Stream: {self.tcp_single_conn}
 
         QUIC DCID: {self.dcid}
         QUIC DCID hex: {self.dcid_hex}
@@ -152,3 +154,35 @@ class TestCase:
     def update_goodput(self, goodput):
         setattr(self, 'goodput', goodput)
 
+
+class Streams:
+    def __init__(self):
+        self.streams = []
+
+    def add_stream(self, stream):
+        self.streams.append(stream)
+
+    def find_stream_by_id(self, stream_id):
+        for stream in self.streams:
+            if stream.stream_id == stream_id:
+                return stream
+        return None
+
+
+    def __str__(self):
+        streams = "\n".join(str(stream) for stream in self.streams)
+        return f"\n{streams}"
+
+class Stream:
+    def __init__(self, stream_id, request_time):
+        self.stream_id = stream_id
+        self.request_time = request_time
+        self.response_time = None
+        self.connection_time = None
+
+    def update_response_time(self, response_time):
+        setattr(self, 'response_time', response_time)
+        setattr(self, 'connection_time', self.response_time - self.request_time)
+
+    def __str__(self):
+        return f"Stream ID: {self.stream_id}, Request Time: {self.request_time}, Response Time: {self.response_time}, Connection Time: {self.connection_time}"

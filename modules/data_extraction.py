@@ -1,11 +1,11 @@
 import pandas as pd
 import os
-import logging
 import json
 import pyshark
 from modules.commands import run_command
 from modules.prerequisites import read_configuration
 from modules.progress_bar import update_program_progress_bar
+from modules.classes import Stream, Streams
 
 
 PCAP_PATH = read_configuration().get("PCAP_PATH")
@@ -70,6 +70,7 @@ def get_tcp_connection_time(pcap):
                 seq_raw_packet = (packet.tcp.seq_raw)
                 if ip_src == CLIENT_1_IP and seq_raw_packet == fin_ack_seq:
                     time_relative = float(packet.frame_info.time_relative)
+                    time_relative = round(time_relative, 3)
                     if time_relative > 0:
                         tcp_connection_duration = time_relative
                         
@@ -81,13 +82,30 @@ def get_tcp_connection_time(pcap):
     
 
 def get_tcp_single_stream_connection_time(pcap):
-    def get_stream_ids():
-        pass
-    def get_time_of_request_for_each_stream_id():
-        pass
-    def get_time_of_response_for_each_stream_id():
-        pass
-    pass
+    def get_request_time_for_each_stream(packet, streams):
+        if 'http2' in packet and hasattr(packet.http2, 'headers.method'):
+            stream_id = packet.http2.streamid
+            request_time = float(packet.frame_info.time_relative)
+            new_stream = Stream(stream_id, request_time)
+            streams.add_stream(new_stream)
+    
+    def get_response_time_for_each_stream(packet, streams):
+        if 'http2' in packet and hasattr(packet.http2, 'body_reassembled_data'):
+            stream_id = packet.http2.streamid
+            stream = streams.find_stream_by_id(stream_id)
+            response_time = float(packet.frame_info.time_relative) 
+            stream.update_response_time(response_time)
+            
+        
+    streams = Streams()
+    tcp_connection_time_for_each_single_stream = {}
+    for packet in pcap:
+        get_request_time_for_each_stream(packet, streams)
+        get_response_time_for_each_stream(packet, streams)
+
+    for stream in streams.streams:
+        tcp_connection_time_for_each_single_stream[stream.stream_id] = stream.connection_time
+    return tcp_connection_time_for_each_single_stream
 
 
 def get_tcp_rtt_data(pcap):
@@ -95,10 +113,13 @@ def get_tcp_rtt_data(pcap):
     for packet in pcap:
         if 'TCP' in packet and 'IP' in packet:
             if hasattr(packet.tcp, 'analysis_ack_rtt'):
-                ack_rtt = packet.tcp.analysis_ack_rtt
+                ack_rtt = float(packet.tcp.analysis_ack_rtt)
+                ack_rtt = round(ack_rtt, 3)
+
                 ip_src = packet.ip.src
                 if (ip_src == SERVER_IP):
-                    rtt_values.append(float(ack_rtt))
+
+                    rtt_values.append(ack_rtt)
 
     return rtt_values
 
@@ -118,6 +139,8 @@ def get_quic_handshake_time(pcap):
                 if packet.quic.tls_handshake_type == '20':
                     quic_handshake_end = float(packet.frame_info.time_relative)
                     quic_handshake_duration = quic_handshake_end - quic_handshake_start
+                    quic_handshake_duration = round(quic_handshake_duration, 3)
+
                     break
     return quic_handshake_duration
 
@@ -137,6 +160,8 @@ def get_quic_connection_time(pcap):
                 if packet.quic.frame_type == '29':
                     quic_connection_end = float(packet.frame_info.time_relative)
                     quic_connection_duration = quic_connection_end - quic_connection_start
+                    quic_connection_duration = round(quic_connection_duration, 3)
+                    
                     break
       
     return quic_connection_duration
@@ -163,6 +188,7 @@ def get_test_results(test):
             'tcp_rtt': get_tcp_rtt_data(pcap),
             'tcp_hs': get_tcp_handshake_time(pcap),
             'tcp_conn': get_tcp_connection_time(pcap),
+            'tcp_single_conn': get_tcp_single_stream_connection_time(pcap),
             'quic_hs': get_quic_handshake_time(pcap),
             'quic_conn': get_quic_connection_time(pcap),
             'dcid': get_quic_dcid(pcap)[0],
@@ -194,38 +220,41 @@ def get_test_results(test):
                 qlog_file)
             return test_case
         
+        def collect_min_and_smoothed_rtt_data(qlog_event, min_rtt_values, smoothed_rtt_values):
+            min_rtt = qlog_event["data"]["min_rtt"]/1000
+            min_rtt = round(min_rtt, 3)
+            min_rtt_values.append(min_rtt)
+            smoothed_rtt = qlog_event["data"]["smoothed_rtt"]/1000
+            smoothed_rtt = round(smoothed_rtt, 3)
+            smoothed_rtt_values.append(smoothed_rtt)
+            return min_rtt_values, smoothed_rtt_values
+
         def get_rtt_values_from_json_format_qlog(qlog_data):
             min_rtt_values = []
             smoothed_rtt_values = []
+            
 
             if isinstance(qlog_data, dict) and 'traces' in qlog_data:
                 for packet in qlog_data['traces']:
-                    for event in packet.get('events', []):
-                        data = event.get('data', {})
-                        if 'min_rtt' in data:
-                            min_rtt = data.get('min_rtt')
-                            min_rtt_values.append(min_rtt / 1000)
-                            smoothed_rtt = data.get('smoothed_rtt')
-                            smoothed_rtt_values.append(smoothed_rtt / 1000)
+                    for qlog_event in packet.get('events', []):
+                        if "min_rtt" in qlog_event["data"]:
+                            min_rtt_values, smoothed_rtt_values = collect_min_and_smoothed_rtt_data(qlog_event, min_rtt_values, smoothed_rtt_values)
             return min_rtt_values, smoothed_rtt_values   
 
         def get_rtt_values_from_ndjson_format_qlog(file):
             min_rtt_values = []
             smoothed_rtt_values = []
 
-            def split_data_into_lines_and_parse_each_line_as_json(ndqlog_data):
+            def split_data_into_lines_and_parse_each_line_as_json(ndqlog_data, min_rtt_values, smoothed_rtt_values):
                 for line in ndqlog_data.strip().split('\n'):
-                    qlog_data = json.loads(line)
-                    if "data" in qlog_data:
-                        if "min_rtt" in qlog_data["data"]:
-                            min_rtt_values.append(
-                                qlog_data["data"]["min_rtt"]/1000)
-                            smoothed_rtt_values.append(
-                                qlog_data["data"]["smoothed_rtt"]/1000)
+                    qlog_event = json.loads(line)
+                    if "data" in qlog_event:
+                        if "min_rtt" in qlog_event["data"]:
+                            min_rtt_values, smoothed_rtt_values = collect_min_and_smoothed_rtt_data(qlog_event, min_rtt_values, smoothed_rtt_values)
                 return min_rtt_values, smoothed_rtt_values
 
             ndqlog_data = file.read()
-            min_rtt_values, smoothed_rtt_values = split_data_into_lines_and_parse_each_line_as_json(ndqlog_data)
+            min_rtt_values, smoothed_rtt_values = split_data_into_lines_and_parse_each_line_as_json(ndqlog_data, min_rtt_values, smoothed_rtt_values)
 
             return min_rtt_values, smoothed_rtt_values   
 
