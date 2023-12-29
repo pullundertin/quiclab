@@ -80,7 +80,13 @@ def get_tcp_connection_time(pcap):
     return tcp_connection_duration
     
 
-def get_tcp_single_stream_connection_time(json_file):
+def get_tcp_single_stream_connection_time(pcap):
+    def get_stream_ids():
+        pass
+    def get_time_of_request_for_each_stream_id():
+        pass
+    def get_time_of_response_for_each_stream_id():
+        pass
     pass
 
 
