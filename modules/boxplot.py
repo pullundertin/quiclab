@@ -80,7 +80,7 @@ def create_boxplots_for_each_value_of_independent_variable(df, test):
         else:
             print("no boxplot")
 
-    else:
+    elif control_parameter is not None:
         for value in df[control_parameter].unique():
             filtered_df = df[df[control_parameter] == value]
 
@@ -88,7 +88,6 @@ def create_boxplots_for_each_value_of_independent_variable(df, test):
             conn_df = combine_quic_and_tcp_values_for(filtered_df, 'conn', value)
 
             fig, axes = plt.subplots(2, 1, figsize=(8, 10))
-
             plot_boxplot(hs_df, axes[0], 'mode', f'time_{value}',
                          f'QUIC vs TCP Handshake | {control_parameter} = {value}', 'Implementations', 'Time')
             plot_boxplot(conn_df, axes[1], 'mode', f'time_{value}',

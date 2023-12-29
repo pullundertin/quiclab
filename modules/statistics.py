@@ -32,20 +32,6 @@ def get_medians(test_results_dataframe):
 
     median_df = test_results_dataframe_copy.groupby(group_columns, as_index=False).agg(agg_columns)
 
-    # # Apply the custom median function using agg with skipna parameter
-    # median_df = test_results_dataframe_copy.groupby(group_columns, as_index=False).agg({
-    #     'goodput': lambda x: custom_median(x),
-    #     'aioquic_hs': lambda x: custom_median(x),
-    #     'quicgo_hs': lambda x: custom_median(x),
-    #     'tcp_hs': lambda x: custom_median(x),
-    #     'quic_hs': lambda x: custom_median(x),
-    #     'aioquic_conn': lambda x: custom_median(x),
-    #     'quicgo_conn': lambda x: custom_median(x),
-    #     'quic_conn': lambda x: custom_median(x),
-    #     'tcp_conn': lambda x: custom_median(x)
-    # })
-
-
     return median_df
 
 

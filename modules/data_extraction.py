@@ -36,7 +36,9 @@ def get_tcp_handshake_time(pcap):
         if 'TCP' in packet and 'IP' in packet:
             if hasattr(packet, 'tls') and hasattr(packet.tls, 'handshake_type'):
                 if packet.tls.handshake_type == '20':
-                    return packet.frame_info.time_relative
+                    tcp_handshake_time = float(packet.frame_info.time_relative)
+                    tcp_handshake_time = round(tcp_handshake_time, 3)
+                    return tcp_handshake_time
 
 
 def get_tcp_connection_time(pcap):
@@ -221,10 +223,10 @@ def get_test_results(test):
             return test_case
         
         def collect_min_and_smoothed_rtt_data(qlog_event, min_rtt_values, smoothed_rtt_values):
-            min_rtt = qlog_event["data"]["min_rtt"]/1000
+            min_rtt = float(qlog_event["data"]["min_rtt"]/1000)
             min_rtt = round(min_rtt, 3)
             min_rtt_values.append(min_rtt)
-            smoothed_rtt = qlog_event["data"]["smoothed_rtt"]/1000
+            smoothed_rtt = float(qlog_event["data"]["smoothed_rtt"]/1000)
             smoothed_rtt = round(smoothed_rtt, 3)
             smoothed_rtt_values.append(smoothed_rtt)
             return min_rtt_values, smoothed_rtt_values

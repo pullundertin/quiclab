@@ -78,7 +78,7 @@ def split_single_stream_connection_times_into_separate_columns(test_results_data
     df_normalized.columns = [f"Stream {col}" for col in df_normalized.columns]
 
     # Concatenate original DataFrame and normalized DataFrame
-    return pd.concat([test_results_dataframe.reset_index(drop=True), df_normalized.reset_index(drop=True)], axis=1).fillna('')
+    return pd.concat([test_results_dataframe.reset_index(drop=True), df_normalized.reset_index(drop=True)], axis=1)#.fillna('')
 
 def create_dataframe_from_object(test):
     update_program_progress_bar('Create Dataframe')
@@ -135,8 +135,7 @@ if __name__ == "__main__":
     test_results_dataframe = create_dataframe_from_object(test)
     median_dataframe = do_statistics(test_results_dataframe)    
     print_all_results_to_cli(test_results_dataframe, median_dataframe)
-    # evaluate_test_results(test_results_dataframe, median_dataframe, test)
-
-    # store_results(test_results_dataframe, median_dataframe, args)
+    evaluate_test_results(test_results_dataframe, median_dataframe, test)
+    store_results(test_results_dataframe, median_dataframe, args)
 
     logging.info("All tasks are completed.")

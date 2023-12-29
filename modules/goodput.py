@@ -11,17 +11,6 @@ DOWNLOADS_DIR = read_configuration().get("DOWNLOADS_DIR")
 def get_associated_test_case(file_path, test):
     return test.test_cases_decompressed.map_file_to_test_case(file_path)
 
-def ends_with_number(file_path):
-    pattern = r'\d$'
-    return bool(re.search(pattern, file_path))
-
-# def get_download_size_of_file(file_path):
-#     if ends_with_number(file_path):
-#         return os.path.getsize(file_path)
-#     else:    
-#         return os.path.getsize(file_path)
-
-
 def get_connection_time(test_case):
     possible_connection_time_fields = ['tcp_conn', 'quic_conn']
     for field in possible_connection_time_fields:
@@ -78,7 +67,7 @@ def calculate_goodput(test):
             download_size = os.path.getsize(file_path)         
             if test_case:
                 download_sizes = get_total_size_of_multi_stream_download(test_case, download_sizes)
-                
+
 
     for test_case, download_size in download_sizes.items():
         calculate_and_update_goodput(test_case, download_size)
