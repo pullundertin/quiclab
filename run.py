@@ -101,7 +101,7 @@ def create_dataframe_from_object(test):
 
     convert_each_test_case_object_into_a_dataframe()
     main_df = add_each_dataframe_as_new_row_to_a_main_dataframe()
-    # main_df = split_single_stream_connection_times_into_separate_columns(main_df)
+    main_df = main_df.drop(columns=['streams'])
 
     return main_df
 

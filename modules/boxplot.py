@@ -29,6 +29,38 @@ def create_boxplot(df, ax, x_data, y_data, title, xlabel, ylabel):
     ax.set_xlabel(xlabel)
     ax.set_ylabel(ylabel)
 
+def create_boxplots_for_each_single_stream(df, test):
+     
+    
+    # Find columns that match the pattern 'Stream_ID_<number>_goodput' and have non-null values
+    stream_columns = [col for col in df.columns if col.startswith('Stream_ID_') and col.endswith('_goodput') and df[col].notnull().any()]
+
+    # Create subplots for each mode
+    modes = df['mode'].unique()
+    num_plots = len(modes)
+
+    fig, axes = plt.subplots(nrows=1, ncols=num_plots, figsize=(15, 6), sharey=True)
+
+    for idx, mode in enumerate(modes):
+        mode_df = df[df['mode'] == mode]
+        mode_df_melted = mode_df.melt(id_vars='mode', value_vars=stream_columns, var_name='Stream_ID')
+
+        non_nan_columns = [col for col in stream_columns if mode_df[col].notnull().any()]
+        x_labels = [col.replace('_goodput', '') for col in non_nan_columns]
+
+        sns.boxplot(data=mode_df_melted.dropna(), x='Stream_ID', y='value', ax=axes[idx], palette='Set3')
+        axes[idx].set_title(f'Mode: {mode}')
+        axes[idx].set_xlabel('Streams')  
+        axes[idx].set_ylabel('Goodput')
+        axes[idx].set_xticks(range(len(non_nan_columns))) 
+        axes[idx].set_xticklabels(x_labels, rotation=90)  
+        axes[idx].legend().set_visible(False)
+
+    fig.suptitle('Goodput per Stream', y=1.05)
+    plt.tight_layout()
+    plt.savefig(f"{BOXPLOTS_DIR}/boxplots_single_stream.png",
+                        dpi=300, bbox_inches='tight')
+    plt.show()
 
 def create_boxplots_for_each_value_of_independent_variable(df, test):
 
@@ -102,3 +134,4 @@ def create_boxplots_for_each_value_of_independent_variable(df, test):
 def show_boxplot(test_results_dataframe, test):
     create_boxplots_for_each_value_of_independent_variable(
         test_results_dataframe, test)
+    create_boxplots_for_each_single_stream(test_results_dataframe, test)
