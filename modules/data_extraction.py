@@ -101,14 +101,10 @@ def get_tcp_single_stream_connection_time(pcap, test_case):
             
         
     streams = test_case.streams
-    tcp_connection_time_for_each_single_stream = {}
+
     for packet in pcap:
         get_request_time_for_each_stream(packet, streams)
         get_response_time_for_each_stream(packet, streams)
-
-    # for stream in streams.streams:
-    #     tcp_connection_time_for_each_single_stream[stream.stream_id] = stream.connection_time
-    # return tcp_connection_time_for_each_single_stream
 
 
 def get_tcp_rtt_data(pcap):
@@ -274,7 +270,7 @@ def get_test_results(test):
                                         if header["value"] == "GET":
                                             stream_id = qlog_event["data"]["stream_id"]
                                             stream = streams.find_stream_by_id(stream_id)
-                                            request_time = float(qlog_event['time'])
+                                            request_time = float(qlog_event['time'])/1000
                                             stream.update_request_time(request_time)
             
             def get_response_time_for_each_stream(qlog_data, streams):
@@ -288,7 +284,7 @@ def get_test_results(test):
                                         if header["value"] == "200":
                                             stream_id = qlog_event["data"]["stream_id"]
                                             stream = streams.find_stream_by_id(stream_id)
-                                            response_time = float(qlog_event['time']) 
+                                            response_time = float(qlog_event['time'])/1000 
                                             stream.update_response_time(response_time)
                     
                 
@@ -314,7 +310,8 @@ def get_test_results(test):
                                 for frame in qlog_event['data']['frames']:
                                     if 'fin' in frame and frame['fin'] == True and rtt_frame:
                                         stream_id = frame['stream_id']
-                                        stream_times_map[stream_id].append(float(qlog_event['time']))
+                                        timestamp = float(qlog_event['time']) / 1000
+                                        stream_times_map[stream_id].append(timestamp)
                                         if len(stream_times_map[stream_id]) == 2:
                                             request_time = stream_times_map[stream_id][0]
                                             stream = streams.find_stream_by_id(stream_id)
@@ -331,7 +328,8 @@ def get_test_results(test):
                                 for frame in qlog_event['data']['frames']:
                                     if 'fin' in frame and frame['fin'] == True and rtt_frame:
                                         stream_id = frame['stream_id']
-                                        stream_times_map[stream_id].append(float(qlog_event['time']))
+                                        timestamp = float(qlog_event['time']) / 1000
+                                        stream_times_map[stream_id].append(timestamp)
                                         if len(stream_times_map[stream_id]) == 2:
                                             response_time = stream_times_map[stream_id][1]
                                             stream = streams.find_stream_by_id(stream_id)

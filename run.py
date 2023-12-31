@@ -137,10 +137,11 @@ if __name__ == "__main__":
 
     get_test_results(test)
     calculate_goodput(test)
-    test_results_dataframe = create_dataframe_from_object(test)
+    print(test)
+    # test_results_dataframe = create_dataframe_from_object(test)
     # print(test_results_dataframe)
-    median_dataframe = do_statistics(test_results_dataframe)    
-    print_all_results_to_cli(test_results_dataframe, median_dataframe)
+    # median_dataframe = do_statistics(test_results_dataframe)    
+    # print_all_results_to_cli(test_results_dataframe, median_dataframe)
     # evaluate_test_results(test_results_dataframe, median_dataframe, test)
     # store_results(test_results_dataframe, median_dataframe, args)
 

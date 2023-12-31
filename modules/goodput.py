@@ -46,6 +46,15 @@ def show_goodput_graph(df, control_parameter):
 def calculate_goodput(test):
     update_program_progress_bar('Calculate Goodput')
 
+    def calculate_goodput_per_stream(test_case, download_size):
+        streams = test_case.streams
+        for stream in streams.streams:
+            stream_id = stream.stream_id
+            stream = streams.find_stream_by_id(stream_id)
+            connection_time = stream.connection_time
+            goodput = download_size/connection_time
+            stream.update_goodput(goodput)
+
     def calculate_and_update_goodput(test_case, download_size):
         connection_time = get_connection_time(test_case)
         goodput = download_size / connection_time
@@ -67,6 +76,7 @@ def calculate_goodput(test):
             download_size = os.path.getsize(file_path)         
             if test_case:
                 download_sizes = get_total_size_of_multi_stream_download(test_case, download_sizes)
+                calculate_goodput_per_stream(test_case, download_size)
 
 
     for test_case, download_size in download_sizes.items():

@@ -182,6 +182,7 @@ class Stream:
         self.request_time = None
         self.response_time = None
         self.connection_time = None
+        self.goodput = None
 
     def update_request_time(self, request_time):
         setattr(self, 'request_time', request_time)
@@ -190,16 +191,20 @@ class Stream:
         setattr(self, 'response_time', response_time)
         setattr(self, 'connection_time', self.response_time - self.request_time)
 
+    def update_goodput(self, goodput):
+        setattr(self, 'goodput', goodput)
+
     def __str__(self):
-        return f"\t\tStream ID: {self.stream_id}, Request Time: {self.request_time}, Response Time: {self.response_time}, Connection Time: {self.connection_time}"
+        return f"\t\tStream ID: {self.stream_id}, Request Time: {self.request_time}, Response Time: {self.response_time}, Connection Time: {self.connection_time}, Goodput: {self.goodput}"
 
     def __eq__(self, other):
         if isinstance(other, Stream):
             return (self.stream_id == other.stream_id and
                     self.request_time == other.request_time and
                     self.response_time == other.response_time and
-                    self.connection_time == other.connection_time)
+                    self.connection_time == other.connection_time and
+                    self.goodput == other.goodput)
         return False
 
     def __hash__(self):
-        return hash((self.stream_id, self.request_time, self.response_time, self.connection_time))
+        return hash((self.stream_id, self.request_time, self.response_time, self.connection_time, self.goodput))
