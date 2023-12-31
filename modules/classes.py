@@ -78,7 +78,6 @@ class TestCase:
         self.tcp_rtt = None
         self.tcp_hs = None
         self.tcp_conn = None
-        self.tcp_single_conn = None
         self.quic_min_rtt = None
         self.quic_smoothed_rtt = None
         self.aioquic_hs = None
@@ -119,7 +118,6 @@ class TestCase:
         TCP RTT: {self.tcp_rtt}
         TCP Handshake Time: {self.tcp_hs}
         TCP Connection Time: {self.tcp_conn}
-        TCP Connection Time for each Stream: {self.tcp_single_conn}
 
         QUIC DCID: {self.dcid}
         QUIC DCID hex: {self.dcid_hex}

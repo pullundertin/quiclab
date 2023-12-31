@@ -96,7 +96,7 @@ def create_dataframe_from_object(test):
 
     convert_each_test_case_object_into_a_dataframe()
     main_df = add_each_dataframe_as_new_row_to_a_main_dataframe()
-    main_df = split_single_stream_connection_times_into_separate_columns(main_df)
+    # main_df = split_single_stream_connection_times_into_separate_columns(main_df)
 
     return main_df
 
@@ -132,15 +132,12 @@ if __name__ == "__main__":
 
 
     get_test_results(test)
-    # calculate_goodput(test)
-    # for test_case in (test.test_cases_decompressed.test_cases):
-    #     # print(test_case.number, test_case.iteration, test_case.streams)
-    #     print(type(test_case.streams.streams))
+    calculate_goodput(test)
     print(test)
-    # test_results_dataframe = create_dataframe_from_object(test)
-    # median_dataframe = do_statistics(test_results_dataframe)    
-    # print_all_results_to_cli(test_results_dataframe, median_dataframe)
-    # evaluate_test_results(test_results_dataframe, median_dataframe, test)
-    # store_results(test_results_dataframe, median_dataframe, args)
+    test_results_dataframe = create_dataframe_from_object(test)
+    median_dataframe = do_statistics(test_results_dataframe)    
+    print_all_results_to_cli(test_results_dataframe, median_dataframe)
+    evaluate_test_results(test_results_dataframe, median_dataframe, test)
+    store_results(test_results_dataframe, median_dataframe, args)
 
     logging.info("All tasks are completed.")

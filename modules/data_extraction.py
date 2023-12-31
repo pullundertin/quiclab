@@ -106,9 +106,9 @@ def get_tcp_single_stream_connection_time(pcap, test_case):
         get_request_time_for_each_stream(packet, streams)
         get_response_time_for_each_stream(packet, streams)
 
-    for stream in streams.streams:
-        tcp_connection_time_for_each_single_stream[stream.stream_id] = stream.connection_time
-    return tcp_connection_time_for_each_single_stream
+    # for stream in streams.streams:
+    #     tcp_connection_time_for_each_single_stream[stream.stream_id] = stream.connection_time
+    # return tcp_connection_time_for_each_single_stream
 
 
 def get_tcp_rtt_data(pcap):
@@ -201,7 +201,6 @@ def get_test_results(test):
             'tcp_rtt': get_tcp_rtt_data(pcap),
             'tcp_hs': get_tcp_handshake_time(pcap),
             'tcp_conn': get_tcp_connection_time(pcap),
-            'tcp_single_conn': get_tcp_single_stream_connection_time(pcap, test_case),
             'quic_hs': get_quic_handshake_time(pcap),
             'quic_conn': get_quic_connection_time(pcap),
             'dcid': get_quic_dcid(pcap)[0],
@@ -214,7 +213,7 @@ def get_test_results(test):
             data[f'{mode}_conn'] = get_quic_connection_time(pcap)
 
         test_case.store_test_results_for(data)
-
+        get_tcp_single_stream_connection_time(pcap, test_case)
 
     def get_pcap_data():
         pcap_files = traverse_pcap_directory()
@@ -340,7 +339,6 @@ def get_test_results(test):
                     
                 
             streams = test_case.streams
-            # print('test case: ', test_case.number, test_case.iteration)
             quic_connection_time_for_each_single_stream = {}
             ndqlog_data = file.read()
             get_request_time_for_each_stream(ndqlog_data, streams)
