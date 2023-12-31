@@ -4,7 +4,7 @@ iterations: 3
 cases:
   mode: [tcp, aioquic, quicgo]
   size: 0.01M
-  delay: 20ms
+  delay: [20ms, 40ms]
   delay_deviation: 0
   loss: 0
   rate: 1G
@@ -14,7 +14,7 @@ cases:
   rdef: 131072
   rmax: 62901456
   migration: false
-  number_of_streams: [1, 5]
+  number_of_streams: 5
   generic_heatmap: ''
 
   
