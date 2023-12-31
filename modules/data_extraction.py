@@ -6,6 +6,7 @@ from modules.commands import run_command
 from modules.prerequisites import read_configuration
 from modules.progress_bar import update_program_progress_bar
 from modules.classes import Stream, Streams
+from collections import defaultdict
 
 
 PCAP_PATH = read_configuration().get("PCAP_PATH")
@@ -168,8 +169,6 @@ def get_quic_connection_time(pcap):
       
     return quic_connection_duration
 
-# TODO
-# def get_quic_single_stream_connection_time(pcap):
 
 def get_quic_dcid(pcap):
     quic_dcid = None
@@ -264,6 +263,93 @@ def get_test_results(test):
             streams = split_data_into_lines_and_parse_each_line_as_json(ndqlog_data, streams)
             return streams
 
+        def get_quic_single_stream_connection_time_from_json_format_qlog(qlog_data, test_case):
+            def get_request_time_for_each_stream(qlog_data, streams):
+                if isinstance(qlog_data, dict) and 'traces' in qlog_data:
+                    for packet in qlog_data['traces']:
+                        for qlog_event in packet.get('events', []):
+                            if "data" in qlog_event and 'frame' in qlog_event['data']:
+                                qlog_frame = qlog_event["data"]["frame"]
+                                if "headers" in qlog_frame:
+                                    for header in qlog_frame["headers"]: 
+                                        if header["value"] == "GET":
+                                            stream_id = qlog_event["data"]["stream_id"]
+                                            stream = streams.find_stream_by_id(stream_id)
+                                            request_time = float(qlog_event['time'])
+                                            stream.update_request_time(request_time)
+            
+            def get_response_time_for_each_stream(qlog_data, streams):
+                if isinstance(qlog_data, dict) and 'traces' in qlog_data:
+                    for packet in qlog_data['traces']:
+                        for qlog_event in packet.get('events', []):
+                            if "data" in qlog_event and 'frame' in qlog_event['data']:
+                                qlog_frame = qlog_event["data"]["frame"]
+                                if "headers" in qlog_frame:
+                                    for header in qlog_frame["headers"]: 
+                                        if header["value"] == "200":
+                                            stream_id = qlog_event["data"]["stream_id"]
+                                            stream = streams.find_stream_by_id(stream_id)
+                                            response_time = float(qlog_event['time']) 
+                                            stream.update_response_time(response_time)
+                    
+                
+            streams = test_case.streams
+            quic_connection_time_for_each_single_stream = {}
+
+            get_request_time_for_each_stream(qlog_data, streams)
+            get_response_time_for_each_stream(qlog_data, streams)
+
+            for stream in streams.streams:
+                quic_connection_time_for_each_single_stream[stream.stream_id] = stream.connection_time
+            return quic_connection_time_for_each_single_stream
+        
+        def get_quic_single_stream_connection_time_from_ndjson_format_qlog(file, test_case):
+            def get_request_time_for_each_stream(ndqlog_data, streams):
+                stream_times_map = defaultdict(list)
+                for line in ndqlog_data.strip().split('\n'):
+                    qlog_event = json.loads(line)
+                    if "data" in qlog_event:
+                            if 'header' in qlog_event['data'] and 'packet_type' in qlog_event["data"]["header"] and qlog_event["data"]["header"]["packet_type"] == "1RTT":
+                                rtt_frame = True
+                            if 'frames' in qlog_event['data']:
+                                for frame in qlog_event['data']['frames']:
+                                    if 'fin' in frame and frame['fin'] == True and rtt_frame:
+                                        stream_id = frame['stream_id']
+                                        stream_times_map[stream_id].append(float(qlog_event['time']))
+                                        if len(stream_times_map[stream_id]) == 2:
+                                            request_time = stream_times_map[stream_id][0]
+                                            stream = streams.find_stream_by_id(stream_id)
+                                            stream.update_request_time(request_time)
+            
+            def get_response_time_for_each_stream(ndqlog_data, streams):
+                stream_times_map = defaultdict(list)
+                for line in ndqlog_data.strip().split('\n'):
+                    qlog_event = json.loads(line)
+                    if "data" in qlog_event:
+                            if 'header' in qlog_event['data'] and 'packet_type' in qlog_event["data"]["header"] and qlog_event["data"]["header"]["packet_type"] == "1RTT":
+                                rtt_frame = True
+                            if 'frames' in qlog_event['data']:
+                                for frame in qlog_event['data']['frames']:
+                                    if 'fin' in frame and frame['fin'] == True and rtt_frame:
+                                        stream_id = frame['stream_id']
+                                        stream_times_map[stream_id].append(float(qlog_event['time']))
+                                        if len(stream_times_map[stream_id]) == 2:
+                                            response_time = stream_times_map[stream_id][1]
+                                            stream = streams.find_stream_by_id(stream_id)
+                                            stream.update_response_time(response_time)
+                    
+                
+            streams = test_case.streams
+            # print('test case: ', test_case.number, test_case.iteration)
+            quic_connection_time_for_each_single_stream = {}
+            ndqlog_data = file.read()
+            get_request_time_for_each_stream(ndqlog_data, streams)
+            get_response_time_for_each_stream(ndqlog_data, streams)
+
+            for stream in streams.streams:
+                quic_connection_time_for_each_single_stream[stream.stream_id] = stream.connection_time
+            return quic_connection_time_for_each_single_stream
+
         def get_dataframe_index_of_qlog_file(qlog_file):
             test_case = test.test_cases_decompressed.map_qlog_file_to_test_case_by_dcid(
                 qlog_file)
@@ -313,21 +399,22 @@ def get_test_results(test):
                     qlog_data = json.loads(f.read())
                     min_rtt_values, smoothed_rtt_values = get_rtt_values_from_json_format_qlog(qlog_data)
                     streams = get_http3_streams_from_json_format_qlog(qlog_data, test_case)
+                    get_quic_single_stream_connection_time_from_json_format_qlog(qlog_data, test_case)
                 except json.JSONDecodeError:
                     f.seek(0)
                     min_rtt_values, smoothed_rtt_values = get_rtt_values_from_ndjson_format_qlog(f)
                     f.seek(0)
                     streams = get_http3_streams_from_ndjson_format_qlog(f, test_case)
+                    f.seek(0)
+                    get_quic_single_stream_connection_time_from_ndjson_format_qlog(f, test_case)
             if test_case:
                 data = {
                     'streams': streams,
-                    'min_rtt': min_rtt_values,
-                    'smoothed_rtt': smoothed_rtt_values,
+                    'quic_min_rtt': min_rtt_values,
+                    'quic_smoothed_rtt': smoothed_rtt_values,
                 }
-                # test_case.update_quic_rtt_data_from_qlog(
-                    # min_rtt_values, smoothed_rtt_values)
-                
                 test_case.store_test_results_for(data)
+
 
     update_program_progress_bar('Get Test Results')
 
