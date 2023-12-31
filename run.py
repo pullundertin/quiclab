@@ -88,8 +88,9 @@ def create_dataframe_from_object(test):
                 for stream in stream_data:
                     stream_id = stream.stream_id
                     connection_time = stream.connection_time
-
-                    stream_info[f'Stream_ID_{stream_id}'] = connection_time  # Store connection time for each stream ID
+                    stream_info[f'Stream_ID_{stream_id}_conn'] = connection_time  
+                    goodput = stream.goodput
+                    stream_info[f'Stream_ID_{stream_id}_goodput'] = goodput  
 
                 df = pd.concat([df, pd.DataFrame([stream_info])], axis=1)
         
@@ -137,12 +138,10 @@ if __name__ == "__main__":
 
     get_test_results(test)
     calculate_goodput(test)
-    print(test)
-    # test_results_dataframe = create_dataframe_from_object(test)
-    # print(test_results_dataframe)
-    # median_dataframe = do_statistics(test_results_dataframe)    
-    # print_all_results_to_cli(test_results_dataframe, median_dataframe)
-    # evaluate_test_results(test_results_dataframe, median_dataframe, test)
-    # store_results(test_results_dataframe, median_dataframe, args)
+    test_results_dataframe = create_dataframe_from_object(test)
+    median_dataframe = do_statistics(test_results_dataframe)    
+    print_all_results_to_cli(test_results_dataframe, median_dataframe)
+    evaluate_test_results(test_results_dataframe, median_dataframe, test)
+    store_results(test_results_dataframe, median_dataframe, args)
 
     logging.info("All tasks are completed.")
