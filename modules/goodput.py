@@ -72,4 +72,3 @@ def calculate_goodput(test):
     for test_case, download_size in download_sizes.items():
         calculate_and_update_goodput(test_case, download_size)
 
- 

@@ -130,12 +130,17 @@ if __name__ == "__main__":
     else:
         logging.info("Executing evaluation only")
 
+
     get_test_results(test)
-    calculate_goodput(test)
-    test_results_dataframe = create_dataframe_from_object(test)
-    median_dataframe = do_statistics(test_results_dataframe)    
-    print_all_results_to_cli(test_results_dataframe, median_dataframe)
-    evaluate_test_results(test_results_dataframe, median_dataframe, test)
-    store_results(test_results_dataframe, median_dataframe, args)
+    # calculate_goodput(test)
+    # for test_case in (test.test_cases_decompressed.test_cases):
+    #     # print(test_case.number, test_case.iteration, test_case.streams)
+    #     print(type(test_case.streams.streams))
+    print(test)
+    # test_results_dataframe = create_dataframe_from_object(test)
+    # median_dataframe = do_statistics(test_results_dataframe)    
+    # print_all_results_to_cli(test_results_dataframe, median_dataframe)
+    # evaluate_test_results(test_results_dataframe, median_dataframe, test)
+    # store_results(test_results_dataframe, median_dataframe, args)
 
     logging.info("All tasks are completed.")

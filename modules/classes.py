@@ -60,6 +60,7 @@ class TestCase:
         self.file_name_prefix = f"Case_{self.number}_Iteration_{self.iteration}_"
         self.mode = config['mode']
         self.number_of_streams = config['number_of_streams']
+        self.streams = Streams()
         self.size = self.convert_to_bytes(config['size'])
         self.real_size = self.get_real_file_size_based_on_single_or_multi_stream()
         self.delay = config['delay']
@@ -98,6 +99,7 @@ class TestCase:
         Mode: {self.mode}
         Size: {self.size}
         Number of Streams: {self.number_of_streams}
+        Streams: {self.streams}
         Real Size (Multistream): {self.real_size}
         Delay: {self.delay}
         Delay Deviation: {self.delay_deviation}
@@ -154,13 +156,16 @@ class TestCase:
     def update_goodput(self, goodput):
         setattr(self, 'goodput', goodput)
 
+    def add_streams(self, streams):
+        setattr(self, 'streams', streams)
+
 
 class Streams:
     def __init__(self):
-        self.streams = []
+        self.streams = set()
 
     def add_stream(self, stream):
-        self.streams.append(stream)
+        self.streams.add(stream)
 
     def find_stream_by_id(self, stream_id):
         for stream in self.streams:
@@ -174,15 +179,29 @@ class Streams:
         return f"\n{streams}"
 
 class Stream:
-    def __init__(self, stream_id, request_time):
+    def __init__(self, stream_id):
         self.stream_id = stream_id
-        self.request_time = request_time
+        self.request_time = None
         self.response_time = None
         self.connection_time = None
+
+    def update_request_time(self, request_time):
+        setattr(self, 'request_time', request_time)
 
     def update_response_time(self, response_time):
         setattr(self, 'response_time', response_time)
         setattr(self, 'connection_time', self.response_time - self.request_time)
 
     def __str__(self):
-        return f"Stream ID: {self.stream_id}, Request Time: {self.request_time}, Response Time: {self.response_time}, Connection Time: {self.connection_time}"
+        return f"\t\tStream ID: {self.stream_id}, Request Time: {self.request_time}, Response Time: {self.response_time}, Connection Time: {self.connection_time}"
+
+    def __eq__(self, other):
+        if isinstance(other, Stream):
+            return (self.stream_id == other.stream_id and
+                    self.request_time == other.request_time and
+                    self.response_time == other.response_time and
+                    self.connection_time == other.connection_time)
+        return False
+
+    def __hash__(self):
+        return hash((self.stream_id, self.request_time, self.response_time, self.connection_time))

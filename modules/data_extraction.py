@@ -83,13 +83,13 @@ def get_tcp_connection_time(pcap):
     return tcp_connection_duration
     
 
-def get_tcp_single_stream_connection_time(pcap):
+def get_tcp_single_stream_connection_time(pcap, test_case):
     def get_request_time_for_each_stream(packet, streams):
         if 'http2' in packet and hasattr(packet.http2, 'headers.method'):
             stream_id = packet.http2.streamid
+            stream = streams.find_stream_by_id(stream_id)
             request_time = float(packet.frame_info.time_relative)
-            new_stream = Stream(stream_id, request_time)
-            streams.add_stream(new_stream)
+            stream.update_request_time(request_time)
     
     def get_response_time_for_each_stream(packet, streams):
         if 'http2' in packet and hasattr(packet.http2, 'body_reassembled_data'):
@@ -99,7 +99,7 @@ def get_tcp_single_stream_connection_time(pcap):
             stream.update_response_time(response_time)
             
         
-    streams = Streams()
+    streams = test_case.streams
     tcp_connection_time_for_each_single_stream = {}
     for packet in pcap:
         get_request_time_for_each_stream(packet, streams)
@@ -168,7 +168,8 @@ def get_quic_connection_time(pcap):
       
     return quic_connection_duration
 
-
+# TODO
+# def get_quic_single_stream_connection_time(pcap):
 
 def get_quic_dcid(pcap):
     quic_dcid = None
@@ -181,20 +182,31 @@ def get_quic_dcid(pcap):
             break
     return quic_dcid, quic_dcid_ascii
 
+def get_http2_streams(pcap, test_case):
+    streams = test_case.streams
+    
+    for packet in pcap:
+        if 'http2' in packet and hasattr(packet.http2, 'headers.method'):
+            stream_id = packet.http2.streamid
+            new_stream = Stream(stream_id)
+            streams.add_stream(new_stream)
+
+    return streams
 
 def get_test_results(test):
 
     def populate_test_case_with_test_results_from_json(pcap, test_case):
         
         data = {
+            'streams': get_http2_streams(pcap, test_case),
             'tcp_rtt': get_tcp_rtt_data(pcap),
             'tcp_hs': get_tcp_handshake_time(pcap),
             'tcp_conn': get_tcp_connection_time(pcap),
-            'tcp_single_conn': get_tcp_single_stream_connection_time(pcap),
+            'tcp_single_conn': get_tcp_single_stream_connection_time(pcap, test_case),
             'quic_hs': get_quic_handshake_time(pcap),
             'quic_conn': get_quic_connection_time(pcap),
             'dcid': get_quic_dcid(pcap)[0],
-            'dcid_hex': get_quic_dcid(pcap)[1]
+            'dcid_hex': get_quic_dcid(pcap)[1],
         }
 
         if test_case.mode in ('aioquic', 'quicgo'):
@@ -217,6 +229,41 @@ def get_test_results(test):
 
         qlog_files = traverse_qlog_directory()
 
+        def get_http3_streams_from_json_format_qlog(qlog_data, test_case):
+            streams = test_case.streams
+            if isinstance(qlog_data, dict) and 'traces' in qlog_data:
+                for packet in qlog_data['traces']:
+                    for qlog_event in packet.get('events', []):
+                        if "data" in qlog_event and 'frame' in qlog_event['data']:
+                            qlog_frame = qlog_event["data"]["frame"]
+                            if "headers" in qlog_frame:
+                                for header in qlog_frame["headers"]: 
+                                    if header["value"] == "GET":
+                                        stream_id = qlog_event["data"]["stream_id"]
+                                        new_stream = Stream(stream_id)
+                                        streams.add_stream(new_stream)
+            return streams
+        
+        def get_http3_streams_from_ndjson_format_qlog(file, test_case):
+            streams = test_case.streams
+            def split_data_into_lines_and_parse_each_line_as_json(ndqlog_data, streams):
+                for line in ndqlog_data.strip().split('\n'):
+                    qlog_event = json.loads(line)
+                    if "data" in qlog_event:
+                            if 'header' in qlog_event['data'] and 'packet_type' in qlog_event["data"]["header"] and qlog_event["data"]["header"]["packet_type"] == "1RTT":
+                                rtt_frame = True
+                            if 'frames' in qlog_event['data']:
+                                for frame in qlog_event['data']['frames']:
+                                    if 'fin' in frame and frame['fin'] == True and rtt_frame:
+                                        stream_id = frame['stream_id']
+                                        new_stream = Stream(stream_id)
+                                        streams.add_stream(new_stream)
+                return streams
+
+            ndqlog_data = file.read()
+            streams = split_data_into_lines_and_parse_each_line_as_json(ndqlog_data, streams)
+            return streams
+
         def get_dataframe_index_of_qlog_file(qlog_file):
             test_case = test.test_cases_decompressed.map_qlog_file_to_test_case_by_dcid(
                 qlog_file)
@@ -233,8 +280,7 @@ def get_test_results(test):
 
         def get_rtt_values_from_json_format_qlog(qlog_data):
             min_rtt_values = []
-            smoothed_rtt_values = []
-            
+            smoothed_rtt_values = []            
 
             if isinstance(qlog_data, dict) and 'traces' in qlog_data:
                 for packet in qlog_data['traces']:
@@ -263,15 +309,25 @@ def get_test_results(test):
         for qlog_file in qlog_files:
             with open(qlog_file, 'r') as f:
                 try:
+                    test_case = get_dataframe_index_of_qlog_file(qlog_file)
                     qlog_data = json.loads(f.read())
                     min_rtt_values, smoothed_rtt_values = get_rtt_values_from_json_format_qlog(qlog_data)
+                    streams = get_http3_streams_from_json_format_qlog(qlog_data, test_case)
                 except json.JSONDecodeError:
                     f.seek(0)
                     min_rtt_values, smoothed_rtt_values = get_rtt_values_from_ndjson_format_qlog(f)
-
-            test_case = get_dataframe_index_of_qlog_file(qlog_file)
-            test_case.update_quic_rtt_data_from_qlog(
-                min_rtt_values, smoothed_rtt_values)
+                    f.seek(0)
+                    streams = get_http3_streams_from_ndjson_format_qlog(f, test_case)
+            if test_case:
+                data = {
+                    'streams': streams,
+                    'min_rtt': min_rtt_values,
+                    'smoothed_rtt': smoothed_rtt_values,
+                }
+                # test_case.update_quic_rtt_data_from_qlog(
+                    # min_rtt_values, smoothed_rtt_values)
+                
+                test_case.store_test_results_for(data)
 
     update_program_progress_bar('Get Test Results')
 
