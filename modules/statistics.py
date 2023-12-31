@@ -20,7 +20,7 @@ def get_medians(test_results_dataframe):
     test_results_dataframe_copy[numeric_columns] = test_results_dataframe_copy[numeric_columns].apply(pd.to_numeric, errors='coerce')
 
     # Get columns starting with 'Stream '
-    stream_cols = [col for col in test_results_dataframe_copy.columns if col.startswith('Stream ')]
+    stream_cols = [col for col in test_results_dataframe_copy.columns if col.startswith('Stream')]
 
     # Convert columns starting with "Stream " to numeric if needed
     test_results_dataframe_copy[stream_cols] = test_results_dataframe_copy[stream_cols].apply(pd.to_numeric, errors='coerce')

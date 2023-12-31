@@ -71,15 +71,6 @@ def store_results(test_results_dataframe, median_dataframe, args):
     sync_shared_folders_with_remote_host(args)
 
 
-def split_single_stream_connection_times_into_separate_columns(test_results_dataframe):
-    df_normalized = pd.json_normalize(test_results_dataframe['tcp_single_conn'])
-
-    # Rename columns by adding 'Stream ' prefix
-    df_normalized.columns = [f"Stream {col}" for col in df_normalized.columns]
-
-    # Concatenate original DataFrame and normalized DataFrame
-    return pd.concat([test_results_dataframe.reset_index(drop=True), df_normalized.reset_index(drop=True)], axis=1)#.fillna('')
-
 def create_dataframe_from_object(test):
     update_program_progress_bar('Create Dataframe')
 
@@ -89,6 +80,19 @@ def create_dataframe_from_object(test):
         df = pd.DataFrame()
         for test_case in test.test_cases_decompressed.test_cases:
             df = pd.DataFrame([vars(test_case)])
+            streams = df['streams'].iloc[0] if 'streams' in df.columns else None
+            
+            if streams:
+                stream_data = streams.streams
+                stream_info = {}
+                for stream in stream_data:
+                    stream_id = stream.stream_id
+                    connection_time = stream.connection_time
+
+                    stream_info[f'Stream_ID_{stream_id}'] = connection_time  # Store connection time for each stream ID
+
+                df = pd.concat([df, pd.DataFrame([stream_info])], axis=1)
+        
             list_of_df.append(df)
 
     def add_each_dataframe_as_new_row_to_a_main_dataframe():
@@ -104,7 +108,7 @@ def create_dataframe_from_object(test):
 def print_all_results_to_cli(test_results_dataframe, median_dataframe):
     columns_to_print = TEST_CONFIG_COLUMNS + TEST_RESULT_COLUMNS
     if args.results:
-        print(test_results_dataframe[columns_to_print])
+        print(test_results_dataframe)
         divider = '\\' * 60 + ' MEDIAN ' + '\\' * 60
         print(divider)
         print(median_dataframe)
@@ -133,11 +137,11 @@ if __name__ == "__main__":
 
     get_test_results(test)
     calculate_goodput(test)
-    print(test)
     test_results_dataframe = create_dataframe_from_object(test)
+    # print(test_results_dataframe)
     median_dataframe = do_statistics(test_results_dataframe)    
     print_all_results_to_cli(test_results_dataframe, median_dataframe)
-    evaluate_test_results(test_results_dataframe, median_dataframe, test)
-    store_results(test_results_dataframe, median_dataframe, args)
+    # evaluate_test_results(test_results_dataframe, median_dataframe, test)
+    # store_results(test_results_dataframe, median_dataframe, args)
 
     logging.info("All tasks are completed.")
