@@ -135,7 +135,6 @@ if __name__ == "__main__":
     else:
         logging.info("Executing evaluation only")
 
-
     get_test_results(test)
     calculate_goodput(test)
     test_results_dataframe = create_dataframe_from_object(test)

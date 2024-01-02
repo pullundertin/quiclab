@@ -83,22 +83,32 @@ def get_tcp_connection_time(pcap):
     tcp_connection_duration = find_packet_matching_this_ack(fin_ack_seq, pcap)
     return tcp_connection_duration
     
-
+def check_all_fields(packet, layer):
+        if packet.__contains__(layer):
+            fields = packet.get_multiple_layers(layer)
+            return fields
+        
 def get_tcp_single_stream_connection_time(pcap, test_case):
     def get_request_time_for_each_stream(packet, streams):
-        if 'http2' in packet and hasattr(packet.http2, 'headers.method'):
-            stream_id = packet.http2.streamid
-            stream = streams.find_stream_by_id(stream_id)
-            request_time = float(packet.frame_info.time_relative)
-            stream.update_request_time(request_time)
+            fields = check_all_fields(packet, 'http2')
+            if fields:
+                for field in fields:
+                    if hasattr(field, 'headers.method'):
+                        stream_id = field.streamid
+                        stream = streams.find_stream_by_id(stream_id)
+                        request_time = float(packet.frame_info.time_relative)
+                        stream.update_request_time(request_time)
     
     def get_response_time_for_each_stream(packet, streams):
-        if 'http2' in packet and hasattr(packet.http2, 'body_reassembled_data'):
-            stream_id = packet.http2.streamid
-            stream = streams.find_stream_by_id(stream_id)
-            response_time = float(packet.frame_info.time_relative) 
-            stream.update_response_time(response_time)
-            
+            fields = check_all_fields(packet, 'http2')
+            if fields:
+                for field in fields:
+                    if hasattr(field,'body_reassembled_data') and field.flags_end_stream == '1':
+                        stream_id = field.streamid
+                        stream = streams.find_stream_by_id(stream_id)
+                        response_time = float(packet.frame_info.time_relative) 
+                        stream.update_response_time(response_time)
+                        break            
         
     streams = test_case.streams
 
