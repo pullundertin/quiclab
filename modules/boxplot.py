@@ -3,6 +3,7 @@ import seaborn as sns
 import matplotlib.pyplot as plt
 import pandas as pd
 from modules.prerequisites import read_configuration
+import re
 
 BOXPLOTS_DIR = read_configuration().get("BOXPLOTS_DIR")
 
@@ -50,8 +51,13 @@ def create_boxplots_for_each_single_stream(df, test):
 
             # If there are columns with non-null values
             if non_nan_columns:
+
+                # Extract and sort the numerical part of Stream_ID from column names
+                stream_ids = [int(re.search(r'Stream_ID_(\d+)_goodput', col).group(1)) for col in non_nan_columns]
+                sorted_cols = [col for _, col in sorted(zip(stream_ids, non_nan_columns))]
+
                 mode_control_df_melted = mode_control_df.melt(id_vars=['mode', control_parameter], value_vars=non_nan_columns, var_name='Stream_ID')
-                x_labels = [col.replace('_goodput', '') for col in non_nan_columns]
+                x_labels = [col.replace('_goodput', '') for col in sorted_cols]
 
                 sns.boxplot(data=mode_control_df_melted.dropna(), x='Stream_ID', y='value', ax=axes[j, i], palette='Set3')
                 axes[j, i].set_title(f'Mode: {mode}, Control Parameter: {control_param}')
