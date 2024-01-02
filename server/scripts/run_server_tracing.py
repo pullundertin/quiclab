@@ -43,10 +43,12 @@ def convert_to_bytes(size_string):
 
 
 def generate_data(file_path, size):
+
     # command = f'dd if=/dev/zero of=/data/data.log bs=1 count=0 seek={size} status=none'
 
     # Target file size in bytes (1 MB is approximately 1,048,576 bytes)
-    target_file_size = convert_to_bytes(size)
+    target_file_size = float(size)
+    # target_file_size = convert_to_bytes(size)
 
     with open(file_path, 'w') as file:
         total_bytes_written = 0
