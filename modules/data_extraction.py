@@ -2,10 +2,9 @@ import pandas as pd
 import os
 import json
 import pyshark
-from modules.commands import run_command
 from modules.prerequisites import read_configuration
 from modules.progress_bar import update_program_progress_bar
-from modules.classes import Stream, Streams
+from modules.classes import Stream
 from collections import defaultdict
 
 
@@ -20,10 +19,11 @@ pd.set_option('display.max_columns', None)
 pd.set_option('display.max_colwidth', None)
 
 
-
 def traverse_pcap_directory():
-    return [os.path.join(PCAP_PATH, filename) for filename in os.listdir(PCAP_PATH) if filename.endswith('client_1.pcap')]
-
+    # return [os.path.join(PCAP_PATH, filename) for filename in os.listdir(PCAP_PATH) if filename.endswith('client_1.pcap')]
+    for filename in os.listdir(PCAP_PATH):
+        if filename.endswith('client_1.pcap'):
+            yield os.path.join(PCAP_PATH, filename)
 
 def traverse_qlog_directory():
     return [os.path.join(QLOG_PATH_CLIENT, filename) for filename in os.listdir(QLOG_PATH_CLIENT) if filename.endswith('.qlog')]

@@ -3,7 +3,7 @@ iterations: 3
 
 cases:
   mode: [tcp, aioquic, quicgo]
-  size: 0.5M
+  size: 0.01M
   delay: [10ms, 20ms]
   delay_deviation: 0
   loss: 0

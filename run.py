@@ -35,7 +35,6 @@ def arguments():
 
     return args
 
-
 def evaluate_test_results(test_results_dataframe, median_dataframe, test):
     update_program_progress_bar('Evaluate Test Results')
 
@@ -106,16 +105,17 @@ def create_dataframe_from_object(test):
     return main_df
 
 
-def print_all_results_to_cli(test_results_dataframe, median_dataframe):
+def print_all_results_to_cli(test_results_dataframe, median_dataframe, test, args):
     columns_to_print = TEST_CONFIG_COLUMNS + TEST_RESULT_COLUMNS
     if args.results:
+        print(test)
         print(test_results_dataframe)
         divider = '\\' * 60 + ' MEDIAN ' + '\\' * 60
         print(divider)
         print(median_dataframe)
+        
+def main():
 
-
-if __name__ == "__main__":
     test_results_dataframe = None
     median_dataframe = None
 
@@ -139,8 +139,11 @@ if __name__ == "__main__":
     calculate_goodput(test)
     test_results_dataframe = create_dataframe_from_object(test)
     median_dataframe = do_statistics(test_results_dataframe)    
-    print_all_results_to_cli(test_results_dataframe, median_dataframe)
+    print_all_results_to_cli(test_results_dataframe, median_dataframe, test, args)
     evaluate_test_results(test_results_dataframe, median_dataframe, test)
     store_results(test_results_dataframe, median_dataframe, args)
 
     logging.info("All tasks are completed.")
+
+if __name__ == "__main__":
+    main()
