@@ -103,8 +103,8 @@ def get_tcp_single_stream_connection_time(pcap, test_case):
             fields = check_all_fields(packet, 'http2')
             if fields:
                 for field in fields:
-                    if hasattr(field,'body_reassembled_data'):# and field.flags_end_stream == '1':
-                        stream_id = field.streamid
+                    if hasattr(field,'body_reassembled_data'): #and field.flags_end_stream == '1':
+                        stream_id = packet.http2.streamid
                         stream = streams.find_stream_by_id(stream_id)
                         response_time = float(packet.frame_info.time_relative) 
                         stream.update_response_time(response_time)
@@ -188,12 +188,14 @@ def get_quic_dcid(pcap):
 
 def get_http2_streams(pcap, test_case):
     streams = test_case.streams
-    
     for packet in pcap:
-        if 'http2' in packet and hasattr(packet.http2, 'headers.method'):
-            stream_id = packet.http2.streamid
-            new_stream = Stream(stream_id)
-            streams.add_stream(new_stream)
+        fields = check_all_fields(packet, 'http2')
+        if fields:
+            for field in fields:
+                if hasattr(field, 'headers.method'):
+                    stream_id = field.streamid
+                    new_stream = Stream(stream_id)
+                    streams.add_stream(new_stream)
 
     return streams
 
