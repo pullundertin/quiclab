@@ -103,12 +103,11 @@ def get_tcp_single_stream_connection_time(pcap, test_case):
             fields = check_all_fields(packet, 'http2')
             if fields:
                 for field in fields:
-                    if hasattr(field,'body_reassembled_data') and field.flags_end_stream == '1':
+                    if hasattr(field,'body_reassembled_data'):# and field.flags_end_stream == '1':
                         stream_id = field.streamid
                         stream = streams.find_stream_by_id(stream_id)
                         response_time = float(packet.frame_info.time_relative) 
                         stream.update_response_time(response_time)
-                        break            
         
     streams = test_case.streams
 
