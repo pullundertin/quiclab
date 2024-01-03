@@ -50,12 +50,16 @@ def evaluate_test_results(test_results_dataframe, median_dataframe, test):
         do_anova(test_results_dataframe, control_parameter)
 
 
-def store_results(test_results_dataframe, median_dataframe, args):
+def store_results(test_results_dataframe, median_dataframe, test, args):
+    TEST_RESULTS_DIR = read_configuration().get('TEST_RESULTS_DIR')
     def write_dataframes_to_csv(test_results_dataframe, median_dataframe):
-        TEST_RESULTS_DIR = read_configuration().get('TEST_RESULTS_DIR')
         test_results_dataframe.to_csv(
             f'{TEST_RESULTS_DIR}/test_results.csv', index=False)
         median_dataframe.to_csv(f'{TEST_RESULTS_DIR}/medians.csv', index=False)
+
+    def write_test_object_to_log(test):
+        with open(f'{TEST_RESULTS_DIR}/test_object.log', 'w') as file:
+            file.write(str(test))
 
     def sync_shared_folders_with_remote_host(args):
         if args.store:
@@ -67,6 +71,7 @@ def store_results(test_results_dataframe, median_dataframe, args):
     update_program_progress_bar('Store Test Results')
     if test_results_dataframe is not None and median_dataframe is not None:
         write_dataframes_to_csv(test_results_dataframe, median_dataframe)
+    write_test_object_to_log(test)
     sync_shared_folders_with_remote_host(args)
 
 
@@ -141,7 +146,7 @@ def main():
     median_dataframe = do_statistics(test_results_dataframe)    
     print_all_results_to_cli(test_results_dataframe, median_dataframe, test, args)
     evaluate_test_results(test_results_dataframe, median_dataframe, test)
-    store_results(test_results_dataframe, median_dataframe, args)
+    store_results(test_results_dataframe, median_dataframe, test, args)
 
     logging.info("All tasks are completed.")
 
