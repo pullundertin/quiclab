@@ -124,8 +124,8 @@ def main():
     test_results_dataframe = None
     median_dataframe = None
 
-    log_config()
     args = arguments()
+    log_config(args)
 
     test = get_test_object(args)
 
