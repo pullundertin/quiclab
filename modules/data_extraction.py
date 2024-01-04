@@ -29,7 +29,7 @@ def traverse_qlog_directory():
     return [os.path.join(QLOG_PATH_CLIENT, filename) for filename in os.listdir(QLOG_PATH_CLIENT) if filename.endswith('.qlog')]
 
 def capture_packets(pcap_file):
-    with pyshark.FileCapture(pcap_file, override_prefs={'tls.keylog_file': KEYS_PATH}) as pcap:
+    with pyshark.FileCapture(pcap_file, override_prefs={'tcp.analyze_sequence_numbers': 'TRUE', 'transum.reassembly': 'TRUE', 'tls.keylog_file': 'shared/keys/client.key', 'tcp.reassemble_out_of_order': 'TRUE', 'tcp.desegment_tcp_streams': 'TRUE',  'tls.desegment_ssl_application_data': 'TRUE', 'tls.desegment_ssl_records': 'TRUE'}) as pcap:
         return list(pcap)
     
 def get_tcp_handshake_time(pcap):

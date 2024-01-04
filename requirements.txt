@@ -1,0 +1,8 @@
+pandas
+docker
+pyyaml
+tqdm
+seaborn
+scipy
+statsmodels
+pyshark

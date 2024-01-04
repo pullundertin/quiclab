@@ -41,7 +41,7 @@ def create_boxplots_for_each_single_stream(df, test):
         return
     control_parameters = test.control_parameter_values
 
-    fig, axes = plt.subplots(nrows=len(control_parameters), ncols=len(modes), figsize=(15, 6), sharey=True)
+    fig, axes = plt.subplots(nrows=len(control_parameters), ncols=len(modes), figsize=(50, 20), sharey=True)
 
     for i, mode in enumerate(modes):
         for j, control_param in enumerate(control_parameters):

@@ -52,8 +52,9 @@ def calculate_goodput(test):
             stream_id = stream.stream_id
             stream = streams.find_stream_by_id(stream_id)
             connection_time = stream.connection_time
-            goodput = download_size/connection_time
-            stream.update_goodput(goodput)
+            if connection_time is not None:
+                goodput = download_size/connection_time
+                stream.update_goodput(goodput)
 
     def calculate_and_update_goodput(test_case, download_size):
         connection_time = get_connection_time(test_case)

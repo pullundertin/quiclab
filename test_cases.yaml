@@ -1,12 +1,12 @@
 # applies to full execution mode only !!!
-iterations: 1
+iterations: 30
 
 cases:
   mode: [tcp, aioquic, quicgo]
-  size: [0.01M]
+  size: 0.1M
   delay: 10ms
   delay_deviation: 0
-  loss: 0
+  loss: [0, 0.5, 1]
   rate: 1000
   firewall: None
   window_scaling: 1
