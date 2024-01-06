@@ -13,6 +13,7 @@ from modules.t_test import t_test
 from modules.anova import do_anova
 from modules.goodput import calculate_goodput, show_goodput_graph
 from modules.progress_bar import update_program_progress_bar
+from modules.histogram import show_histogram
 import os
 import argparse
 import pandas as pd
@@ -42,6 +43,7 @@ def evaluate_test_results(test_results_dataframe, median_dataframe, test):
     if control_parameter is None:
         control_parameter = 'generic_heatmap'
     iterations = test.iterations
+    show_histogram(test_results_dataframe, control_parameter)
     show_goodput_graph(median_dataframe, control_parameter)
     show_boxplot(test_results_dataframe, test)
     show_heatmaps(median_dataframe, control_parameter)
@@ -136,15 +138,16 @@ def main():
         save_test_cases_config_to_log_file()
         run_tests(test)
         process_tcp_probe_logs()
+        get_test_results(test)
+        calculate_goodput(test)
+        test_results_dataframe = create_dataframe_from_object(test)
 
     else:
         logging.info("Executing evaluation only")
-
-    get_test_results(test)
-    print(test)
-    calculate_goodput(test)
-    test_results_dataframe = create_dataframe_from_object(test)
+        test_results_dataframe = pd.read_csv('shared/test_results/test_results.csv')
+        
     median_dataframe = do_statistics(test_results_dataframe)    
+
     print_all_results_to_cli(test_results_dataframe, median_dataframe, test, args)
     evaluate_test_results(test_results_dataframe, median_dataframe, test)
     store_results(test_results_dataframe, median_dataframe, test, args)

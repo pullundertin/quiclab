@@ -6,7 +6,7 @@ cases:
   size: 0.1M
   delay: 10ms
   delay_deviation: 0
-  loss: [0, 0.5, 1]
+  loss: 0
   rate: 1000
   firewall: None
   window_scaling: 1
@@ -14,7 +14,7 @@ cases:
   rdef: 131072
   rmax: 62901456
   migration: false
-  number_of_streams: 1
+  number_of_streams: [1, 5]
   generic_heatmap: ''
 
   
