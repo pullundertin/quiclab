@@ -22,7 +22,7 @@ def arguments():
 
 
 def aioquic():
-    command = "python /aioquic/examples/http3_server.py --certificate /aioquic/tests/ssl_cert.pem --private-key /aioquic/tests/ssl_key.pem --quic-log $QLOG_PATH_SERVER"
+    command = "python /aioquic/examples/http3_server.py --certificate /aioquic/tests/ssl_cert.pem --private-key /aioquic/tests/ssl_key.pem --quic-log $QLOG_PATH_SERVER --congestion-control-algorithm cubic"
     # command = "python /aioquic/examples/http3_server.py --certificate /aioquic/tests/ssl_cert.pem --private-key /aioquic/tests/ssl_key.pem --quic-log $QLOG_PATH_SERVER --retry"
     logging.info(f"{os.getenv('HOST')}: starting aioquic server...")
     run_command(command)

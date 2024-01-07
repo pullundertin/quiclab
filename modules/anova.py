@@ -1,15 +1,50 @@
 import pandas as pd
-from scipy.stats import f_oneway
+from scipy.stats import f_oneway, levene
 import statsmodels.stats.multicomp as mc
 from modules.prerequisites import read_configuration
 import os
 
 ANOVA_RESULTS = read_configuration().get("ANOVA_RESULTS")
+ALPHA = read_configuration().get("ALPHA")
 
 
 def do_anova(test_results_dataframe, control_parameter):
     if os.path.exists(ANOVA_RESULTS):
         os.remove(ANOVA_RESULTS)
+
+    def perform_levene_test(anova_dataframe):
+        levene_results = {}
+        unique_postfixes = set(col.split('_')[-1] for col in anova_dataframe.columns)
+        anova_applicable = {}
+
+        for postfix in unique_postfixes:
+            columns_with_postfix = [
+                col for col in anova_dataframe.columns if col.endswith(postfix)]
+            if len(columns_with_postfix) > 1:
+                args = [anova_dataframe[col].dropna() for col in columns_with_postfix]  # Drop NaN values
+                print(args)
+                stat, p_value = levene(*args)
+
+                if p_value > ALPHA:
+                    anova_applicable[postfix] = "ANOVA is applicable"
+                else:
+                    anova_applicable[postfix] = "ANOVA is not applicable"
+
+                levene_results[postfix] = {'statistic': stat, 'p_value': p_value, 'result': anova_applicable[postfix]}
+        return levene_results
+
+
+    def store_levene_results_to_file(levene_results, control_parameter, value):
+        with open(ANOVA_RESULTS, 'a') as file:
+            for key, values in levene_results.items():
+                output = f"""
+Metric: {key} (Levene Test)
+Independent Variable: {control_parameter} = {value}
+    Levene Statistic: {values['statistic']}
+    P-value: {values['p_value']}
+    Results: {values['result']}
+                """
+                file.write(output)
 
     def filter_test_results_based_on_values_of_control_parameter(test_results_dataframe, control_parameter, value):
         return test_results_dataframe[test_results_dataframe[control_parameter] == value]
@@ -27,6 +62,8 @@ def do_anova(test_results_dataframe, control_parameter):
             anova_dataframe = add_additional_columns_to_do_anova_on(
                 filtered_by_value_dataframe, anova_dataframe, additional_values_to_do_anova_on)
 
+            levene_results = perform_levene_test(anova_dataframe)
+            store_levene_results_to_file(levene_results, control_parameter, value)
             anova_results = perform_anova(anova_dataframe)
             tukey_result = perform_tukey_hsd_test(anova_dataframe)
             store_results_to_file(anova_results,
@@ -60,6 +97,7 @@ def do_anova(test_results_dataframe, control_parameter):
         return combined_df
 
     def generate_dataframe_with_all_values_combined(results, df):
+        print(results)
         combined_data = {column: df[column].dropna().tolist()
                          for column in results}
         combined_df = pd.DataFrame(combined_data)

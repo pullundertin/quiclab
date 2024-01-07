@@ -18,7 +18,6 @@ def get_medians(test_results_dataframe):
     
     test_results_dataframe_copy = test_results_dataframe.copy()
     test_results_dataframe_copy[numeric_columns] = test_results_dataframe_copy[numeric_columns].apply(pd.to_numeric, errors='coerce')
-
     # Get columns starting with 'Stream '
     stream_cols = [col for col in test_results_dataframe_copy.columns if col.startswith('Stream')]
 
@@ -39,13 +38,13 @@ def get_statistics_for_df(df):
     TEST_RESULT_COLUMNS = read_configuration().get('TEST_RESULT_COLUMNS')
     stream_columns = [col for col in df.columns if col.startswith('Stream_ID_') and col.endswith('_goodput')]
     columns_to_print = TEST_RESULT_COLUMNS + stream_columns
-    print(df.columns)
-    # filtered_df = df[columns_to_print]
-    # filtered_df.describe().to_csv(f'{TEST_RESULTS_DIR}/statistics.csv')
+    filtered_df = df[columns_to_print].copy()
+    filtered_df.describe().to_csv(f'{TEST_RESULTS_DIR}/statistics.csv')
 
 def do_statistics(df):
     update_program_progress_bar('Do Statistics')
-    # get_statistics_for_df(df)
+   
+    get_statistics_for_df(df)
     median_df = get_medians(df)
 
     return median_df

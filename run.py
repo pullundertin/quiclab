@@ -17,6 +17,7 @@ from modules.histogram import show_histogram
 import os
 import argparse
 import pandas as pd
+import numpy as np
 
 TEST_CONFIG_COLUMNS = read_configuration().get("TEST_CONFIG_COLUMNS")
 TEST_RESULT_COLUMNS = read_configuration().get("TEST_RESULT_COLUMNS")
@@ -36,19 +37,46 @@ def arguments():
 
     return args
 
-def evaluate_test_results(test_results_dataframe, median_dataframe, test):
-    update_program_progress_bar('Evaluate Test Results')
+def filter_outliers(df):
+    columns_to_check = TEST_RESULT_COLUMNS
 
+    filtered_df = df.copy()
+
+    for column_name in columns_to_check:
+        # Filter out rows where the column contains NaN values
+        filtered_df = df[pd.notnull(df[column_name])]   
+
+        Q1 = filtered_df[column_name].quantile(0.25)
+        Q3 = filtered_df[column_name].quantile(0.75)
+        IQR = Q3 - Q1
+
+        # Filter the DataFrame based on the modified non-NaN values and outlier thresholds
+        filtered_df = filtered_df[~((filtered_df[column_name] < (Q1 - 1.5 * IQR)) | (filtered_df[column_name] > (Q3 + 1.5 * IQR)))]
+
+    return filtered_df
+
+def check_if_folders_for_results_exist():
+    SHARED_DIRECTORIES = read_configuration().get("SHARED_DIRECTORIES")
+
+    for folder in SHARED_DIRECTORIES:
+        if not os.path.exists(folder):  
+            os.makedirs(folder)  
+
+def evaluate_test_results(test_results_dataframe, median_dataframe, test):
+    print(test_results_dataframe)
+    print(median_dataframe)
+    update_program_progress_bar('Evaluate Test Results')
+    # test_results_dataframe_without_outliers = filter_outliers(test_results_dataframe)
     control_parameter = test.control_parameter
     if control_parameter is None:
         control_parameter = 'generic_heatmap'
     iterations = test.iterations
-    show_histogram(test_results_dataframe, control_parameter)
-    show_goodput_graph(median_dataframe, control_parameter)
-    show_boxplot(test_results_dataframe, test)
-    show_heatmaps(median_dataframe, control_parameter)
+    # show_histogram(test_results_dataframe, control_parameter)
+    # show_goodput_graph(test_results_dataframe, control_parameter)
+    # show_boxplot(test_results_dataframe, test)
+    # show_heatmaps(median_dataframe, control_parameter)
     if iterations > 2:
-        t_test(test_results_dataframe, control_parameter)
+        # t_test(test_results_dataframe, control_parameter)
         do_anova(test_results_dataframe, control_parameter)
 
 
@@ -71,10 +99,9 @@ def store_results(test_results_dataframe, median_dataframe, test, args):
             rsync()
 
     update_program_progress_bar('Store Test Results')
-    if test_results_dataframe is not None and median_dataframe is not None:
-        write_dataframes_to_csv(test_results_dataframe, median_dataframe)
+    write_dataframes_to_csv(test_results_dataframe, median_dataframe)
     write_test_object_to_log(test)
-    sync_shared_folders_with_remote_host(args)
+    # sync_shared_folders_with_remote_host(args)
 
 
 def create_dataframe_from_object(test):
@@ -130,6 +157,7 @@ def main():
     log_config(args)
 
     test = get_test_object(args)
+    check_if_folders_for_results_exist()
 
     if args.full:
         logging.info(f"{os.getenv('HOST')}: full execution enabled")
@@ -141,16 +169,35 @@ def main():
         get_test_results(test)
         calculate_goodput(test)
         test_results_dataframe = create_dataframe_from_object(test)
-
+        median_dataframe = do_statistics(test_results_dataframe)  
+        print_all_results_to_cli(test_results_dataframe, median_dataframe, test, args)
+        print(test_results_dataframe.dtypes)
+        print(median_dataframe.dtypes)
+        store_results(test_results_dataframe, median_dataframe, test, args)
     else:
         logging.info("Executing evaluation only")
         test_results_dataframe = pd.read_csv('shared/test_results/test_results.csv')
-        
-    median_dataframe = do_statistics(test_results_dataframe)    
+        median_dataframe = pd.read_csv('shared/test_results/medians.csv')
+        # Remove leading and trailing spaces from column names
+        test_results_dataframe.columns = test_results_dataframe.columns.str.strip()
+        # Remove leading and trailing spaces from values
+        test_results_dataframe = test_results_dataframe.applymap(lambda x: x.strip() if isinstance(x, str) else x)
+        # Remove leading and trailing spaces from column names
+        median_dataframe.columns = median_dataframe.columns.str.strip()
+        # Remove leading and trailing spaces from values
+        median_dataframe = median_dataframe.applymap(lambda x: x.strip() if isinstance(x, str) else x)
+        # Replace empty strings with None (optional)
+        test_results_dataframe.replace('', np.nan, inplace=True)    
+        # Replace empty strings with None (optional)
+        median_dataframe.replace('', np.nan, inplace=True)    
+         # Replace spaces with underscores in column names
+        test_results_dataframe.rename(columns=lambda x: x.replace(' ', ''), inplace=True)
+        median_dataframe.rename(columns=lambda x: x.replace(' ', ''), inplace=True)
+        print(test_results_dataframe.dtypes)
+        print(median_dataframe.dtypes)
 
-    print_all_results_to_cli(test_results_dataframe, median_dataframe, test, args)
+
     evaluate_test_results(test_results_dataframe, median_dataframe, test)
-    store_results(test_results_dataframe, median_dataframe, test, args)
 
     logging.info("All tasks are completed.")
 

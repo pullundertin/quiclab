@@ -19,12 +19,11 @@ def show_histogram(df, control_parameter):
     for i, param in enumerate(parameters):
         for j, ctrl_param_value in enumerate(unique_control_parameter_values):
             grouped = df[(~df[param].isnull()) & (df[control_parameter] == ctrl_param_value)].groupby('mode')[param]
-
             for mode, group in grouped:
                 # Plot histogram
                 axs[i, j].hist(group, bins='auto', alpha=0.5, rwidth=0.55, label=mode, density=True)
                 # Plot KDE (PDA)
-                sns.kdeplot(group, ax=axs[i, j], label=f'{mode} KDE', linewidth=2)
+                # sns.kdeplot(group, ax=axs[i, j], label=f'{mode} KDE', linewidth=2)
 
             axs[i, j].set_title(f'Histogram for {param} - {control_parameter}: {ctrl_param_value}')
             axs[i, j].set_xlabel(param)
