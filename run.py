@@ -62,19 +62,34 @@ def check_if_folders_for_results_exist():
         if not os.path.exists(folder):  
             os.makedirs(folder)  
 
+def delete_old_test_results():
+    TEST_RESULTS_DIRECTORIES = read_configuration().get("TEST_RESULTS_DIRECTORIES")
+
+    for folder in TEST_RESULTS_DIRECTORIES:
+        if os.path.exists(folder):  
+            # List all files in the folder
+            files = os.listdir(folder)
+
+            # Iterate through the files and delete each one
+            for file_name in files:
+                file_path = os.path.join(folder, file_name)
+                os.remove(file_path) 
+
 def evaluate_test_results(test_results_dataframe, median_dataframe, test):
     print(test_results_dataframe)
     print(median_dataframe)
+    print(test_results_dataframe.dtypes)
+    print(median_dataframe.dtypes)
     update_program_progress_bar('Evaluate Test Results')
     # test_results_dataframe_without_outliers = filter_outliers(test_results_dataframe)
     control_parameter = test.control_parameter
     if control_parameter is None:
         control_parameter = 'generic_heatmap'
     iterations = test.iterations
-    # show_histogram(test_results_dataframe, control_parameter)
-    # show_goodput_graph(test_results_dataframe, control_parameter)
-    # show_boxplot(test_results_dataframe, test)
-    # show_heatmaps(median_dataframe, control_parameter)
+    show_histogram(test_results_dataframe, control_parameter)
+    show_goodput_graph(test_results_dataframe, control_parameter)
+    show_boxplot(test_results_dataframe, test)
+    show_heatmaps(median_dataframe, control_parameter)
     if iterations > 2:
         # t_test(test_results_dataframe, control_parameter)
         do_anova(test_results_dataframe, control_parameter)
@@ -147,6 +162,17 @@ def print_all_results_to_cli(test_results_dataframe, median_dataframe, test, arg
         divider = '\\' * 60 + ' MEDIAN ' + '\\' * 60
         print(divider)
         print(median_dataframe)
+
+def cleat_data_from_csv(df):    
+    # Remove leading and trailing spaces from column names
+    df.columns = df.columns.str.strip()
+    # Remove leading and trailing spaces from values
+    df = df.applymap(lambda x: x.strip() if isinstance(x, str) else x)
+    # Replace empty strings with None (optional)
+    df.replace('', np.nan, inplace=True)    
+        # Replace spaces with underscores in column names
+    df.rename(columns=lambda x: x.replace(' ', ''), inplace=True)
+    return df
         
 def main():
 
@@ -158,6 +184,7 @@ def main():
 
     test = get_test_object(args)
     check_if_folders_for_results_exist()
+    delete_old_test_results()
 
     if args.full:
         logging.info(f"{os.getenv('HOST')}: full execution enabled")
@@ -178,23 +205,28 @@ def main():
         logging.info("Executing evaluation only")
         test_results_dataframe = pd.read_csv('shared/test_results/test_results.csv')
         median_dataframe = pd.read_csv('shared/test_results/medians.csv')
-        # Remove leading and trailing spaces from column names
+        # test_results_dataframe = cleat_data_from_csv(test_results_dataframe)
+        # median_dataframe = cleat_data_from_csv(median_dataframe)
+            # Remove leading and trailing spaces from column names
         test_results_dataframe.columns = test_results_dataframe.columns.str.strip()
         # Remove leading and trailing spaces from values
         test_results_dataframe = test_results_dataframe.applymap(lambda x: x.strip() if isinstance(x, str) else x)
-        # Remove leading and trailing spaces from column names
+        # Replace empty strings with None (optional)
+        test_results_dataframe.replace('', np.nan, inplace=True)    
+            # Replace spaces with underscores in column names
+        test_results_dataframe.rename(columns=lambda x: x.replace(' ', ''), inplace=True)
+
+            # Remove leading and trailing spaces from column names
         median_dataframe.columns = median_dataframe.columns.str.strip()
         # Remove leading and trailing spaces from values
         median_dataframe = median_dataframe.applymap(lambda x: x.strip() if isinstance(x, str) else x)
         # Replace empty strings with None (optional)
-        test_results_dataframe.replace('', np.nan, inplace=True)    
-        # Replace empty strings with None (optional)
         median_dataframe.replace('', np.nan, inplace=True)    
-         # Replace spaces with underscores in column names
-        test_results_dataframe.rename(columns=lambda x: x.replace(' ', ''), inplace=True)
+            # Replace spaces with underscores in column names
         median_dataframe.rename(columns=lambda x: x.replace(' ', ''), inplace=True)
-        print(test_results_dataframe.dtypes)
-        print(median_dataframe.dtypes)
+
+
+
 
 
     evaluate_test_results(test_results_dataframe, median_dataframe, test)

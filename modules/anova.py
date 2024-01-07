@@ -22,7 +22,6 @@ def do_anova(test_results_dataframe, control_parameter):
                 col for col in anova_dataframe.columns if col.endswith(postfix)]
             if len(columns_with_postfix) > 1:
                 args = [anova_dataframe[col].dropna() for col in columns_with_postfix]  # Drop NaN values
-                print(args)
                 stat, p_value = levene(*args)
 
                 if p_value > ALPHA:
@@ -97,7 +96,6 @@ Independent Variable: {control_parameter} = {value}
         return combined_df
 
     def generate_dataframe_with_all_values_combined(results, df):
-        print(results)
         combined_data = {column: df[column].dropna().tolist()
                          for column in results}
         combined_df = pd.DataFrame(combined_data)
