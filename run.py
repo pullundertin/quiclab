@@ -76,10 +76,6 @@ def delete_old_test_results():
                 os.remove(file_path) 
 
 def evaluate_test_results(test_results_dataframe, median_dataframe, test):
-    print(test_results_dataframe)
-    print(median_dataframe)
-    print(test_results_dataframe.dtypes)
-    print(median_dataframe.dtypes)
     update_program_progress_bar('Evaluate Test Results')
     # test_results_dataframe_without_outliers = filter_outliers(test_results_dataframe)
     control_parameter = test.control_parameter
@@ -97,10 +93,9 @@ def evaluate_test_results(test_results_dataframe, median_dataframe, test):
 
 def store_results(test_results_dataframe, median_dataframe, test, args):
     TEST_RESULTS_DIR = read_configuration().get('TEST_RESULTS_DIR')
-    def write_dataframes_to_csv(test_results_dataframe, median_dataframe):
-        test_results_dataframe.to_csv(
-            f'{TEST_RESULTS_DIR}/test_results.csv', index=False)
-        median_dataframe.to_csv(f'{TEST_RESULTS_DIR}/medians.csv', index=False)
+    def write_dataframes_to_csv(df, filename):
+        df.to_parquet(
+            f'{TEST_RESULTS_DIR}/{filename}.parquet', index=False)
 
     def write_test_object_to_log(test):
         with open(f'{TEST_RESULTS_DIR}/test_object.log', 'w') as file:
@@ -114,7 +109,8 @@ def store_results(test_results_dataframe, median_dataframe, test, args):
             rsync()
 
     update_program_progress_bar('Store Test Results')
-    write_dataframes_to_csv(test_results_dataframe, median_dataframe)
+    write_dataframes_to_csv(test_results_dataframe, 'test_results')
+    write_dataframes_to_csv(median_dataframe, 'medians')
     write_test_object_to_log(test)
     # sync_shared_folders_with_remote_host(args)
 
@@ -163,16 +159,6 @@ def print_all_results_to_cli(test_results_dataframe, median_dataframe, test, arg
         print(divider)
         print(median_dataframe)
 
-def cleat_data_from_csv(df):    
-    # Remove leading and trailing spaces from column names
-    df.columns = df.columns.str.strip()
-    # Remove leading and trailing spaces from values
-    df = df.applymap(lambda x: x.strip() if isinstance(x, str) else x)
-    # Replace empty strings with None (optional)
-    df.replace('', np.nan, inplace=True)    
-        # Replace spaces with underscores in column names
-    df.rename(columns=lambda x: x.replace(' ', ''), inplace=True)
-    return df
         
 def main():
 
@@ -198,37 +184,12 @@ def main():
         test_results_dataframe = create_dataframe_from_object(test)
         median_dataframe = do_statistics(test_results_dataframe)  
         print_all_results_to_cli(test_results_dataframe, median_dataframe, test, args)
-        print(test_results_dataframe.dtypes)
-        print(median_dataframe.dtypes)
         store_results(test_results_dataframe, median_dataframe, test, args)
     else:
         logging.info("Executing evaluation only")
-        test_results_dataframe = pd.read_csv('shared/test_results/test_results.csv')
-        median_dataframe = pd.read_csv('shared/test_results/medians.csv')
-        # test_results_dataframe = cleat_data_from_csv(test_results_dataframe)
-        # median_dataframe = cleat_data_from_csv(median_dataframe)
-            # Remove leading and trailing spaces from column names
-        test_results_dataframe.columns = test_results_dataframe.columns.str.strip()
-        # Remove leading and trailing spaces from values
-        test_results_dataframe = test_results_dataframe.applymap(lambda x: x.strip() if isinstance(x, str) else x)
-        # Replace empty strings with None (optional)
-        test_results_dataframe.replace('', np.nan, inplace=True)    
-            # Replace spaces with underscores in column names
-        test_results_dataframe.rename(columns=lambda x: x.replace(' ', ''), inplace=True)
-
-            # Remove leading and trailing spaces from column names
-        median_dataframe.columns = median_dataframe.columns.str.strip()
-        # Remove leading and trailing spaces from values
-        median_dataframe = median_dataframe.applymap(lambda x: x.strip() if isinstance(x, str) else x)
-        # Replace empty strings with None (optional)
-        median_dataframe.replace('', np.nan, inplace=True)    
-            # Replace spaces with underscores in column names
-        median_dataframe.rename(columns=lambda x: x.replace(' ', ''), inplace=True)
-
-
-
-
-
+        test_results_dataframe = pd.read_parquet('shared/test_results/test_results.parquet')
+        median_dataframe = pd.read_parquet('shared/test_results/medians.parquet')
+        
     evaluate_test_results(test_results_dataframe, median_dataframe, test)
 
     logging.info("All tasks are completed.")

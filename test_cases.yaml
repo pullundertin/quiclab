@@ -1,9 +1,9 @@
 # applies to full execution mode only !!!
-iterations: 10
+iterations: 3
 
 cases:
   mode: [tcp, aioquic, quicgo]
-  size: [1M]
+  size: [0.01M, 0.1M]
   delay: 10ms
   delay_deviation: 0
   loss: 0
