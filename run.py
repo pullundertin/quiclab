@@ -83,13 +83,13 @@ def evaluate_test_results(test_results_dataframe, median_dataframe, test):
     if control_parameter is None:
         control_parameter = 'generic_heatmap'
     iterations = test.iterations
-    # show_histogram(test_results_dataframe, control_parameter)
-    # show_goodput_graph(test_results_dataframe, control_parameter)
+    show_histogram(test_results_dataframe, control_parameter)
+    show_goodput_graph(test_results_dataframe, control_parameter)
     show_boxplot(test_results_dataframe, test)
-    # show_heatmaps(median_dataframe, control_parameter)
-    # if iterations > 2:
-    #     # t_test(test_results_dataframe, control_parameter)
-    #     do_anova(test_results_dataframe, control_parameter)
+    show_heatmaps(median_dataframe, control_parameter)
+    if iterations > 2:
+        # t_test(test_results_dataframe, control_parameter)
+        do_anova(test_results_dataframe, control_parameter)
 
 
 def store_results(test_results_dataframe, median_dataframe, test, args):
@@ -196,9 +196,7 @@ def main():
         median_dataframe = pd.read_parquet('shared/test_results/medians.parquet')
         print_all_results_to_cli(test_results_dataframe, median_dataframe, None, args)
     
-    # evaluate_test_results(test_results_dataframe, median_dataframe, test)
-    get_test_results(test)
-    print(test)
+    evaluate_test_results(test_results_dataframe, median_dataframe, test)
     logging.info("All tasks are completed.")
 
 if __name__ == "__main__":
