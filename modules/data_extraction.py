@@ -233,52 +233,42 @@ def get_test_results(test):
             test_case = test.test_cases_decompressed.map_file_to_test_case(pcap_file)
             populate_test_case_with_test_results_from_json(pcap, test_case)
 
+
+
+
+
+
     def get_qlog_data():
         update_program_progress_bar('Get QLOG Data')
         qlog_files = traverse_qlog_directory()
 
-        def get_qlog_stream_data_from_aioquic(qlog_data, test_case):
-            streams = test_case.streams
-            bandwidth = test_case.rate * 1024 * 1024 / 8
+        def get_qlog_stream_data_from_aioquic(qlog_data):     
+            timestamps_by_stream_id = defaultdict(list)
             if isinstance(qlog_data, dict) and 'traces' in qlog_data:
-                    timestamps_by_stream_id = defaultdict(list)
-                    for packet in qlog_data['traces']:
-                        for qlog_event in packet.get('events', []):
-                            if "data" in qlog_event and 'frames' in qlog_event['data']:
-                                for frame in qlog_event['data']['frames']:
-                                    if 'fin' in frame and frame['fin'] == True:
-                                        stream_id = frame['stream_id']
-                                        timestamp = qlog_event['time']
-                                        timestamps_by_stream_id[stream_id].append(timestamp)
-
-                    for stream_id, timestamps in timestamps_by_stream_id.items():
-                        stream = Stream(stream_id)
-                        streams.add_stream(stream)
-                        request_time = float(timestamps[0])/1000 
-                        response_time = float(timestamps[1])/1000 
-                        connection_time = float(timestamps[1]-timestamps[0])/1000 
-                        # link_utilization = float(connection_time / bandwidth)
-                        stream.update_request_time(request_time)
-                        stream.update_response_time(response_time)
-                        stream.update_connection_time(connection_time)
-                        # stream.update_link_utilization(link_utilization)
-                    
-                
-
+                for packet in qlog_data['traces']:
+                    for qlog_event in packet.get('events', []):
+                        timestamps_by_stream_id = get_timestamps_in_qlog_event(qlog_event, timestamps_by_stream_id)
+            return timestamps_by_stream_id
         
-        def get_qlog_stream_data_from_quicgo(ndqlog_data, test_case):
-            streams = test_case.streams
-            bandwidth = test_case.rate * 1024 * 1024 / 8
+        def get_qlog_stream_data_from_quicgo(ndqlog_data):
             timestamps_by_stream_id = defaultdict(list)
             for line in ndqlog_data.strip().split('\n'):
                 qlog_event = json.loads(line)
-                if "data" in qlog_event and 'frames' in qlog_event['data']:
-                    for frame in qlog_event['data']['frames']:
-                        if 'fin' in frame and frame['fin'] == True:
-                            stream_id = frame['stream_id']
-                            timestamp = qlog_event['time']
-                            timestamps_by_stream_id[stream_id].append(timestamp)
+                timestamps_by_stream_id = get_timestamps_in_qlog_event(qlog_event, timestamps_by_stream_id)
+            return timestamps_by_stream_id
 
+        def get_timestamps_in_qlog_event(qlog_event, timestamps_by_stream_id):
+            if "data" in qlog_event and 'frames' in qlog_event['data']:
+                for frame in qlog_event['data']['frames']:
+                    if 'fin' in frame and frame['fin'] == True:
+                        stream_id = frame['stream_id']
+                        timestamp = qlog_event['time']
+                        timestamps_by_stream_id[stream_id].append(timestamp)
+            return timestamps_by_stream_id
+        
+        def populate_qlog_data(timestamps_by_stream_id, min_rtt_values, smoothed_rtt_values, test_case):
+            bandwidth = test_case.rate * 1024 * 1024 / 8
+            streams = test_case.streams
             for stream_id, timestamps in timestamps_by_stream_id.items():
                 stream = Stream(stream_id)
                 streams.add_stream(stream)
@@ -289,10 +279,13 @@ def get_test_results(test):
                 stream.update_request_time(request_time)
                 stream.update_response_time(response_time)
                 stream.update_connection_time(connection_time)
-                # stream.update_link_utilization(link_utilization)      
-                
-
-            
+                # stream.update_link_utilization(link_utilization)  
+            if test_case:
+                data = {
+                    'quic_min_rtt': min_rtt_values,
+                    'quic_smoothed_rtt': smoothed_rtt_values,
+                }
+                test_case.store_test_results_for(data)  
 
         def get_dataframe_index_of_qlog_file(qlog_file):
             test_case = test.test_cases_decompressed.map_qlog_file_to_test_case_by_dcid(
@@ -311,7 +304,6 @@ def get_test_results(test):
         def get_rtt_values_from_json_format_qlog(qlog_data):
             min_rtt_values = []
             smoothed_rtt_values = []            
-
             if isinstance(qlog_data, dict) and 'traces' in qlog_data:
                 for packet in qlog_data['traces']:
                     for qlog_event in packet.get('events', []):
@@ -322,17 +314,11 @@ def get_test_results(test):
         def get_rtt_values_from_ndjson_format_qlog(ndqlog_data):
             min_rtt_values = []
             smoothed_rtt_values = []
-
-            def split_data_into_lines_and_parse_each_line_as_json(ndqlog_data, min_rtt_values, smoothed_rtt_values):
-                for line in ndqlog_data.strip().split('\n'):
-                    qlog_event = json.loads(line)
-                    if "data" in qlog_event:
-                        if "min_rtt" in qlog_event["data"]:
-                            min_rtt_values, smoothed_rtt_values = collect_min_and_smoothed_rtt_data(qlog_event, min_rtt_values, smoothed_rtt_values)
-                return min_rtt_values, smoothed_rtt_values
-
-            min_rtt_values, smoothed_rtt_values = split_data_into_lines_and_parse_each_line_as_json(ndqlog_data, min_rtt_values, smoothed_rtt_values)
-
+            for line in ndqlog_data.strip().split('\n'):
+                qlog_event = json.loads(line)
+                if "data" in qlog_event:
+                    if "min_rtt" in qlog_event["data"]:
+                        min_rtt_values, smoothed_rtt_values = collect_min_and_smoothed_rtt_data(qlog_event, min_rtt_values, smoothed_rtt_values)
             return min_rtt_values, smoothed_rtt_values   
 
         for qlog_file in qlog_files:
@@ -342,18 +328,14 @@ def get_test_results(test):
                     test_case = get_dataframe_index_of_qlog_file(qlog_file)
                     qlog_data = json.loads(file_content)
                     min_rtt_values, smoothed_rtt_values = get_rtt_values_from_json_format_qlog(qlog_data)
-                    get_qlog_stream_data_from_aioquic(qlog_data, test_case)
+                    timestamps_by_stream_id = get_qlog_stream_data_from_aioquic(qlog_data)
                 except json.JSONDecodeError:
-                    file.seek(0)
                     ndqlog_data = file_content
                     min_rtt_values, smoothed_rtt_values = get_rtt_values_from_ndjson_format_qlog(ndqlog_data)
-                    get_qlog_stream_data_from_quicgo(ndqlog_data, test_case)
-            if test_case:
-                data = {
-                    'quic_min_rtt': min_rtt_values,
-                    'quic_smoothed_rtt': smoothed_rtt_values,
-                }
-                test_case.store_test_results_for(data)
+                    timestamps_by_stream_id = get_qlog_stream_data_from_quicgo(ndqlog_data)
+                finally:
+                    populate_qlog_data(timestamps_by_stream_id, min_rtt_values, smoothed_rtt_values, test_case)
+
 
 
     update_program_progress_bar('Get Test Results')
