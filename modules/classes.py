@@ -76,6 +76,7 @@ class TestCase:
         self.generic_heatmap = config['generic_heatmap']
         self.goodput = None
         self.link_utilization = None
+        self.jfi = None
         self.tcp_rtt = None
         self.tcp_hs = None
         self.tcp_conn = None
@@ -116,6 +117,7 @@ class TestCase:
         Test Results:
         Goodput: {self.goodput}
         Link Utilization: {self.link_utilization}
+        Jain's Fairness Index: {self.jfi}
 
         TCP RTT: {self.tcp_rtt}
         TCP Handshake Time: {self.tcp_hs}
@@ -159,6 +161,9 @@ class TestCase:
     def update_link_utilization(self, link_utilization):
         setattr(self, 'link_utilization', link_utilization)
 
+    def update_jfi(self, jfi):
+        setattr(self, 'jfi', jfi)
+
     def add_streams(self, streams):
         setattr(self, 'streams', streams)
 
@@ -195,7 +200,9 @@ class Stream:
 
     def update_response_time(self, response_time):
         setattr(self, 'response_time', response_time)
-        setattr(self, 'connection_time', self.response_time - self.request_time)
+
+    def update_connection_time(self, connection_time):
+        setattr(self, 'connection_time', connection_time)
 
     def update_goodput(self, goodput):
         setattr(self, 'goodput', goodput)
