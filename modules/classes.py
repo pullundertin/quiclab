@@ -75,6 +75,7 @@ class TestCase:
         self.migration = config['migration']
         self.generic_heatmap = config['generic_heatmap']
         self.goodput = None
+        self.link_utilization = None
         self.tcp_rtt = None
         self.tcp_hs = None
         self.tcp_conn = None
@@ -114,6 +115,7 @@ class TestCase:
 
         Test Results:
         Goodput: {self.goodput}
+        Link Utilization: {self.link_utilization}
 
         TCP RTT: {self.tcp_rtt}
         TCP Handshake Time: {self.tcp_hs}
@@ -154,6 +156,9 @@ class TestCase:
     def update_goodput(self, goodput):
         setattr(self, 'goodput', goodput)
 
+    def update_link_utilization(self, link_utilization):
+        setattr(self, 'link_utilization', link_utilization)
+
     def add_streams(self, streams):
         setattr(self, 'streams', streams)
 
@@ -183,6 +188,7 @@ class Stream:
         self.response_time = None
         self.connection_time = None
         self.goodput = None
+        self.link_utilization = None
 
     def update_request_time(self, request_time):
         setattr(self, 'request_time', request_time)
@@ -194,8 +200,11 @@ class Stream:
     def update_goodput(self, goodput):
         setattr(self, 'goodput', goodput)
 
+    def update_link_utilization(self, link_utilization):
+        setattr(self, 'link_utilization', link_utilization)
+
     def __str__(self):
-        return f"\t\tStream ID: {self.stream_id}, Request Time: {self.request_time}, Response Time: {self.response_time}, Connection Time: {self.connection_time}, Goodput: {self.goodput}"
+        return f"\t\tStream ID: {self.stream_id}, Request Time: {self.request_time}, Response Time: {self.response_time}, Connection Time: {self.connection_time}, Goodput: {self.goodput}, Link Utilization: {self.link_utilization}"
 
     def __eq__(self, other):
         if isinstance(other, Stream):

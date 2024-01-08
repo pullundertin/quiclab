@@ -55,11 +55,17 @@ def calculate_goodput(test):
             if connection_time is not None:
                 goodput = download_size/connection_time
                 stream.update_goodput(goodput)
+                bandwidth = test_case.rate * 1024 * 1024 / 8
+                link_utilization = goodput / bandwidth
+                stream.update_link_utilization(link_utilization)
 
     def calculate_and_update_goodput(test_case, download_size):
         connection_time = get_connection_time(test_case)
         goodput = download_size / connection_time
         test_case.update_goodput(goodput)
+        bandwidth = test_case.rate * 1024 * 1024 / 8
+        link_utilization = goodput / bandwidth
+        test_case.update_link_utilization(link_utilization)
 
     def get_total_size_of_multi_stream_download(test_case, download_sizes):
         if test_case in download_sizes:
