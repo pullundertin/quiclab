@@ -14,6 +14,7 @@ from modules.anova import do_anova
 from modules.goodput import calculate_goodput, show_goodput_graph
 from modules.progress_bar import update_program_progress_bar
 from modules.histogram import show_histogram
+from modules.jains_fairness_index import calculate_jains_fairness_index
 import os
 import argparse
 import pandas as pd
@@ -82,13 +83,13 @@ def evaluate_test_results(test_results_dataframe, median_dataframe, test):
     if control_parameter is None:
         control_parameter = 'generic_heatmap'
     iterations = test.iterations
-    show_histogram(test_results_dataframe, control_parameter)
-    show_goodput_graph(test_results_dataframe, control_parameter)
+    # show_histogram(test_results_dataframe, control_parameter)
+    # show_goodput_graph(test_results_dataframe, control_parameter)
     show_boxplot(test_results_dataframe, test)
-    show_heatmaps(median_dataframe, control_parameter)
-    if iterations > 2:
-        # t_test(test_results_dataframe, control_parameter)
-        do_anova(test_results_dataframe, control_parameter)
+    # show_heatmaps(median_dataframe, control_parameter)
+    # if iterations > 2:
+    #     # t_test(test_results_dataframe, control_parameter)
+    #     do_anova(test_results_dataframe, control_parameter)
 
 
 def store_results(test_results_dataframe, median_dataframe, test, args):
@@ -135,6 +136,8 @@ def create_dataframe_from_object(test):
                     stream_info[f'Stream_ID_{stream_id}_conn'] = connection_time  
                     goodput = stream.goodput
                     stream_info[f'Stream_ID_{stream_id}_goodput'] = goodput  
+                    link_utilization = stream.link_utilization
+                    stream_info[f'Stream_ID_{stream_id}_link_utilization'] = link_utilization  
 
                 df = pd.concat([df, pd.DataFrame([stream_info])], axis=1)
         
@@ -181,6 +184,8 @@ def main():
         process_tcp_probe_logs()
         get_test_results(test)
         calculate_goodput(test)
+        calculate_jains_fairness_index(test)
+
         test_results_dataframe = create_dataframe_from_object(test)
         median_dataframe = do_statistics(test_results_dataframe)  
         print_all_results_to_cli(test_results_dataframe, median_dataframe, test, args)
@@ -189,9 +194,11 @@ def main():
         logging.info("Executing evaluation only")
         test_results_dataframe = pd.read_parquet('shared/test_results/test_results.parquet')
         median_dataframe = pd.read_parquet('shared/test_results/medians.parquet')
-        
-    evaluate_test_results(test_results_dataframe, median_dataframe, test)
-
+        print_all_results_to_cli(test_results_dataframe, median_dataframe, None, args)
+    
+    # evaluate_test_results(test_results_dataframe, median_dataframe, test)
+    get_test_results(test)
+    print(test)
     logging.info("All tasks are completed.")
 
 if __name__ == "__main__":
