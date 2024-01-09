@@ -276,7 +276,7 @@ def get_test_results(test):
             return timestamps_by_stream_id
 
         def populate_qlog_data(timestamps_by_stream_id, min_rtt_values, smoothed_rtt_values, test_case):
-            bandwidth = test_case.rate * 1024 * 1024 / 8
+            # bandwidth = test_case.rate * 1024 * 1024 / 8
             streams = test_case.streams
             for stream_id, timestamps in timestamps_by_stream_id.items():
                 stream = Stream(stream_id)
