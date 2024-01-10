@@ -74,6 +74,7 @@ class TestCase:
         self.rdef = config['rdef']
         self.rmax = config['rmax']
         self.migration = config['migration']
+        self.zero_rtt = config['zero_rtt']
         self.generic_heatmap = config['generic_heatmap']
         self.goodput = None
         self.link_utilization = None
@@ -108,12 +109,13 @@ class TestCase:
         Loss: {self.loss} %
         Reorder: {self.reorder} %
         Rate: {self.rate} Mbits
+        0 RTT: {self.zero_rtt}
+        Connection Migration: {self.migration}
         Firewall: {self.firewall}
         Window Scaling: {self.window_scaling}
         Receive Window Min: {self.rmin}
         Receive Window Default: {self.rdef}
         Receive Window Max: {self.rmax}
-        Connection Migration: {self.migration}
         Generic: {self.generic_heatmap}
 
         Test Results:

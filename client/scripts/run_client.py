@@ -34,6 +34,8 @@ def arguments():
                         help='set number of parallel streams')
     parser.add_argument('--file_name_prefix', type=str,
                         help='prefix for pcap files')
+    parser.add_argument('--zero_rtt', choices=['True', 'False'],
+                        help='enable/disable 0 RTT in aioquic')
 
     args = parser.parse_args()
 
@@ -69,12 +71,14 @@ def aioquic(args):
     URL = "https://172.3.0.5:4433/data.log"
     max_data = 2000000
     request = (URL + ' ') * args.number_of_streams
-    command = f"python /aioquic/examples/http3_client.py -k {request} --secrets-log $KEYS_PATH --quic-log $QLOG_PATH_CLIENT" #--zero-rtt --session-ticket $TICKET_PATH"
-    # command = f"python /aioquic/examples/http3_client.py -k {URL} --max-data {max_data} --secrets-log $KEYS_PATH --quic-log $QLOG_PATH_CLIENT --zero-rtt --session-ticket $TICKET_PATH"
-    # command = f"python /aioquic/examples/http3_client.py -k {URL} {URL} --secrets-log $KEYS_PATH --quic-log $QLOG_PATH_CLIENT --zero-rtt --session-ticket $TICKET_PATH"
+    if args.zero_rtt == 'True':
+        command = f"python /aioquic/examples/http3_client.py -k {request} --secrets-log $KEYS_PATH --quic-log $QLOG_PATH_CLIENT --zero-rtt --session-ticket $TICKET_PATH"
+        run_command(command)
+    else:
+        command = f"python /aioquic/examples/http3_client.py -k {request} --secrets-log $KEYS_PATH --quic-log $QLOG_PATH_CLIENT"
+        run_command(command)
+
     logging.info(f"{os.getenv('HOST')}: sending aioquic request...")
-    # run_command(command)
-    run_command(command)
 
 
 def quicgo(args):
