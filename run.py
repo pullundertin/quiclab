@@ -14,6 +14,7 @@ from modules.progress_bar import update_program_progress_bar
 from modules.histogram import show_histogram
 from modules.qlog_data import get_qlog_data
 from modules.pcap_data import get_pcap_data
+from modules.system_info import get_system_info
 from modules.additional_metrics import calculate_additional_metrics
 
 import time
@@ -181,6 +182,7 @@ def main():
 
         reset_workdir()
         save_test_cases_config_to_log_file()
+        get_system_info()
         run_tests(test)
         process_tcp_probe_logs()
         get_pcap_data(test)
