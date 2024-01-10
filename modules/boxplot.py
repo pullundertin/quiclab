@@ -50,10 +50,10 @@ def create_boxplots_for_each_single_stream(df, test):
     # Get unique combinations of 'mode' and 'control_parameter' from the 'test' object
     modes = df['mode'].unique()
     control_parameter = test.control_parameter
-    control_parameters = df[control_parameter].unique()
-
     if not control_parameter:
         return
+    control_parameters = df[control_parameter].unique()
+
 
     # Set up the figure for subplots based on the number of modes and control parameters
     for control_param in control_parameters:
@@ -108,10 +108,11 @@ def create_link_utilization_boxplots_for_each_single_stream(df, test):
     # Get unique combinations of 'mode' and 'control_parameter' from the 'test' object
     modes = df['mode'].unique()
     control_parameter = test.control_parameter
-    control_parameters = df[control_parameter].unique()
-
     if not control_parameter:
         return
+    
+    control_parameters = df[control_parameter].unique()
+
 
     # Set up the figure for subplots based on the number of modes and control parameters
     for control_param in control_parameters:
@@ -219,13 +220,20 @@ def create_boxplots_for_each_value_of_independent_variable(df, test):
 
 def create_jfi_boxplots(df, test):
     control_parameter = test.control_parameter
-    for value in df[control_parameter].unique():
-            filtered_df = df[df[control_parameter] == value]
-            plt.figure(figsize=(10, 6))
-            sns.boxplot(x='mode', y='jfi', data=filtered_df)
-            plt.tight_layout()
-            plt.savefig(f"{BOXPLOTS_DIR}/jfi_boxplots_{value}.png",
-                        dpi=300, bbox_inches='tight')
+    if control_parameter:
+        for value in df[control_parameter].unique():
+                filtered_df = df[df[control_parameter] == value]
+                plt.figure(figsize=(10, 6))
+                sns.boxplot(x='mode', y='jfi', data=filtered_df)
+                plt.tight_layout()
+                plt.savefig(f"{BOXPLOTS_DIR}/jfi_boxplots_{value}.png",
+                            dpi=300, bbox_inches='tight')
+    else:
+        plt.figure(figsize=(10, 6))
+        sns.boxplot(x='mode', y='jfi', data=df)
+        plt.tight_layout()
+        plt.savefig(f"{BOXPLOTS_DIR}/jfi_boxplots.png",
+                    dpi=300, bbox_inches='tight')
 
 def show_boxplot(test_results_dataframe, test):
     create_boxplots_for_each_value_of_independent_variable(
