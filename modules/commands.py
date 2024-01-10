@@ -42,7 +42,7 @@ def run_client(test_case):
 
 
 def traffic_control(test_case):
-    command = f"python /scripts/traffic_control.py --delay {test_case.delay} --delay_deviation {test_case.delay_deviation} --loss {test_case.loss} --rate {test_case.rate} --firewall {test_case.firewall}"
+    command = f"python /scripts/traffic_control.py --delay {test_case.delay} --delay_deviation {test_case.delay_deviation} --loss {test_case.loss} --reorder {test_case.reorder} --rate {test_case.rate} --firewall {test_case.firewall}"
     router_1.exec_run(command)
     router_2.exec_run(command)
 

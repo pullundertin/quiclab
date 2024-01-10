@@ -99,9 +99,9 @@ def tcp(args):
         sum_of_requests = ''
         for index in range(args.number_of_streams):
             sum_of_requests += f"{URL} "
-        command = f"curl -k -Z {sum_of_requests} -s"
+        command = f"curl -k -Z -o /dev/null {sum_of_requests}"
     else:
-        command = f"curl -k {URL} -s"
+        command = f"curl -k -o /dev/null {URL}"
     logging.info(f"{os.getenv('HOST')}: sending tcp request...")
     run_command(command)
 

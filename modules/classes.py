@@ -66,6 +66,7 @@ class TestCase:
         self.delay = config['delay']
         self.delay_deviation = config['delay_deviation']
         self.loss = config['loss']
+        self.reorder = config['reorder']
         self.rate = config['rate']
         self.firewall = config['firewall']
         self.window_scaling = config['window_scaling']
@@ -105,6 +106,7 @@ class TestCase:
         Delay: {self.delay} ms
         Delay Deviation: {self.delay_deviation}
         Loss: {self.loss} %
+        Reorder: {self.reorder} %
         Rate: {self.rate} Mbits
         Firewall: {self.firewall}
         Window Scaling: {self.window_scaling}
