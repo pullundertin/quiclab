@@ -29,7 +29,6 @@ TEST_RESULTS_DIR = read_configuration().get('TEST_RESULTS_DIR')
 
 
 def arguments():
-    # Create an ArgumentParser object
     parser = argparse.ArgumentParser(description='QuicLab Test Environment')
 
     parser.add_argument('--full', action='store_true',
@@ -43,24 +42,6 @@ def arguments():
 
     return args
 
-def filter_outliers(df):
-    columns_to_check = TEST_RESULT_COLUMNS
-
-    filtered_df = df.copy()
-
-    for column_name in columns_to_check:
-        # Filter out rows where the column contains NaN values
-        filtered_df = df[pd.notnull(df[column_name])]   
-
-        Q1 = filtered_df[column_name].quantile(0.25)
-        Q3 = filtered_df[column_name].quantile(0.75)
-        IQR = Q3 - Q1
-
-        # Filter the DataFrame based on the modified non-NaN values and outlier thresholds
-        filtered_df = filtered_df[~((filtered_df[column_name] < (Q1 - 1.5 * IQR)) | (filtered_df[column_name] > (Q3 + 1.5 * IQR)))]
-
-    return filtered_df
-
 def check_if_folders_for_results_exist():
     SHARED_DIRECTORIES = read_configuration().get("SHARED_DIRECTORIES")
 
@@ -73,17 +54,13 @@ def delete_old_test_results():
 
     for folder in TEST_RESULTS_DIRECTORIES:
         if os.path.exists(folder):  
-            # List all files in the folder
             files = os.listdir(folder)
-
-            # Iterate through the files and delete each one
             for file_name in files:
                 file_path = os.path.join(folder, file_name)
                 os.remove(file_path) 
 
 def evaluate_test_results(test_results_dataframe, median_dataframe, test):
     update_program_progress_bar('Evaluate Test Results')
-    # test_results_dataframe_without_outliers = filter_outliers(test_results_dataframe)
     control_parameter = test.control_parameter
     if control_parameter is None:
         control_parameter = 'generic_heatmap'
