@@ -25,6 +25,8 @@ import numpy as np
 
 TEST_CONFIG_COLUMNS = read_configuration().get("TEST_CONFIG_COLUMNS")
 TEST_RESULT_COLUMNS = read_configuration().get("TEST_RESULT_COLUMNS")
+TEST_RESULTS_DIR = read_configuration().get('TEST_RESULTS_DIR') 
+
 
 def arguments():
     # Create an ArgumentParser object
@@ -94,28 +96,13 @@ def evaluate_test_results(test_results_dataframe, median_dataframe, test):
         do_anova(test_results_dataframe, control_parameter)
 
 
-def store_results(test_results_dataframe, median_dataframe, test, args):
-    TEST_RESULTS_DIR = read_configuration().get('TEST_RESULTS_DIR')
-    def write_dataframes_to_csv(df, filename):
-        df.to_parquet(
-            f'{TEST_RESULTS_DIR}/{filename}.parquet', index=False)
+def write_dataframes_to_csv(df, filename):
+    df.to_parquet(
+        f'{TEST_RESULTS_DIR}/{filename}.parquet', index=False)
 
-    def write_test_object_to_log(test):
-        with open(f'{TEST_RESULTS_DIR}/test_object.log', 'w') as file:
-            file.write(str(test))
-
-    def sync_shared_folders_with_remote_host(args):
-        if args.store:
-            rsync()
-            rsync_permanent(args.store)
-        else:
-            rsync()
-
-    update_program_progress_bar('Store Test Results')
-    write_dataframes_to_csv(test_results_dataframe, 'test_results')
-    write_dataframes_to_csv(median_dataframe, 'medians')
-    write_test_object_to_log(test)
-    # sync_shared_folders_with_remote_host(args)
+def write_test_object_to_log(test):
+    with open(f'{TEST_RESULTS_DIR}/test_object.log', 'w') as file:
+        file.write(str(test))
 
 
 def create_dataframe_from_object(test):
@@ -154,16 +141,6 @@ def create_dataframe_from_object(test):
 
     return main_df
 
-
-def print_all_results_to_cli(test_results_dataframe, median_dataframe, test, args):
-    columns_to_print = TEST_CONFIG_COLUMNS + TEST_RESULT_COLUMNS
-    if args.results:
-        print(test)
-        print(test_results_dataframe)
-        divider = '\\' * 60 + ' MEDIAN ' + '\\' * 60
-        print(divider)
-        print(median_dataframe)
-
         
 def main():
 
@@ -186,21 +163,23 @@ def main():
         run_tests(test)
         process_tcp_probe_logs()
         get_pcap_data(test)
+        write_test_object_to_log(test)
         get_qlog_data(test)
+        write_test_object_to_log(test)
         calculate_additional_metrics(test)
-
 
         test_results_dataframe = create_dataframe_from_object(test)
         median_dataframe = do_statistics(test_results_dataframe)  
-        print_all_results_to_cli(test_results_dataframe, median_dataframe, test, args)
-        store_results(test_results_dataframe, median_dataframe, test, args)
+        write_dataframes_to_csv(test_results_dataframe, 'test_results_dataframe')
+        write_dataframes_to_csv(median_dataframe, 'median_dataframe')
     else:
         logging.info("Executing evaluation only")
         test_results_dataframe = pd.read_parquet('shared/test_results/test_results.parquet')
         median_dataframe = pd.read_parquet('shared/test_results/medians.parquet')
-        print_all_results_to_cli(test_results_dataframe, median_dataframe, None, args)
     
     evaluate_test_results(test_results_dataframe, median_dataframe, test)
+    if args.store:
+        rsync_permanent(args.store)
     logging.info("All tasks are completed.")
 
 

@@ -4,6 +4,10 @@ from modules.prerequisites import read_configuration
 from modules.progress_bar import update_program_progress_bar
 from modules.classes import Stream
 from collections import defaultdict
+import logging
+
+class NoTestCaseFoundException(Exception):
+    pass
 
 QLOG_PATH_CLIENT = read_configuration().get("QLOG_PATH_CLIENT")
 
@@ -42,6 +46,7 @@ def get_qlog_data(test):
 
     def populate_qlog_data(timestamps_by_stream_id, min_rtt_values, smoothed_rtt_values, test_case):
         streams = test_case.streams
+
         for stream_id, timestamps in timestamps_by_stream_id.items():
             stream = Stream(stream_id)
             streams.add_stream(stream)
@@ -99,11 +104,16 @@ def get_qlog_data(test):
             try:
                 file_content = file.read()
                 test_case = get_dataframe_index_of_qlog_file(qlog_file)
+                if test_case is None:
+                    raise NoTestCaseFoundException(f"QLOG file {qlog_file} could not match any test case")
                 qlog_data = json.loads(file_content)
                 min_rtt_values, smoothed_rtt_values = get_rtt_values_from_json_format_qlog(
                     qlog_data)
                 timestamps_by_stream_id = get_qlog_stream_data_from_aioquic(
                     qlog_data)
+            except NoTestCaseFoundException as e:
+                logging.error(str(e)) 
+                continue  
             except json.JSONDecodeError:
                 ndqlog_data = file_content
                 min_rtt_values, smoothed_rtt_values = get_rtt_values_from_ndjson_format_qlog(
