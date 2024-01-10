@@ -69,7 +69,7 @@ def aioquic(args):
     URL = "https://172.3.0.5:4433/data.log"
     max_data = 2000000
     request = (URL + ' ') * args.number_of_streams
-    command = f"python /aioquic/examples/http3_client.py -k {request} --output-dir /shared/downloads --filename {args.file_name_prefix} --secrets-log $KEYS_PATH --quic-log $QLOG_PATH_CLIENT" #--zero-rtt --session-ticket $TICKET_PATH"
+    command = f"python /aioquic/examples/http3_client.py -k {request} --secrets-log $KEYS_PATH --quic-log $QLOG_PATH_CLIENT" #--zero-rtt --session-ticket $TICKET_PATH"
     # command = f"python /aioquic/examples/http3_client.py -k {URL} --max-data {max_data} --secrets-log $KEYS_PATH --quic-log $QLOG_PATH_CLIENT --zero-rtt --session-ticket $TICKET_PATH"
     # command = f"python /aioquic/examples/http3_client.py -k {URL} {URL} --secrets-log $KEYS_PATH --quic-log $QLOG_PATH_CLIENT --zero-rtt --session-ticket $TICKET_PATH"
     logging.info(f"{os.getenv('HOST')}: sending aioquic request...")
@@ -84,7 +84,7 @@ def quicgo(args):
     request = (URL + ' ') * args.number_of_streams
 
     # TODO KEYS_PATH funktioniert nur ohne vorangestelltem Punkt!
-    command = f"go run main.go --insecure --output-dir /shared/downloads --filename {args.file_name_prefix} --keylog /shared/keys/client.key --qlog {request}"
+    command = f"go run main.go --insecure --keylog /shared/keys/client.key --qlog {request}"
     # command = f"go run main.go --insecure --keylog $KEYS_PATH --qlog {URL} {URL}"
     logging.info(f"{os.getenv('HOST')}: sending quic-go request...")
     run_command(command)
@@ -93,16 +93,15 @@ def quicgo(args):
 def tcp(args):
     tcp_settings(args)
     URL = "https://172.3.0.5:443/data.log"
-    request = f"{URL} -o /shared/downloads/{args.file_name_prefix}"
     os.environ['SSLKEYLOGFILE'] = os.getenv('KEYS_PATH')
 
     if args.number_of_streams > 1:
         sum_of_requests = ''
         for index in range(args.number_of_streams):
-            sum_of_requests += f"{request}_{index} "
-        command = f"curl -k -Z {sum_of_requests}"
+            sum_of_requests += f"{URL} "
+        command = f"curl -k -Z {sum_of_requests} -s"
     else:
-        command = f"curl -k {request}"
+        command = f"curl -k {URL} -s"
     logging.info(f"{os.getenv('HOST')}: sending tcp request...")
     run_command(command)
 

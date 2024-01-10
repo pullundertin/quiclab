@@ -14,13 +14,11 @@ def reset_workdir():
     folders = [
         f'{WORKDIR}/anova',
         f'{WORKDIR}/boxplots',
-        f'{WORKDIR}/downloads',
         f'{WORKDIR}/heatmaps',
         f'{WORKDIR}/keys',
         f'{WORKDIR}/pcap',
         f'{WORKDIR}/qlog_client',
         f'{WORKDIR}/qlog_server',
-        f'{WORKDIR}/t_test',
         f'{WORKDIR}/tcpprobe',
         f'{WORKDIR}/test_results',
     ]

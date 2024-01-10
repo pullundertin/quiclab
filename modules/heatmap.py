@@ -2,7 +2,7 @@
 import seaborn as sns
 import matplotlib.pyplot as plt
 import numpy as np
-from modules.prerequisites import get_test_object, read_configuration, get_control_parameter
+from modules.prerequisites import read_configuration
 
 HEATMAPS_DIR = read_configuration().get("HEATMAPS_DIR")
 

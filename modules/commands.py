@@ -23,14 +23,14 @@ def run_command(command):
 
 
 def rsync():
-    command = f"rsync -ahP --delete --exclude=downloads {WORKDIR}/ '-e ssh -i {SSH_PUBLIC_KEY_PATH}' {REMOTE_HOST}:{REMOTE_DIR}"
+    command = f"rsync -ahP --delete {WORKDIR}/ '-e ssh -i {SSH_PUBLIC_KEY_PATH}' {REMOTE_HOST}:{REMOTE_DIR}"
     run_command(command)
 
 
 def rsync_permanent(permanent_storage_dir):
     current_datetime = datetime.now()
     formatted_datetime = current_datetime.strftime('%y%m%d_%H%M%S')
-    command = f"rsync -ahP --exclude=downloads {WORKDIR}/ '-e ssh -i {SSH_PUBLIC_KEY_PATH}' {REMOTE_HOST}:{permanent_storage_dir}/{formatted_datetime}/"
+    command = f"rsync -ahP {WORKDIR}/ '-e ssh -i {SSH_PUBLIC_KEY_PATH}' {REMOTE_HOST}:{permanent_storage_dir}/{formatted_datetime}/"
     print(
         f'\n\nResults have been stored to {permanent_storage_dir}{formatted_datetime}.')
     run_command(command)

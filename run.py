@@ -15,7 +15,6 @@ from modules.histogram import show_histogram
 from modules.qlog_data import get_qlog_data
 from modules.pcap_data import get_pcap_data
 from modules.additional_metrics import calculate_additional_metrics
-import time
 
 import time
 import os
@@ -91,7 +90,6 @@ def evaluate_test_results(test_results_dataframe, median_dataframe, test):
     show_boxplot(test_results_dataframe, test)
     show_heatmaps(median_dataframe, control_parameter)
     if iterations > 2:
-        # t_test(test_results_dataframe, control_parameter)
         do_anova(test_results_dataframe, control_parameter)
 
 
@@ -187,33 +185,23 @@ def main():
         process_tcp_probe_logs()
         get_pcap_data(test)
         get_qlog_data(test)
-        
+        calculate_additional_metrics(test)
+
 
         test_results_dataframe = create_dataframe_from_object(test)
         median_dataframe = do_statistics(test_results_dataframe)  
         print_all_results_to_cli(test_results_dataframe, median_dataframe, test, args)
         store_results(test_results_dataframe, median_dataframe, test, args)
     else:
-    #     logging.info("Executing evaluation only")
-    #     test_results_dataframe = pd.read_parquet('shared/test_results/test_results.parquet')
-    #     median_dataframe = pd.read_parquet('shared/test_results/medians.parquet')
-    #     print_all_results_to_cli(test_results_dataframe, median_dataframe, None, args)
+        logging.info("Executing evaluation only")
+        test_results_dataframe = pd.read_parquet('shared/test_results/test_results.parquet')
+        median_dataframe = pd.read_parquet('shared/test_results/medians.parquet')
+        print_all_results_to_cli(test_results_dataframe, median_dataframe, None, args)
     
-    # evaluate_test_results(test_results_dataframe, median_dataframe, test)
-    # logging.info("All tasks are completed.")
-        start = time.time()
-        get_pcap_data(test)
-        end = time.time()
-        print('pcap', end - start)
+    evaluate_test_results(test_results_dataframe, median_dataframe, test)
+    logging.info("All tasks are completed.")
 
-        start = time.time()
-        get_qlog_data(test)
-        end = time.time()
-        print('qlog', end - start)
 
-        # calculate_additional_metrics(test)
-
-        print(test)
 
 
 if __name__ == "__main__":
