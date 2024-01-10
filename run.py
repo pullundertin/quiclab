@@ -1,6 +1,5 @@
 
 import logging
-from modules.data_extraction import get_test_results
 from modules.commands import rsync, rsync_permanent
 from modules.logs import log_config
 from modules.prerequisites import reset_workdir, read_configuration, get_test_object, save_test_cases_config_to_log_file
@@ -9,12 +8,16 @@ from modules.boxplot import show_boxplot
 from modules.tests import run_tests
 from modules.converter import process_tcp_probe_logs
 from modules.statistics import do_statistics
-from modules.t_test import t_test
 from modules.anova import do_anova
-from modules.goodput import calculate_goodput, show_goodput_graph
+from modules.goodput import show_goodput_graph
 from modules.progress_bar import update_program_progress_bar
 from modules.histogram import show_histogram
-from modules.jains_fairness_index import calculate_jains_fairness_index
+from modules.qlog_data import get_qlog_data
+from modules.pcap_data import get_pcap_data
+from modules.additional_metrics import calculate_additional_metrics
+import time
+
+import time
 import os
 import argparse
 import pandas as pd
@@ -182,22 +185,36 @@ def main():
         save_test_cases_config_to_log_file()
         run_tests(test)
         process_tcp_probe_logs()
-        get_test_results(test)
-        calculate_goodput(test)
-        calculate_jains_fairness_index(test)
+        get_pcap_data(test)
+        get_qlog_data(test)
+        
 
         test_results_dataframe = create_dataframe_from_object(test)
         median_dataframe = do_statistics(test_results_dataframe)  
         print_all_results_to_cli(test_results_dataframe, median_dataframe, test, args)
         store_results(test_results_dataframe, median_dataframe, test, args)
     else:
-        logging.info("Executing evaluation only")
-        test_results_dataframe = pd.read_parquet('shared/test_results/test_results.parquet')
-        median_dataframe = pd.read_parquet('shared/test_results/medians.parquet')
-        print_all_results_to_cli(test_results_dataframe, median_dataframe, None, args)
+    #     logging.info("Executing evaluation only")
+    #     test_results_dataframe = pd.read_parquet('shared/test_results/test_results.parquet')
+    #     median_dataframe = pd.read_parquet('shared/test_results/medians.parquet')
+    #     print_all_results_to_cli(test_results_dataframe, median_dataframe, None, args)
     
-    evaluate_test_results(test_results_dataframe, median_dataframe, test)
-    logging.info("All tasks are completed.")
+    # evaluate_test_results(test_results_dataframe, median_dataframe, test)
+    # logging.info("All tasks are completed.")
+        start = time.time()
+        get_pcap_data(test)
+        end = time.time()
+        print('pcap', end - start)
+
+        start = time.time()
+        get_qlog_data(test)
+        end = time.time()
+        print('qlog', end - start)
+
+        # calculate_additional_metrics(test)
+
+        print(test)
+
 
 if __name__ == "__main__":
     main()

@@ -77,7 +77,7 @@ class TestCase:
         self.goodput = None
         self.link_utilization = None
         self.jfi = None
-        self.tcp_rtt = None
+        self.tcp_rtt = []
         self.tcp_hs = None
         self.tcp_conn = None
         self.quic_min_rtt = None
@@ -166,6 +166,16 @@ class TestCase:
 
     def add_streams(self, streams):
         setattr(self, 'streams', streams)
+
+    def update_property(self, property, value):
+        setattr(self, property, value)
+    
+    def update_min_rtt(self, min_rtt):
+        setattr(self, 'quic_min_rtt', min_rtt)
+
+    def update_smoothed_rtt(self, smoothed_rtt):
+        setattr(self, 'quic_smoothed_rtt', smoothed_rtt)
+
 
 
 class Streams:
