@@ -12,6 +12,7 @@ services:
       - ${SHARED_DIRECTORY}
       - ${LOG_DIRECTORY}
       - ${KEYS_DIRECTORY}
+      - ${TICKET_DIRECTORY}
       - ${PCAP_DIRECTORY}
       - ${QLOG_DIRECTORY_CLIENT}
       - ${TCPPROBE_DIRECTORY}
@@ -43,6 +44,7 @@ services:
       - ${SHARED_DIRECTORY}
       - ${LOG_DIRECTORY}
       - ${KEYS_DIRECTORY}
+      - ${TICKET_DIRECTORY}
       - ${PCAP_DIRECTORY}
       - ${QLOG_DIRECTORY_CLIENT}
       - ${TCPPROBE_DIRECTORY}

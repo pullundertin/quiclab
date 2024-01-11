@@ -66,6 +66,7 @@ class TestCase:
         self.delay = config['delay']
         self.delay_deviation = config['delay_deviation']
         self.loss = config['loss']
+        self.reorder = config['reorder']
         self.rate = config['rate']
         self.firewall = config['firewall']
         self.window_scaling = config['window_scaling']
@@ -73,11 +74,12 @@ class TestCase:
         self.rdef = config['rdef']
         self.rmax = config['rmax']
         self.migration = config['migration']
+        self.zero_rtt = config['zero_rtt']
         self.generic_heatmap = config['generic_heatmap']
         self.goodput = None
         self.link_utilization = None
         self.jfi = None
-        self.tcp_rtt = None
+        self.tcp_rtt = []
         self.tcp_hs = None
         self.tcp_conn = None
         self.quic_min_rtt = None
@@ -101,38 +103,40 @@ class TestCase:
         Size: {self.size}
         Number of Streams: {self.number_of_streams}
         Streams: {self.streams}
-        Real Size (Multistream): {self.real_size}
-        Delay: {self.delay}
+        Real Size (Multistream): {self.real_size} Bytes
+        Delay: {self.delay} ms
         Delay Deviation: {self.delay_deviation}
-        Loss: {self.loss}
-        Rate: {self.rate}
+        Loss: {self.loss} %
+        Reorder: {self.reorder} %
+        Rate: {self.rate} Mbits
+        0 RTT: {self.zero_rtt}
+        Connection Migration: {self.migration}
         Firewall: {self.firewall}
         Window Scaling: {self.window_scaling}
         Receive Window Min: {self.rmin}
         Receive Window Default: {self.rdef}
         Receive Window Max: {self.rmax}
-        Connection Migration: {self.migration}
         Generic: {self.generic_heatmap}
 
         Test Results:
-        Goodput: {self.goodput}
+        Goodput: {self.goodput} Bytes/s
         Link Utilization: {self.link_utilization}
         Jain's Fairness Index: {self.jfi}
 
         TCP RTT: {self.tcp_rtt}
-        TCP Handshake Time: {self.tcp_hs}
-        TCP Connection Time: {self.tcp_conn}
+        TCP Handshake Time: {self.tcp_hs} s
+        TCP Connection Time: {self.tcp_conn} s
 
         QUIC DCID: {self.dcid}
         QUIC DCID hex: {self.dcid_hex}
         QUIC Min RTT: {self.quic_min_rtt}
         QUIC Smoothed RTT: {self.quic_smoothed_rtt}
-        QUIC Handshake Time: {self.quic_hs}
-        QUIC Connection Time: {self.quic_conn}
-        # AIOQUIC Handshake Time: {self.aioquic_hs}
-        # QUIC-GO Handshake Time: {self.quicgo_hs}
-        # AIOQUIC Connection Time: {self.aioquic_conn}
-        # QUIC-GO Connection Time: {self.quicgo_conn}
+        QUIC Handshake Time: {self.quic_hs} s
+        QUIC Connection Time: {self.quic_conn} s
+        # AIOQUIC Handshake Time: {self.aioquic_hs} s
+        # QUIC-GO Handshake Time: {self.quicgo_hs} s
+        # AIOQUIC Connection Time: {self.aioquic_conn} s
+        # QUIC-GO Connection Time: {self.quicgo_conn} s
         """
 
     def convert_to_bytes(self, value):
@@ -166,6 +170,16 @@ class TestCase:
 
     def add_streams(self, streams):
         setattr(self, 'streams', streams)
+
+    def update_property(self, property, value):
+        setattr(self, property, value)
+    
+    def update_min_rtt(self, min_rtt):
+        setattr(self, 'quic_min_rtt', min_rtt)
+
+    def update_smoothed_rtt(self, smoothed_rtt):
+        setattr(self, 'quic_smoothed_rtt', smoothed_rtt)
+
 
 
 class Streams:
@@ -211,7 +225,7 @@ class Stream:
         setattr(self, 'link_utilization', link_utilization)
 
     def __str__(self):
-        return f"\t\tStream ID: {self.stream_id}, Request Time: {self.request_time}, Response Time: {self.response_time}, Connection Time: {self.connection_time}, Goodput: {self.goodput}, Link Utilization: {self.link_utilization}"
+        return f"\t\tStream ID: {self.stream_id}, Request Time: {self.request_time} s, Response Time: {self.response_time} s, Connection Time: {self.connection_time} s, Goodput: {self.goodput} Bytes/s, Link Utilization: {self.link_utilization}"
 
     def __eq__(self, other):
         if isinstance(other, Stream):

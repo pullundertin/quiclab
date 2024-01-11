@@ -23,26 +23,26 @@ def run_command(command):
 
 
 def rsync():
-    command = f"rsync -ahP --delete --exclude=downloads {WORKDIR}/ '-e ssh -i {SSH_PUBLIC_KEY_PATH}' {REMOTE_HOST}:{REMOTE_DIR}"
+    command = f"rsync -ahP --delete {WORKDIR}/ '-e ssh -i {SSH_PUBLIC_KEY_PATH}' {REMOTE_HOST}:{REMOTE_DIR}"
     run_command(command)
 
 
 def rsync_permanent(permanent_storage_dir):
     current_datetime = datetime.now()
     formatted_datetime = current_datetime.strftime('%y%m%d_%H%M%S')
-    command = f"rsync -ahP --exclude=downloads {WORKDIR}/ '-e ssh -i {SSH_PUBLIC_KEY_PATH}' {REMOTE_HOST}:{permanent_storage_dir}/{formatted_datetime}/"
+    command = f"rsync -ahP {WORKDIR}/ '-e ssh -i {SSH_PUBLIC_KEY_PATH}' {REMOTE_HOST}:{permanent_storage_dir}/{formatted_datetime}/"
     print(
         f'\n\nResults have been stored to {permanent_storage_dir}{formatted_datetime}.')
     run_command(command)
 
 
 def run_client(test_case):
-    command = f"python /scripts/run_client.py --mode {test_case.mode} --window_scaling {test_case.window_scaling} --rmin {test_case.rmin} --rdef {test_case.rdef} --rmax {test_case.rmax} --migration {test_case.migration} --file_name_prefix {test_case.file_name_prefix} --number_of_streams {test_case.number_of_streams}"
+    command = f"python /scripts/run_client.py --mode {test_case.mode} --window_scaling {test_case.window_scaling} --rmin {test_case.rmin} --rdef {test_case.rdef} --rmax {test_case.rmax} --migration {test_case.migration} --file_name_prefix {test_case.file_name_prefix} --number_of_streams {test_case.number_of_streams} --zero_rtt {test_case.zero_rtt}"
     client_1.exec_run(command)
 
 
 def traffic_control(test_case):
-    command = f"python /scripts/traffic_control.py --delay {test_case.delay} --delay_deviation {test_case.delay_deviation} --loss {test_case.loss} --rate {test_case.rate} --firewall {test_case.firewall}"
+    command = f"python /scripts/traffic_control.py --delay {test_case.delay} --delay_deviation {test_case.delay_deviation} --loss {test_case.loss} --reorder {test_case.reorder} --rate {test_case.rate} --firewall {test_case.firewall}"
     router_1.exec_run(command)
     router_2.exec_run(command)
 

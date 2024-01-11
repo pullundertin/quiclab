@@ -3,9 +3,42 @@ import logging
 import docker
 import yaml
 import shutil
+import argparse
+import pandas as pd
+
 from modules.classes import Test, TestCase, TestCases
 from modules.progress_bar import update_program_progress_bar
 
+def arguments():
+    parser = argparse.ArgumentParser(description='QuicLab Test Environment')
+
+    parser.add_argument('--full', action='store_true',
+                        help='run full execution')
+    parser.add_argument('--store', type=str,
+                        help='directory for permanent storage')
+    parser.add_argument('--results', action='store_true',
+                        help='print resulting dataframe')
+
+    args = parser.parse_args()
+
+    return args
+
+def check_if_folders_for_results_exist():
+    SHARED_DIRECTORIES = read_configuration().get("SHARED_DIRECTORIES")
+
+    for folder in SHARED_DIRECTORIES:
+        if not os.path.exists(folder):  
+            os.makedirs(folder)  
+
+def delete_old_test_results():
+    TEST_RESULTS_DIRECTORIES = read_configuration().get("TEST_RESULTS_DIRECTORIES")
+
+    for folder in TEST_RESULTS_DIRECTORIES:
+        if os.path.exists(folder):  
+            files = os.listdir(folder)
+            for file_name in files:
+                file_path = os.path.join(folder, file_name)
+                os.remove(file_path) 
 
 def reset_workdir():
     update_program_progress_bar('Reset')
@@ -14,13 +47,11 @@ def reset_workdir():
     folders = [
         f'{WORKDIR}/anova',
         f'{WORKDIR}/boxplots',
-        f'{WORKDIR}/downloads',
         f'{WORKDIR}/heatmaps',
         f'{WORKDIR}/keys',
         f'{WORKDIR}/pcap',
         f'{WORKDIR}/qlog_client',
         f'{WORKDIR}/qlog_server',
-        f'{WORKDIR}/t_test',
         f'{WORKDIR}/tcpprobe',
         f'{WORKDIR}/test_results',
     ]
@@ -155,3 +186,50 @@ def get_docker_container():
     router_2 = host.containers.get("router_2")
     server = host.containers.get("server")
     return client_1, router_1, router_2, server
+
+def write_dataframes_to_csv(df, filename):
+    TEST_RESULTS_DIR = read_configuration().get('TEST_RESULTS_DIR') 
+    df.to_parquet(
+        f'{TEST_RESULTS_DIR}/{filename}.parquet', index=False)
+
+def write_test_object_to_log(test):
+    TEST_RESULTS_DIR = read_configuration().get('TEST_RESULTS_DIR') 
+    with open(f'{TEST_RESULTS_DIR}/test_object.log', 'w') as file:
+        file.write(str(test))
+
+
+def create_dataframe_from_object(test):
+    update_program_progress_bar('Create Dataframe')
+
+    list_of_df = []
+
+    def convert_each_test_case_object_into_a_dataframe():
+        df = pd.DataFrame()
+        for test_case in test.test_cases_decompressed.test_cases:
+            df = pd.DataFrame([vars(test_case)])
+            streams = df['streams'].iloc[0] if 'streams' in df.columns else None
+            
+            if streams:
+                stream_data = streams.streams
+                stream_info = {}
+                for stream in stream_data:
+                    stream_id = stream.stream_id
+                    connection_time = stream.connection_time
+                    stream_info[f'Stream_ID_{stream_id}_conn'] = connection_time  
+                    goodput = stream.goodput
+                    stream_info[f'Stream_ID_{stream_id}_goodput'] = goodput  
+                    link_utilization = stream.link_utilization
+                    stream_info[f'Stream_ID_{stream_id}_link_utilization'] = link_utilization  
+
+                df = pd.concat([df, pd.DataFrame([stream_info])], axis=1)
+        
+            list_of_df.append(df)
+
+    def add_each_dataframe_as_new_row_to_a_main_dataframe():
+        return pd.concat(list_of_df, axis=0)
+
+    convert_each_test_case_object_into_a_dataframe()
+    main_df = add_each_dataframe_as_new_row_to_a_main_dataframe()
+    main_df = main_df.drop(columns=['streams'])
+
+    return main_df

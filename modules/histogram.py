@@ -23,7 +23,7 @@ def show_histogram(df, control_parameter):
                 # Plot histogram
                 axs[i].hist(group, bins='auto', alpha=0.5, rwidth=0.55, label=mode, density=True)
                 # Plot KDE (PDA)
-                sns.kdeplot(group, ax=axs[i], label=f'{mode} KDE', linewidth=2)
+                sns.kdeplot(group, ax=axs[i], label=f'{mode} KDE', linewidth=2, warn_singular=False)
 
             axs[i].set_title(f'Histogram for {param} - {control_parameter}: {unique_control_parameter_values[0]}')
             axs[i].set_xlabel(param)

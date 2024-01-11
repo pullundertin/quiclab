@@ -34,6 +34,8 @@ def arguments():
                         help='set number of parallel streams')
     parser.add_argument('--file_name_prefix', type=str,
                         help='prefix for pcap files')
+    parser.add_argument('--zero_rtt', choices=['True', 'False'],
+                        help='enable/disable 0 RTT in aioquic')
 
     args = parser.parse_args()
 
@@ -69,12 +71,14 @@ def aioquic(args):
     URL = "https://172.3.0.5:4433/data.log"
     max_data = 2000000
     request = (URL + ' ') * args.number_of_streams
-    command = f"python /aioquic/examples/http3_client.py -k {request} --output-dir /shared/downloads --filename {args.file_name_prefix} --secrets-log $KEYS_PATH --quic-log $QLOG_PATH_CLIENT" #--zero-rtt --session-ticket $TICKET_PATH"
-    # command = f"python /aioquic/examples/http3_client.py -k {URL} --max-data {max_data} --secrets-log $KEYS_PATH --quic-log $QLOG_PATH_CLIENT --zero-rtt --session-ticket $TICKET_PATH"
-    # command = f"python /aioquic/examples/http3_client.py -k {URL} {URL} --secrets-log $KEYS_PATH --quic-log $QLOG_PATH_CLIENT --zero-rtt --session-ticket $TICKET_PATH"
+    if args.zero_rtt == 'True':
+        command = f"python /aioquic/examples/http3_client.py -k {request} --secrets-log $KEYS_PATH --quic-log $QLOG_PATH_CLIENT --zero-rtt --session-ticket $TICKET_PATH"
+        run_command(command)
+    else:
+        command = f"python /aioquic/examples/http3_client.py -k {request} --secrets-log $KEYS_PATH --quic-log $QLOG_PATH_CLIENT"
+        run_command(command)
+
     logging.info(f"{os.getenv('HOST')}: sending aioquic request...")
-    # run_command(command)
-    run_command(command)
 
 
 def quicgo(args):
@@ -84,7 +88,7 @@ def quicgo(args):
     request = (URL + ' ') * args.number_of_streams
 
     # TODO KEYS_PATH funktioniert nur ohne vorangestelltem Punkt!
-    command = f"go run main.go --insecure --output-dir /shared/downloads --filename {args.file_name_prefix} --keylog /shared/keys/client.key --qlog {request}"
+    command = f"go run main.go --insecure --keylog /shared/keys/client.key --qlog {request}"
     # command = f"go run main.go --insecure --keylog $KEYS_PATH --qlog {URL} {URL}"
     logging.info(f"{os.getenv('HOST')}: sending quic-go request...")
     run_command(command)
@@ -93,16 +97,15 @@ def quicgo(args):
 def tcp(args):
     tcp_settings(args)
     URL = "https://172.3.0.5:443/data.log"
-    request = f"{URL} -o /shared/downloads/{args.file_name_prefix}"
     os.environ['SSLKEYLOGFILE'] = os.getenv('KEYS_PATH')
 
     if args.number_of_streams > 1:
         sum_of_requests = ''
         for index in range(args.number_of_streams):
-            sum_of_requests += f"{request}_{index} "
+            sum_of_requests += f"{URL} -o /dev/null "
         command = f"curl -k -Z {sum_of_requests}"
     else:
-        command = f"curl -k {request}"
+        command = f"curl -k -o /dev/null {URL}"
     logging.info(f"{os.getenv('HOST')}: sending tcp request...")
     run_command(command)
 

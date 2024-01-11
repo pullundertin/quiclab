@@ -21,6 +21,8 @@ def arguments():
                         help='network latency deviation in ms')
     parser.add_argument('-l', '--loss', type=str,
                         help='network loss in %')
+    parser.add_argument('-o', '--reorder', type=str,
+                        help='reordering in %')
     parser.add_argument('-r', '--rate', type=str,
                         help='network rate in Mbit')
     parser.add_argument('-f', '--firewall', type=str,
@@ -60,8 +62,8 @@ def reset_netem_and_tbf_settings():
     run_command(command)
 
 
-def netem_settings(delay, delay_deviation, loss):
-    command = f"tc qdisc add dev {interface} root handle 1: netem delay {delay} {delay_deviation} loss {loss}"
+def netem_settings(delay, delay_deviation, loss, reorder):
+    command = f"tc qdisc add dev {interface} root handle 1: netem delay {delay} {delay_deviation} loss {loss} reorder {reorder}"
     run_command(command)
 
 
@@ -105,6 +107,7 @@ def log_settings():
 
     # Regular expressions for extracting values
     limit_pattern = r'limit (\d+)'
+    reorder_pattern = r'reorder (\d+)'
     delay_pattern = r'delay (\d+\w+)\s+(\d+\w+)?'
     loss_pattern = r'loss (\d+\.\d+|\d+)%'
     rate_pattern = r'rate (\d+\w+)'
@@ -112,6 +115,7 @@ def log_settings():
 
     # Extract values using regular expressions
     limit_match = re.search(limit_pattern, tc_settings)
+    reorder_match = re.search(reorder_pattern, tc_settings)
     delay_match = re.search(delay_pattern, tc_settings)
     loss_match = re.search(loss_pattern, tc_settings)
     rate_match = re.search(rate_pattern, tc_settings)
@@ -119,6 +123,7 @@ def log_settings():
 
     # Check if matches were found and extract values
     log_limit = limit_match.group(1) if limit_match else None
+    log_reorder = reorder_match.group(1) if reorder_match else None
     log_delay = delay_match.group(1) if delay_match else None
     log_delay_deviation = delay_match.group(2) if delay_match else None
     log_loss = loss_match.group(1) if loss_match else None
@@ -127,6 +132,7 @@ def log_settings():
 
     # Log extracted values
     logging.info(f"{os.getenv('HOST')}: Limit: {log_limit}")
+    logging.info(f"{os.getenv('HOST')}: Reorder: {log_reorder}")
     logging.info(f"{os.getenv('HOST')}: Delay: {log_delay}")
     logging.info(
         f"{os.getenv('HOST')}: Delay Deviation: {log_delay_deviation}")
@@ -139,7 +145,7 @@ if __name__ == "__main__":
     interface = get_interface()
     args = arguments()
     reset_netem_and_tbf_settings()
-    netem_settings(args.delay, args.delay_deviation, args.loss)
+    netem_settings(args.delay, args.delay_deviation, args.loss, args.reorder)
     tbf_settings(args.rate)
     firewall_settings(args.firewall)
     log_settings()
