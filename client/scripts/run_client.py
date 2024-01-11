@@ -88,7 +88,7 @@ def quicgo(args):
     request = (URL + ' ') * args.number_of_streams
 
     # TODO KEYS_PATH funktioniert nur ohne vorangestelltem Punkt!
-    command = f"go run main.go --insecure --keylog /shared/keys/client.key --qlog {request}"
+    command = f"go run main.go --insecure -q --keylog /shared/keys/client.key --qlog {request}"
     # command = f"go run main.go --insecure --keylog $KEYS_PATH --qlog {URL} {URL}"
     logging.info(f"{os.getenv('HOST')}: sending quic-go request...")
     run_command(command)
