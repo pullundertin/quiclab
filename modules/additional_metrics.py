@@ -7,6 +7,8 @@ def handle_exceptions(func):
             return func(*args, **kwargs)
         except ZeroDivisionError as e:
             logging.error(f"An error occurred: {e}")
+        except TypeError as e:
+            logging.error(f"An error occurred: {e}")
     return wrapper
 
 @handle_exceptions
