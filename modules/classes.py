@@ -104,7 +104,7 @@ class TestCase:
         Number of Streams: {self.number_of_streams}
         Streams: {self.streams}
         Real Size (Multistream): {self.real_size} Bytes
-        Delay: {self.delay} ms
+        Delay: {self.delay}
         Delay Deviation: {self.delay_deviation}
         Loss: {self.loss} %
         Reorder: {self.reorder} %
