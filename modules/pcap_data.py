@@ -107,30 +107,6 @@ def get_tcp_single_stream_connection_time(packet, test_case):
                 stream.update_connection_time(connection_time)
 
 
-def get_quic_handshake_time(packet, test_case):
-    if hasattr(packet, 'quic') and hasattr(packet.quic, 'tls_handshake_type'):
-        if packet.quic.tls_handshake_type == '20':
-            quic_handshake_duration = float(packet.frame_info.time_relative)
-            quic_handshake_duration = round(quic_handshake_duration, 4)
-            test_case.update_property('quic_hs', quic_handshake_duration)
-            if test_case.mode == 'aioquic':
-                test_case.update_property(
-                    'aioquic_hs', quic_handshake_duration)
-            elif test_case.mode == 'quicgo':
-                test_case.update_property('quicgo_hs', quic_handshake_duration)
-
-
-def get_quic_connection_time(packet, test_case):
-    if hasattr(packet.quic, 'frame_type') and packet.quic.frame_type == '29':
-        quic_connection_duration = float(packet.frame_info.time_relative)
-        quic_connection_duration = round(quic_connection_duration, 4)
-        test_case.update_property('quic_conn', quic_connection_duration)
-        if test_case.mode == 'aioquic':
-            test_case.update_property('aioquic_conn', quic_connection_duration)
-        elif test_case.mode == 'quicgo':
-            test_case.update_property('quicgo_conn', quic_connection_duration)
-
-
 @handle_exceptions
 def get_quic_dcid(packet, test_case):
     if packet.ip.src == CLIENT_1_IP and packet.quic.packet_number == '0':
@@ -153,8 +129,6 @@ def extract_data_from_pcap(packet_generator, test_case):
             get_tcp_single_stream_connection_time(packet, test_case)
         if 'QUIC' in packet:
             get_quic_dcid(packet, test_case)
-            get_quic_handshake_time(packet, test_case)
-            get_quic_connection_time(packet, test_case)
 
 
 def get_pcap_data(test):

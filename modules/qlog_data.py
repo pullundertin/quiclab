@@ -6,13 +6,17 @@ from modules.classes import Stream
 from collections import defaultdict
 import logging
 
+
 class NoTestCaseFoundException(Exception):
     pass
 
+
 QLOG_PATH_CLIENT = read_configuration().get("QLOG_PATH_CLIENT")
+
 
 def traverse_qlog_directory():
     return [os.path.join(QLOG_PATH_CLIENT, filename) for filename in os.listdir(QLOG_PATH_CLIENT) if filename.endswith('.qlog')]
+
 
 def get_qlog_data(test):
     update_program_progress_bar('Get QLOG Data')
@@ -44,7 +48,7 @@ def get_qlog_data(test):
                     timestamps_by_stream_id[stream_id].append(timestamp)
         return timestamps_by_stream_id
 
-    def populate_qlog_data(timestamps_by_stream_id, min_rtt_values, smoothed_rtt_values, test_case):
+    def populate_qlog_data(timestamps_by_stream_id, min_rtt_values, smoothed_rtt_values, total_handshake_time, total_connection_time, test_case):
         streams = test_case.streams
 
         for stream_id, timestamps in timestamps_by_stream_id.items():
@@ -61,7 +65,15 @@ def get_qlog_data(test):
             stream.update_connection_time(connection_time)
             test_case.update_min_rtt(min_rtt_values)
             test_case.update_smoothed_rtt(smoothed_rtt_values)
-
+            test_case.update_property('quic_hs', total_handshake_time)
+            test_case.update_property('quic_conn', total_connection_time)
+            if test_case.mode == 'aioquic':
+                test_case.update_property('aioquic_hs', total_handshake_time)
+                test_case.update_property(
+                    'aioquic_conn', total_connection_time)
+            elif test_case.mode == 'quicgo':
+                test_case.update_property('quicgo_hs', total_handshake_time)
+                test_case.update_property('quicgo_conn', total_connection_time)
 
     def get_dataframe_index_of_qlog_file(qlog_file):
         test_case = test.test_cases_decompressed.map_qlog_file_to_test_case_by_dcid(
@@ -93,11 +105,60 @@ def get_qlog_data(test):
         smoothed_rtt_values = []
         for line in ndqlog_data.strip().split('\n'):
             qlog_event = json.loads(line)
-            if "data" in qlog_event:
-                if "min_rtt" in qlog_event["data"]:
-                    min_rtt_values, smoothed_rtt_values = collect_min_and_smoothed_rtt_data(
-                        qlog_event, min_rtt_values, smoothed_rtt_values)
+            if "data" in qlog_event and "min_rtt" in qlog_event["data"]:
+                min_rtt_values, smoothed_rtt_values = collect_min_and_smoothed_rtt_data(
+                    qlog_event, min_rtt_values, smoothed_rtt_values)
         return min_rtt_values, smoothed_rtt_values
+
+    def get_quic_handshake_time_from_aioquic(qlog_data, first_packet_timestamp):
+        if isinstance(qlog_data, dict) and 'traces' in qlog_data:
+            for packet in qlog_data['traces']:
+                for qlog_event in packet.get('events', []):
+                    if 'key_type' in qlog_event["data"] and qlog_event["data"]["key_type"] == 'client_1rtt_secret':
+                        quic_handshake_duration = float(
+                            (qlog_event["time"] - first_packet_timestamp)/1000)
+                        return quic_handshake_duration
+
+    def get_quic_connection_time_from_aioquic(qlog_data, first_packet_timestamp):
+        if isinstance(qlog_data, dict) and 'traces' in qlog_data:
+            for packet in qlog_data['traces']:
+                for qlog_event in packet.get('events', []):
+                    if "data" in qlog_event and 'frames' in qlog_event['data']:
+                        for frame in qlog_event['data']['frames']:
+                            if 'frame_type' in frame and frame["frame_type"] == 'connection_close':
+                                quic_connection_duration = float(
+                                    (qlog_event["time"] - first_packet_timestamp)/1000)
+                                quic_connection_duration = round(
+                                    quic_connection_duration, 4)
+                                return quic_connection_duration
+
+    def get_quic_handshake_time_from_quicgo(ndqlog_data):
+        for line in ndqlog_data.strip().split('\n'):
+            qlog_event = json.loads(line)
+            if "data" in qlog_event:
+                if 'key_type' in qlog_event["data"] and qlog_event["data"]["key_type"] == 'client_1rtt_secret':
+                    quic_handshake_duration = float(
+                        qlog_event["time"]/1000)
+                    quic_handshake_duration = round(quic_handshake_duration, 4)
+                    return quic_handshake_duration
+
+    def get_quic_connection_time_from_quicgo(ndqlog_data):
+        for line in ndqlog_data.strip().split('\n'):
+            qlog_event = json.loads(line)
+            if "data" in qlog_event and 'frames' in qlog_event['data']:
+                for frame in qlog_event['data']['frames']:
+                    if 'frame_type' in frame and frame["frame_type"] == 'connection_close':
+                        quic_connection_duration = float(
+                            qlog_event["time"]/1000)
+                        quic_connection_duration = round(
+                            quic_connection_duration, 4)
+                        return quic_connection_duration
+
+    def get_first_timestamp_for_timestamp_conversion(qlog_data):
+        if isinstance(qlog_data, dict) and 'traces' in qlog_data:
+            for packet in qlog_data['traces']:
+                timestamp = packet['events'][0]["time"]
+                return timestamp
 
     for qlog_file in qlog_files:
         with open(qlog_file, 'r') as file:
@@ -105,21 +166,32 @@ def get_qlog_data(test):
                 file_content = file.read()
                 test_case = get_dataframe_index_of_qlog_file(qlog_file)
                 if test_case is None:
-                    raise NoTestCaseFoundException(f"QLOG file {qlog_file} could not match any test case")
+                    raise NoTestCaseFoundException(
+                        f"QLOG file {qlog_file} could not match any test case")
                 qlog_data = json.loads(file_content)
+                first_packet_timestamp = get_first_timestamp_for_timestamp_conversion(
+                    qlog_data)
+                handshake_time = get_quic_handshake_time_from_aioquic(
+                    qlog_data, first_packet_timestamp)
+                connection_time = get_quic_connection_time_from_aioquic(
+                    qlog_data, first_packet_timestamp)
                 min_rtt_values, smoothed_rtt_values = get_rtt_values_from_json_format_qlog(
                     qlog_data)
                 timestamps_by_stream_id = get_qlog_stream_data_from_aioquic(
                     qlog_data)
             except NoTestCaseFoundException as e:
-                logging.error(str(e)) 
-                continue  
+                logging.error(str(e))
+                continue
             except json.JSONDecodeError:
                 ndqlog_data = file_content
+                handshake_time = get_quic_handshake_time_from_quicgo(
+                    ndqlog_data)
+                connection_time = get_quic_connection_time_from_quicgo(
+                    ndqlog_data)
                 min_rtt_values, smoothed_rtt_values = get_rtt_values_from_ndjson_format_qlog(
                     ndqlog_data)
                 timestamps_by_stream_id = get_qlog_stream_data_from_quicgo(
                     ndqlog_data)
             finally:
                 populate_qlog_data(
-                    timestamps_by_stream_id, min_rtt_values, smoothed_rtt_values, test_case)
+                    timestamps_by_stream_id, min_rtt_values, smoothed_rtt_values, handshake_time, connection_time, test_case)
