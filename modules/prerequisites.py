@@ -192,9 +192,9 @@ def write_dataframes_to_csv(df, filename):
     df.to_parquet(
         f'{TEST_RESULTS_DIR}/{filename}.parquet', index=False)
 
-def write_test_object_to_log(test):
+def write_test_object_to_log(test, filename):
     TEST_RESULTS_DIR = read_configuration().get('TEST_RESULTS_DIR') 
-    with open(f'{TEST_RESULTS_DIR}/test_object.log', 'w') as file:
+    with open(f'{TEST_RESULTS_DIR}/{filename}.log', 'w') as file:
         file.write(str(test))
 
 

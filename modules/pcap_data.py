@@ -4,6 +4,19 @@ import pyshark
 from modules.prerequisites import read_configuration
 from modules.progress_bar import update_program_progress_bar
 from modules.classes import Stream
+import logging
+
+def handle_exceptions(func):
+    def wrapper(*args, **kwargs):
+        try:
+            return func(*args, **kwargs)
+        except AttributeError as e:
+            logging.error(f"An error occurred in {func.__name__} with arguments {str(args)} and keyword arguments {kwargs}: {e}")
+        except TypeError as e:
+            logging.error(f"An error occurred: {e}")
+    return wrapper
+
+
 
 PCAP_PATH = read_configuration().get("PCAP_PATH")
 KEYS_PATH = read_configuration().get("KEYS_PATH")
@@ -21,7 +34,7 @@ def traverse_pcap_directory():
             yield os.path.join(PCAP_PATH, filename)
 
 def capture_packets(pcap_file):
-    with pyshark.FileCapture(pcap_file, override_prefs={'tcp.analyze_sequence_numbers': 'TRUE', 'transum.reassembly': 'TRUE', 'tls.keylog_file': 'shared/keys/client.key', 'tcp.reassemble_out_of_order': 'TRUE', 'tcp.desegment_tcp_streams': 'TRUE',  'tls.desegment_ssl_application_data': 'TRUE', 'tls.desegment_ssl_records': 'TRUE'}) as pcap:
+    with pyshark.FileCapture(pcap_file, display_filter="tcp.flags.fin == 1 || tls.handshake.type == 20 || http2.headers.method == GET || http2.flags.end_stream == 1 || tls.handshake.type == 1 || tls.handshake.type == 20 || quic.frame_type == 29", override_prefs={'tcp.analyze_sequence_numbers': 'TRUE', 'transum.reassembly': 'TRUE', 'tls.keylog_file': 'shared/keys/client.key', 'tcp.reassemble_out_of_order': 'TRUE', 'tcp.desegment_tcp_streams': 'TRUE',  'tls.desegment_ssl_application_data': 'TRUE', 'tls.desegment_ssl_records': 'TRUE'}) as pcap:
         for packet in pcap:
             yield packet
 
@@ -79,8 +92,8 @@ def get_tcp_single_stream_connection_time(packet, test_case):
                 request_time = round(request_time, 4)
                 stream.update_request_time(request_time)
 
-            if hasattr(field, 'body_reassembled_data'):
-                stream_id = packet.http2.streamid
+            elif hasattr(field, 'flags_end_stream') and field.flags_end_stream == '1':
+                stream_id = field.streamid
                 stream = streams.find_stream_by_id(stream_id)
                 response_time = float(packet.frame_info.time_relative)
                 response_time = round(response_time, 4)
@@ -111,7 +124,7 @@ def get_quic_connection_time(packet, test_case):
             test_case.update_property('quicgo_conn', quic_connection_duration)
 
 
-
+@handle_exceptions
 def get_quic_dcid(packet, test_case):
     if packet.ip.src == CLIENT_1_IP and packet.quic.packet_number == '0':
         quic_dcid_string = packet.quic.dcid

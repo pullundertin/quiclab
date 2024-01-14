@@ -1,22 +1,22 @@
 # applies to full execution mode only !!!
-iterations: 4
+iterations: 10
 
 cases:
-  mode: [aioquic, tcp]
+  mode: [aioquic, quicgo, tcp]
   size: 0.1M
   delay: 10ms
   delay_deviation: 0
   loss: 0
-  reorder: 0
+  reorder: [0, 10, 20]
   rate: 10
   migration: false
-  zero_rtt: true
+  zero_rtt: false
   firewall: None
   window_scaling: 1
   rmin: 4096
   rdef: 131072
   rmax: 62901456
-  number_of_streams: 1
+  number_of_streams: 10
   generic_heatmap: ''
 
   

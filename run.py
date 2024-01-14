@@ -54,15 +54,15 @@ def main():
     if args.full:
         logging.info(f"{os.getenv('HOST')}: full execution enabled")
 
-        reset_workdir()
-        save_test_cases_config_to_log_file()
-        get_system_info()
-        run_tests(test)
-        process_tcp_probe_logs()
+        # reset_workdir()
+        # save_test_cases_config_to_log_file()
+        # get_system_info()
+        # run_tests(test)
+        # process_tcp_probe_logs()
         get_pcap_data(test)
-        write_test_object_to_log(test)
+        write_test_object_to_log(test, 'pcap')
         get_qlog_data(test)
-        write_test_object_to_log(test)
+        write_test_object_to_log(test, 'qlog')
         calculate_additional_metrics(test)
 
         test_results_dataframe = create_dataframe_from_object(test)
@@ -71,8 +71,8 @@ def main():
         write_dataframes_to_csv(median_dataframe, 'median_dataframe')
     else:
         logging.info("Executing evaluation only")
-        test_results_dataframe = pd.read_parquet('shared/test_results/test_results.parquet')
-        median_dataframe = pd.read_parquet('shared/test_results/medians.parquet')
+        test_results_dataframe = pd.read_parquet('shared/test_results/test_results_dataframe.parquet')
+        median_dataframe = pd.read_parquet('shared/test_results/median_dataframe.parquet')
     
     evaluate_test_results(test_results_dataframe, median_dataframe, test)
     if args.store:
