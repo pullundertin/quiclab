@@ -21,9 +21,6 @@ import os
 import pandas as pd
 
 
-
-
-
 def evaluate_test_results(test_results_dataframe, median_dataframe, test):
     update_program_progress_bar('Evaluate Test Results')
     control_parameter = test.control_parameter
@@ -38,7 +35,6 @@ def evaluate_test_results(test_results_dataframe, median_dataframe, test):
         do_anova(test_results_dataframe, control_parameter)
 
 
-        
 def main():
 
     test_results_dataframe = None
@@ -54,11 +50,11 @@ def main():
     if args.full:
         logging.info(f"{os.getenv('HOST')}: full execution enabled")
 
-        # reset_workdir()
-        # save_test_cases_config_to_log_file()
-        # get_system_info()
-        # run_tests(test)
-        # process_tcp_probe_logs()
+        reset_workdir()
+        save_test_cases_config_to_log_file()
+        get_system_info()
+        run_tests(test)
+        process_tcp_probe_logs()
         get_pcap_data(test)
         write_test_object_to_log(test, 'pcap')
         get_qlog_data(test)
@@ -66,20 +62,21 @@ def main():
         calculate_additional_metrics(test)
 
         test_results_dataframe = create_dataframe_from_object(test)
-        median_dataframe = do_statistics(test_results_dataframe)  
-        write_dataframes_to_csv(test_results_dataframe, 'test_results_dataframe')
+        median_dataframe = do_statistics(test_results_dataframe)
+        write_dataframes_to_csv(test_results_dataframe,
+                                'test_results_dataframe')
         write_dataframes_to_csv(median_dataframe, 'median_dataframe')
     else:
         logging.info("Executing evaluation only")
-        test_results_dataframe = pd.read_parquet('shared/test_results/test_results_dataframe.parquet')
-        median_dataframe = pd.read_parquet('shared/test_results/median_dataframe.parquet')
-    
+        test_results_dataframe = pd.read_parquet(
+            'shared/test_results/test_results_dataframe.parquet')
+        median_dataframe = pd.read_parquet(
+            'shared/test_results/median_dataframe.parquet')
+
     evaluate_test_results(test_results_dataframe, median_dataframe, test)
     if args.store:
         rsync_permanent(args.store)
     logging.info("All tasks are completed.")
-
-
 
 
 if __name__ == "__main__":
