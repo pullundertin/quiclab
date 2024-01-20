@@ -39,6 +39,74 @@ def get_medians(test_results_dataframe):
     return median_df
 
 
+def sort_statistics(df):
+    metrics_order = ['goodput', 'aioquic_hs', 'aioquic_conn',
+                     'quicgo_hs', 'quicgo_conn', 'tcp_hs', 'tcp_conn']
+
+    statistics_order = ['mean', 'mean_tcp_ratio',
+                        'std', 'min', '25%', '50%', '75%', 'max']
+
+    sorted_list_of_columns = []
+
+    for metric in metrics_order:
+        # Filter columns by both metrics_order and statistics_order
+        columns_filtered_by_metric_and_stat = [
+            col for col in df.columns if col.startswith(metric) and any(sub in col for sub in statistics_order)
+        ]
+
+        # Sort columns based on the order of metrics_order and within each group by statistics_order
+        sorted_columns = sorted(columns_filtered_by_metric_and_stat, key=lambda col: (
+            metrics_order.index(metric), [statistics_order.index(sub) for sub in statistics_order if col.endswith(sub)])
+        )
+
+        # Append only columns ending with the specified strings from statistics_order
+        sorted_list_of_columns.extend(
+            col for col in sorted_columns if col.endswith(tuple(statistics_order)))
+
+    sorted_df = df[sorted_list_of_columns]
+
+    return sorted_df
+
+
+def merge_columns_with_the_same_stat(df):
+    modes = ['aioquic_', 'quicgo_', 'tcp_']
+
+    # Get column names starting with elements from the list
+    filtered_columns = [col for col in df.columns if any(
+        col.startswith(mode) for mode in modes)]
+
+    # Initialize an empty dictionary to store results
+    result_dict = {}
+
+    # Iterate through each mode
+    for mode in modes:
+        # Get column names starting with the current mode
+        filtered_columns = [col for col in df.columns if col.startswith(mode)]
+
+        # Extract the part of the column names that comes after the mode
+        result_dict[mode] = [col[len(mode):] for col in filtered_columns]
+
+    # Flatten the lists in result_dict.values() and convert to a set to get unique values
+    unique_values = set(val for sublist in result_dict.values()
+                        for val in sublist)
+    columns_to_drop = []
+    for value in unique_values:
+        columns_to_combine = []
+        for key in result_dict.keys():
+            columns_to_combine.append(f'{key}{value}')
+        df[f'{value}'] = df[columns_to_combine].replace(
+            'None', '').sum(1)
+        columns_to_drop.append(columns_to_combine)
+
+    # Flatten the list of lists
+    columns_to_drop_flat = [
+        col for sublist in columns_to_drop for col in sublist]
+
+    # Drop the specified columns
+    df = df.drop(columns=columns_to_drop_flat)
+    return df
+
+
 def get_statistics(df, control_parameter):
 
     TEST_RESULTS_DIR = read_configuration().get('TEST_RESULTS_DIR')
@@ -56,22 +124,16 @@ def get_statistics(df, control_parameter):
     grouped_statistics.columns = [
         '_'.join(col).strip() for col in grouped_statistics.columns.values]
 
+    grouped_statistics = sort_statistics(grouped_statistics).round(4)
+
+    merged_df = merge_columns_with_the_same_stat(grouped_statistics)
     # Calculate relationships for each column
-    for col in grouped_statistics.columns:
+    for col in merged_df.columns:
         # Create a new column for each column with the ratio between each value of index control_parameter
         # with different values for index 'mode'
-        if not grouped_statistics[col].isnull().any():
-            grouped_statistics[f'{col}_tcp_ratio'] = (grouped_statistics[col] /
-                                                      grouped_statistics.loc['tcp', col] * 100) - 100 if grouped_statistics.loc['tcp', col].all() != 0 else np.nan
-
-    # Sort the columns
-    grouped_statistics = grouped_statistics.sort_index(axis=1).round(2)
-
-    # Drop empty columns
-    grouped_statistics_cleaned = grouped_statistics.dropna(axis=1, how='all')
-
-    # Display the resulting DataFrame with calculated relationships
-    grouped_statistics_cleaned.to_csv(f'{TEST_RESULTS_DIR}/statistics.csv')
+        merged_df[f'{col}_tcp_ratio'] = (merged_df[col] /
+                                         merged_df.loc['tcp', col] * 100) - 100
+    merged_df.to_csv(f'{TEST_RESULTS_DIR}/statistics.csv')
 
 
 def do_statistics(df, test):
