@@ -68,6 +68,25 @@ def sort_statistics(df):
     return sorted_df
 
 
+def sort_merged_df(df):
+    # Get the columns ending with '_tcp_ratio'
+    tcp_ratio_columns = [
+        col for col in df.columns if col.endswith('_tcp_ratio')]
+
+    # Create a list of tuples where each tuple contains the column without '_tcp_ratio' and its corresponding column with '_tcp_ratio'
+    sorted_columns = [(col.replace('_tcp_ratio', ''), col)
+                      for col in tcp_ratio_columns]
+
+    # Flatten the list of tuples
+    sorted_columns_flat = [col for pair in sorted_columns for col in pair]
+
+    # Select the sorted columns and other remaining columns
+    sorted_df = df[sorted_columns_flat +
+                   [col for col in df.columns if col not in sorted_columns_flat]]
+
+    return sorted_df
+
+
 def merge_columns_with_the_same_stat(df):
     modes = ['aioquic_', 'quicgo_', 'tcp_']
 
@@ -133,7 +152,8 @@ def get_statistics(df, control_parameter):
         # with different values for index 'mode'
         merged_df[f'{col}_tcp_ratio'] = (merged_df[col] /
                                          merged_df.loc['tcp', col] * 100) - 100
-    merged_df.to_csv(f'{TEST_RESULTS_DIR}/statistics.csv')
+    sorted_merged_df = sort_merged_df(merged_df)
+    sorted_merged_df.to_csv(f'{TEST_RESULTS_DIR}/statistics.csv')
 
 
 def do_statistics(df, test):
