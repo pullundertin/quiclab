@@ -4,24 +4,5 @@
         "editor.hover.enabled": false
     },
     "python.formatting.provider": "none",
-    "workbench.colorCustomizations": {
-        "activityBar.activeBackground": "#4d3b3b",
-        "activityBar.background": "#4d3b3b",
-        "activityBar.foreground": "#e7e7e7",
-        "activityBar.inactiveForeground": "#e7e7e799",
-        "activityBarBadge.background": "#000000",
-        "activityBarBadge.foreground": "#e7e7e7",
-        "commandCenter.border": "#e7e7e799",
-        "sash.hoverBorder": "#4d3b3b",
-        "statusBar.background": "#302525",
-        "statusBar.foreground": "#e7e7e7",
-        "statusBarItem.hoverBackground": "#4d3b3b",
-        "statusBarItem.remoteBackground": "#302525",
-        "statusBarItem.remoteForeground": "#e7e7e7",
-        "titleBar.activeBackground": "#302525",
-        "titleBar.activeForeground": "#e7e7e7",
-        "titleBar.inactiveBackground": "#30252599",
-        "titleBar.inactiveForeground": "#e7e7e799"
-    },
     "peacock.remoteColor": "#302525"
 }
