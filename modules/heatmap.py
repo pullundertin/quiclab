@@ -29,7 +29,6 @@ def save_heatmap(z_value, name, control_parameter):
     plt.title(f'QUIC vs TCP {name}')
     plt.xlabel('Implementations')
     plt.ylabel(control_parameter)
-    plt.show()
 
     plt.savefig(f"{HEATMAPS_DIR}/{name}.png", dpi=300, bbox_inches='tight')
 
