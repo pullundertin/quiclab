@@ -113,8 +113,8 @@ def sort_statistics(df):
     metrics_order = ['goodput', 'hs', 'conn',
                      'link_utilization', 'jfi']
 
-    statistics_order = ['mean', 'mean_tcp_ratio',
-                        'std', 'min', '25%', '50%', '75%', 'max']
+    statistics_order = ['mean',
+                        'std', 'min', '25%',  '50%', '50%_tcp_ratio', '75%', 'max']
 
     sorted_list_of_columns = []
 
@@ -146,13 +146,14 @@ def get_statistics(df, control_parameter):
     sorted_df = sort_statistics(relationships_df)
     results_df = sorted_df.round(4)
     results_df.to_csv(f'{TEST_RESULTS_DIR}/statistics.csv')
+    return results_df
 
 
 def do_statistics(df, test):
     control_parameter = test.control_parameter
     update_program_progress_bar('Do Statistics')
     tmp_df = df.copy()
-    get_statistics(tmp_df, control_parameter)
-    median_df = get_medians(df)
+    median_df = get_statistics(tmp_df, control_parameter)
+    # median_df = get_medians(df)
 
     return median_df
