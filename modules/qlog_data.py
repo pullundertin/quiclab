@@ -56,9 +56,9 @@ def get_qlog_data(test):
             streams.add_stream(stream)
             request_time = float(timestamps[0])/1000
             request_time = round(request_time, 4)
-            response_time = float(timestamps[1])/1000
+            response_time = float(timestamps[-1])/1000
             response_time = round(response_time, 4)
-            connection_time = float(timestamps[1]-timestamps[0])/1000
+            connection_time = float(timestamps[-1]-timestamps[0])/1000
             connection_time = round(connection_time, 4)
             stream.update_request_time(request_time)
             stream.update_response_time(response_time)
