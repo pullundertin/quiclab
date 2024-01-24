@@ -163,7 +163,6 @@ def create_link_utilization_boxplots_for_each_single_stream(df, test):
                 axs[i].set_xticks(range(len(non_nan_columns)))
                 axs[i].set_xticklabels(x_labels, rotation=90)
                 axs[i].legend().set_visible(False)
-                axs[i].set_ylim(0, 1)
 
             plt.tight_layout()
             plt.savefig(
