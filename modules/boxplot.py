@@ -163,7 +163,7 @@ def create_link_utilization_boxplots_for_each_single_stream(df, test):
                 axs[i].set_xticks(range(len(non_nan_columns)))
                 axs[i].set_xticklabels(x_labels, rotation=90)
                 axs[i].legend().set_visible(False)
-                axs[i].set_ylim(y_axis_min, y_axis_max)
+                axs[i].set_ylim(0, 1)
 
             plt.tight_layout()
             plt.savefig(
@@ -262,7 +262,7 @@ def create_jfi_boxplots(df, test):
 def show_boxplot(test_results_dataframe, test):
     create_boxplots_for_each_value_of_independent_variable(
         test_results_dataframe, test)
-    create_jfi_boxplots(test_results_dataframe, test)
+    # create_jfi_boxplots(test_results_dataframe, test)
     create_link_utilization_boxplots_for_each_single_stream(
         test_results_dataframe, test)
     create_boxplots_for_each_single_stream(test_results_dataframe, test)

@@ -18,6 +18,10 @@ def arguments():
                         help='directory for permanent storage')
     parser.add_argument('--results', action='store_true',
                         help='print resulting dataframe')
+    parser.add_argument('--extract', action='store_true',
+                        help='does not run new tests')
+    parser.add_argument('--no_viz', action='store_true',
+                        help='suppresses visualization')
 
     args = parser.parse_args()
 
