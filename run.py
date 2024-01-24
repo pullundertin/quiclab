@@ -34,9 +34,9 @@ def visualize_data(test_results_dataframe, median_dataframe, test):
         control_parameter = 'generic_heatmap'
     iterations = test.iterations
     # show_histogram(test_results_dataframe, control_parameter)
-    # show_goodput_graph(median_dataframe, control_parameter)
+    show_goodput_graph(median_dataframe, control_parameter)
     show_boxplot(test_results_dataframe, test)
-    # show_heatmaps(median_dataframe, control_parameter)
+    show_heatmaps(median_dataframe, control_parameter)
 
 def merge_columns_with_the_same_metric(df):
     result_dict = {'hs': ['aioquic_hs', 'quicgo_hs', 'tcp_hs'], 'conn': [
@@ -98,15 +98,13 @@ def main():
     if args.full:
         logging.info(f"{os.getenv('HOST')}: full execution enabled")
         generate_new_data(test)
-        extract_data(test)
-        test_results_dataframe, median_dataframe = read_data()
-        evaluate_data(test_results_dataframe, test)
     elif args.extract:
         logging.info("Executing without running tests")
         extract_data(test)
+    else:
+        logging.info("Reading data from files")
         test_results_dataframe, median_dataframe = read_data()
-        evaluate_data(test_results_dataframe, test)
-        # median_dataframe = do_statistics(test_results_dataframe, test)
+    evaluate_data(test_results_dataframe, test)
     if not args.no_viz:
         visualize_data(test_results_dataframe, median_dataframe, test)
     if args.store:
