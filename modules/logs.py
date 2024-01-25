@@ -6,7 +6,7 @@ LOG_PATH = read_configuration().get("LOG_PATH")
 
 
 def log_config(args):
-    if args.full:
+    if args.test:
         # clear logs
         if os.path.exists(LOG_PATH):
             os.remove(LOG_PATH)
