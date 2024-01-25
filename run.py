@@ -19,7 +19,7 @@ def main():
     check_if_folders_for_results_exist()
     delete_old_test_results()
 
-    if args.full:
+    if args.test:
         logging.info(f"{os.getenv('HOST')}: full execution enabled")
         generate_new_data(test)
     elif args.extract:

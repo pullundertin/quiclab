@@ -12,8 +12,8 @@ from modules.progress_bar import update_program_progress_bar
 def arguments():
     parser = argparse.ArgumentParser(description='QuicLab Test Environment')
 
-    parser.add_argument('--full', action='store_true',
-                        help='run full execution')
+    parser.add_argument('--test', action='store_true',
+                        help='run tests')
     parser.add_argument('--store', type=str,
                         help='directory for permanent storage')
     parser.add_argument('--results', action='store_true',
