@@ -261,7 +261,7 @@ def create_jfi_boxplots(df, test):
 def show_boxplot(test_results_dataframe, test):
     create_boxplots_for_each_value_of_independent_variable(
         test_results_dataframe, test)
-    # create_jfi_boxplots(test_results_dataframe, test)
+    create_jfi_boxplots(test_results_dataframe, test)
     create_link_utilization_boxplots_for_each_single_stream(
         test_results_dataframe, test)
     create_boxplots_for_each_single_stream(test_results_dataframe, test)

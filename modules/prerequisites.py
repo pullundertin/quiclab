@@ -9,6 +9,7 @@ import pandas as pd
 from modules.classes import Test, TestCase, TestCases
 from modules.progress_bar import update_program_progress_bar
 
+
 def arguments():
     parser = argparse.ArgumentParser(description='QuicLab Test Environment')
 
@@ -19,68 +20,48 @@ def arguments():
     parser.add_argument('--results', action='store_true',
                         help='print resulting dataframe')
     parser.add_argument('--extract', action='store_true',
-                        help='does not run new tests')
-    parser.add_argument('--no_viz', action='store_true',
-                        help='suppresses visualization')
+                        help='extract data from data sources')
+    parser.add_argument('--evaluate', action='store_true',
+                        help='evaluate test results')
+    parser.add_argument('--viz', action='store_true',
+                        help='generate visualization')
 
     args = parser.parse_args()
 
     return args
 
+
 def check_if_folders_for_results_exist():
     SHARED_DIRECTORIES = read_configuration().get("SHARED_DIRECTORIES")
 
     for folder in SHARED_DIRECTORIES:
-        if not os.path.exists(folder):  
-            os.makedirs(folder)  
+        if not os.path.exists(folder):
+            os.makedirs(folder)
+
 
 def delete_old_test_results():
     TEST_RESULTS_DIRECTORIES = read_configuration().get("TEST_RESULTS_DIRECTORIES")
 
     for folder in TEST_RESULTS_DIRECTORIES:
-        if os.path.exists(folder):  
+        if os.path.exists(folder):
             files = os.listdir(folder)
             for file_name in files:
                 file_path = os.path.join(folder, file_name)
-                os.remove(file_path) 
+                os.remove(file_path)
+
 
 def reset_workdir():
     update_program_progress_bar('Reset')
 
     WORKDIR = read_configuration().get("WORKDIR")
-    folders = [
-        f'{WORKDIR}/anova',
-        f'{WORKDIR}/boxplots',
-        f'{WORKDIR}/heatmaps',
-        f'{WORKDIR}/keys',
-        f'{WORKDIR}/pcap',
-        f'{WORKDIR}/qlog_client',
-        f'{WORKDIR}/qlog_server',
-        f'{WORKDIR}/tcpprobe',
-        f'{WORKDIR}/test_results',
-    ]
+    LOG_PATH = read_configuration().get("LOG_PATH")
 
-    def delete_file(file_path):
-        try:
-            if os.path.isfile(file_path):
+    for root, dirs, files in os.walk(WORKDIR):
+        for file in files:
+            file_path = os.path.join(root, file)
+            print(file_path)
+            if file_path != LOG_PATH:
                 os.remove(file_path)
-                logging.info(f"File '{file_path}' deleted.")
-        except Exception as e:
-            logging.error(f"Error deleting file '{file_path}': {e}")
-
-    def delete_files_in_folder(folder):
-        for filename in os.listdir(folder):
-            file_path = os.path.join(folder, filename)
-            delete_file(file_path)
-
-    def delete_files_in_folders(folders):
-        for folder in folders:
-            if os.path.exists(folder):
-                delete_files_in_folder(folder)
-            else:
-                logging.info(f"Folder '{folder}' not found.")
-
-    delete_files_in_folders(folders)
 
 
 def get_test_object(args):
@@ -95,16 +76,18 @@ def get_test_object(args):
             array_of_modes = test.test_cases_compressed['mode']
             number_of_modes = len(array_of_modes)
             return number_of_modes
-        
+
         def get_number_of_control_parameter_values(control_parameter):
             if control_parameter is not None:
                 array_of_control_parameters = test.test_cases_compressed[control_parameter]
-                number_of_control_parameter_values = len(array_of_control_parameters)
+                number_of_control_parameter_values = len(
+                    array_of_control_parameters)
             else:
                 number_of_control_parameter_values = 1
             return number_of_control_parameter_values
-        
-        total_number_of_test_cases = get_number_of_modes(test) * get_number_of_control_parameter_values(control_parameter)
+
+        total_number_of_test_cases = get_number_of_modes(
+            test) * get_number_of_control_parameter_values(control_parameter)
         test.update_total_number_of_test_cases(total_number_of_test_cases)
 
     config = get_test_object_from_config_or_log_file_depending_on_full_run(
@@ -115,7 +98,8 @@ def get_test_object(args):
     test = Test()
     test.iterations = test_configuration['iterations']
     test.test_cases_compressed = test_configuration['cases']
-    test.control_parameter, test.control_parameter_values = get_control_parameter(test.test_cases_compressed)
+    test.control_parameter, test.control_parameter_values = get_control_parameter(
+        test.test_cases_compressed)
     update_total_number_of_test_cases(test.control_parameter)
     test.test_cases_decompressed = decompress_test_cases(test)
     return test
@@ -191,13 +175,15 @@ def get_docker_container():
     server = host.containers.get("server")
     return client_1, router_1, router_2, server
 
+
 def write_dataframes_to_csv(df, filename):
-    TEST_RESULTS_DIR = read_configuration().get('TEST_RESULTS_DIR') 
+    TEST_RESULTS_DIR = read_configuration().get('TEST_RESULTS_DIR')
     df.to_parquet(
         f'{TEST_RESULTS_DIR}/{filename}.parquet', index=False)
 
+
 def write_test_object_to_log(test, filename):
-    TEST_RESULTS_DIR = read_configuration().get('TEST_RESULTS_DIR') 
+    TEST_RESULTS_DIR = read_configuration().get('TEST_RESULTS_DIR')
     with open(f'{TEST_RESULTS_DIR}/{filename}.log', 'w') as file:
         file.write(str(test))
 
@@ -212,21 +198,21 @@ def create_dataframe_from_object(test):
         for test_case in test.test_cases_decompressed.test_cases:
             df = pd.DataFrame([vars(test_case)])
             streams = df['streams'].iloc[0] if 'streams' in df.columns else None
-            
+
             if streams:
                 stream_data = streams.streams
                 stream_info = {}
                 for stream in stream_data:
                     stream_id = stream.stream_id
                     connection_time = stream.connection_time
-                    stream_info[f'Stream_ID_{stream_id}_conn'] = connection_time  
+                    stream_info[f'Stream_ID_{stream_id}_conn'] = connection_time
                     goodput = stream.goodput
-                    stream_info[f'Stream_ID_{stream_id}_goodput'] = goodput  
+                    stream_info[f'Stream_ID_{stream_id}_goodput'] = goodput
                     link_utilization = stream.link_utilization
-                    stream_info[f'Stream_ID_{stream_id}_link_utilization'] = link_utilization  
+                    stream_info[f'Stream_ID_{stream_id}_link_utilization'] = link_utilization
 
                 df = pd.concat([df, pd.DataFrame([stream_info])], axis=1)
-        
+
             list_of_df.append(df)
 
     def add_each_dataframe_as_new_row_to_a_main_dataframe():
