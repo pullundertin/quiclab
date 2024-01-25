@@ -1,5 +1,4 @@
 import os
-import logging
 import docker
 import yaml
 import shutil
@@ -59,7 +58,6 @@ def reset_workdir():
     for root, dirs, files in os.walk(WORKDIR):
         for file in files:
             file_path = os.path.join(root, file)
-            print(file_path)
             if file_path != LOG_PATH:
                 os.remove(file_path)
 
@@ -194,7 +192,6 @@ def create_dataframe_from_object(test):
     list_of_df = []
 
     def convert_each_test_case_object_into_a_dataframe():
-        df = pd.DataFrame()
         for test_case in test.test_cases_decompressed.test_cases:
             df = pd.DataFrame([vars(test_case)])
             streams = df['streams'].iloc[0] if 'streams' in df.columns else None
