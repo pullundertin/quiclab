@@ -28,10 +28,8 @@ def main():
         extract_data(test)
     if not (args.test or args.extract):
         logging.info("Reading data from files")
-        test_results_dataframe, statistics_dataframe = read_data()
+        test_results_dataframe = read_data()
 
-    # delete for new tests
-    statistics_dataframe = do_statistics(test_results_dataframe, test)
     if args.evaluate:
         evaluate_data(test_results_dataframe, test)
     if args.viz:

@@ -30,13 +30,12 @@ def extract_data(test):
     calculate_additional_metrics(test)
 
     test_results_dataframe = create_dataframe_from_object(test)
-    statistics_dataframe = do_statistics(test_results_dataframe, test)
     write_dataframes_to_csv(test_results_dataframe,
                             'test_results_dataframe')
-    write_dataframes_to_csv(statistics_dataframe, 'statistics_dataframe')
-
 
 def evaluate_data(test_results_dataframe, test):
+    statistics_dataframe = do_statistics(test_results_dataframe, test)
+    write_dataframes_to_csv(statistics_dataframe, 'statistics_dataframe')
     df = merge_columns_with_the_same_metric(test_results_dataframe)
     run_statistics(df, test)
     return df
@@ -68,6 +67,4 @@ def merge_columns_with_the_same_metric(df):
 def read_data():
     test_results_dataframe = pd.read_parquet(
         'shared/test_results/test_results_dataframe.parquet')
-    statistics_dataframe = pd.read_parquet(
-        'shared/test_results/statistics_dataframe.parquet')
-    return test_results_dataframe, statistics_dataframe
+    return test_results_dataframe
