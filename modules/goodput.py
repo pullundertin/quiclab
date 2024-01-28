@@ -12,10 +12,10 @@ def show_goodput_graph(df, control_parameter):
     # Create a scatterplot for each mode
     plt.figure(figsize=(10, 6))
 
-    for mode in df.index.get_level_values(group_column).unique():
-        mode_df = df[df.index.get_level_values(group_column) == mode]
+    for mode in df[group_column].unique():
+        mode_df = df[df[group_column] == mode]
 
-        plt.plot(mode_df.index.get_level_values(parameter_column),
+        plt.plot(mode_df[parameter_column],
                  mode_df[data_column],
                  marker='o', linestyle='-', alpha=0.5, label=mode)
 

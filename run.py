@@ -7,10 +7,11 @@ from modules.prerequisites import get_test_object, arguments, check_if_folders_f
 from modules.program_steps import generate_new_data, extract_data, read_data, evaluate_data, visualize_data
 from modules.statistics import do_statistics
 
+
 def main():
 
     test_results_dataframe = None
-    median_dataframe = None
+    statistics_dataframe = None
 
     args = arguments()
     log_config(args)
@@ -27,13 +28,14 @@ def main():
         extract_data(test)
     if not (args.test or args.extract):
         logging.info("Reading data from files")
-        test_results_dataframe, median_dataframe = read_data()
+        test_results_dataframe, statistics_dataframe = read_data()
 
-    # do_statistics(test_results_dataframe, test)
+    # delete for new tests
+    statistics_dataframe = do_statistics(test_results_dataframe, test)
     if args.evaluate:
         evaluate_data(test_results_dataframe, test)
     if args.viz:
-        visualize_data(test_results_dataframe, median_dataframe, test)
+        visualize_data(test_results_dataframe, statistics_dataframe, test)
     if args.store:
         rsync_permanent(args.store)
     logging.info("All tasks are completed.")

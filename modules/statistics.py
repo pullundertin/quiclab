@@ -8,38 +8,6 @@ TEST_RESULT_COLUMNS = read_configuration().get("TEST_RESULT_COLUMNS")
 TEST_RESULTS_DIR = read_configuration().get("TEST_RESULTS_DIR")
 
 
-def get_medians(test_results_dataframe):
-    group_columns = TEST_CONFIG_COLUMNS
-
-    # Define a custom function to calculate median while ignoring NaN values
-    def custom_median(series):
-        return np.nanmedian(series) if not series.isnull().all() else np.nan
-
-    # Convert relevant columns to numeric, ignoring errors to handle non-convertible values
-    numeric_columns = TEST_RESULT_COLUMNS
-
-    test_results_dataframe_copy = test_results_dataframe.copy()
-    test_results_dataframe_copy[numeric_columns] = test_results_dataframe_copy[numeric_columns].apply(
-        pd.to_numeric, errors='coerce')
-    # Get columns starting with 'Stream '
-    stream_cols = [
-        col for col in test_results_dataframe_copy.columns if col.startswith('Stream')]
-
-    # Convert columns starting with "Stream " to numeric if needed
-    test_results_dataframe_copy[stream_cols] = test_results_dataframe_copy[stream_cols].apply(
-        pd.to_numeric, errors='coerce')
-
-    # Apply the custom median function using agg with skipna parameter
-    agg_columns = {
-        col: lambda x: custom_median(x) for col in numeric_columns + stream_cols
-    }
-
-    median_df = test_results_dataframe_copy.groupby(
-        group_columns, as_index=False).agg(agg_columns)
-
-    return median_df
-
-
 def filter_columns_to_calculate_statistics_on(df, control_parameter):
     quic_columns = [col for col in df.columns if col.startswith('quic_')]
     # Exclude 'mode' and control_parameter columns from statistics
@@ -109,8 +77,16 @@ def calculate_relationships_for_each_column(merged_df):
 
 
 def sort_statistics(df):
+    # Get columns starting with 'Stream '
+    stream_cols = [
+        col for col in df.columns if col.startswith('Stream')]
+
+    # Convert columns starting with "Stream " to numeric if needed
+    df[stream_cols] = df[stream_cols].apply(
+        pd.to_numeric, errors='coerce')
+
     metrics_order = ['goodput', 'hs', 'conn',
-                     'link_utilization', 'jfi']
+                     'link_utilization', 'jfi'] + stream_cols
 
     statistics_order = ['mean',
                         'std', 'min', '25%',  '50%', '50%_tcp_ratio', '75%', 'max']
@@ -136,15 +112,22 @@ def sort_statistics(df):
 
     return sorted_df
 
+def convert_indicies_back_to_columns(df, control_parameter):
+    df.reset_index(inplace=True)
+
+    # convert indicies 'mode' and control_parameter to columns
+    df = df.rename(columns={'mode': 'mode', control_parameter: control_parameter})
+    return df
+
 
 def get_statistics(df, control_parameter):
 
     statistics = generate_statistics_on_test_results(df, control_parameter)
     merged_df = merge_columns_with_the_same_metric(statistics)
-    merged_df.to_csv('median.csv')
     relationships_df = calculate_relationships_for_each_column(merged_df)
     sorted_df = sort_statistics(relationships_df)
     results_df = sorted_df.round(4)
+    results_df = convert_indicies_back_to_columns(results_df, control_parameter)
     results_df.to_csv(f'{TEST_RESULTS_DIR}/statistics.csv')
     return results_df
 
@@ -154,6 +137,5 @@ def do_statistics(df, test):
     update_program_progress_bar('Do Statistics')
     tmp_df = df.copy()
     median_df = get_statistics(tmp_df, control_parameter)
-    # median_df = get_medians(df)
 
     return median_df

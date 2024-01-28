@@ -7,25 +7,14 @@ from modules.prerequisites import read_configuration
 HEATMAPS_DIR = read_configuration().get("HEATMAPS_DIR")
 
 
-def calculate_percentage(df, new_column_name, quic_column, tcp_column, dependend_variable):
-    df[new_column_name] = df.apply(lambda row: row[quic_column] / df.loc[(df['mode'] == 'tcp') & (
-        df[dependend_variable] == row[dependend_variable]), tcp_column].values[0] * 100 if row['mode'] not in ['tcp'] else np.nan, axis=1)
-    return df
+def save_heatmap(df, control_parameter, column_to_compare, name):
+    # Pivot the DataFrame
+    pivoted_df = df.pivot(index=control_parameter, columns='mode',
+                          values=column_to_compare)
 
-
-def exclude_tcp_mode_from_heatmap(df):
-    return df[df['mode'] != 'tcp']
-
-
-def generate_heatmap(control_parameter, df, dependend_variable):
-    return df.pivot(
-        index=dependend_variable, columns='mode', values=control_parameter)
-
-
-def save_heatmap(z_value, name, control_parameter):
     # Plotting the heatmap
     plt.figure(figsize=(8, 6))
-    sns.heatmap(z_value, annot=True, cmap='YlGnBu', fmt='.2f', cbar=True)
+    sns.heatmap(pivoted_df, annot=True, cmap='YlGnBu', fmt='.2f', cbar=True)
     plt.title(f'QUIC vs TCP {name}')
     plt.xlabel('Implementations')
     plt.ylabel(control_parameter)
@@ -33,35 +22,8 @@ def save_heatmap(z_value, name, control_parameter):
     plt.savefig(f"{HEATMAPS_DIR}/{name}.png", dpi=300, bbox_inches='tight')
 
 
-def tests_contain_tcp_only(median_dataframe):
-    return (median_dataframe['mode'] == 'tcp').all()
-
-
-def tests_contain_no_tcp(median_dataframe):
-    if not median_dataframe['mode'].str.contains('tcp').any():
-        return True
-    else:
-        return False
-
-
-def show_heatmaps(median_dataframe, control_parameter):
-    if tests_contain_tcp_only(median_dataframe) or tests_contain_no_tcp(median_dataframe):
-        return
-
-    if control_parameter is None:
-        control_parameter = 'generic_heatmap'
-
-    median_dataframe = calculate_percentage(
-        median_dataframe, 'percentage_hs', 'quic_hs', 'tcp_hs', control_parameter)
-    median_dataframe = calculate_percentage(median_dataframe, 'percentage_conn',
-                                            'quic_conn', 'tcp_conn', control_parameter)
-
-    filtered_median_dataframe = exclude_tcp_mode_from_heatmap(
-        median_dataframe)
-    percentage_hs = generate_heatmap(
-        'percentage_hs', filtered_median_dataframe, control_parameter)
-    percentage_conn = generate_heatmap(
-        'percentage_conn', filtered_median_dataframe, control_parameter)
-
-    save_heatmap(percentage_hs, 'Handshake', control_parameter)
-    save_heatmap(percentage_conn, 'Connection', control_parameter)
+def show_heatmaps(df, control_parameter):
+    save_heatmap(df[df['mode'].isin(['aioquic', 'quicgo'])],
+                 control_parameter, 'hs_50%_tcp_ratio', 'Handshake')
+    save_heatmap(df[df['mode'].isin(['aioquic', 'quicgo'])],
+                 control_parameter, 'conn_50%_tcp_ratio', 'Connection')
