@@ -33,12 +33,13 @@ def extract_data(test):
     write_dataframes_to_csv(test_results_dataframe,
                             'test_results_dataframe')
 
+
 def evaluate_data(test_results_dataframe, test):
     statistics_dataframe = do_statistics(test_results_dataframe, test)
     write_dataframes_to_csv(statistics_dataframe, 'statistics_dataframe')
     df = merge_columns_with_the_same_metric(test_results_dataframe)
     run_statistics(df, test)
-    return df
+    return statistics_dataframe
 
 
 def visualize_data(test_results_dataframe, statistics_dataframe, test):

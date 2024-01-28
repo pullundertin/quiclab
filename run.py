@@ -31,7 +31,7 @@ def main():
         test_results_dataframe = read_data()
 
     if args.evaluate:
-        evaluate_data(test_results_dataframe, test)
+        statistics_dataframe = evaluate_data(test_results_dataframe, test)
     if args.viz:
         visualize_data(test_results_dataframe, statistics_dataframe, test)
     if args.store:
