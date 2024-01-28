@@ -25,7 +25,7 @@ def main():
     if args.extract:
         logging.info("Executing without running tests")
         extract_data(test)
-    else:
+    if not (args.test or args.extract):
         logging.info("Reading data from files")
         test_results_dataframe, median_dataframe = read_data()
 
