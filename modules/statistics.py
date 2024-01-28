@@ -78,15 +78,15 @@ def calculate_relationships_for_each_column(merged_df):
 
 def sort_statistics(df):
     # Get columns starting with 'Stream '
-    stream_cols = [
-        col for col in df.columns if col.startswith('Stream')]
+    # stream_cols = [
+    #     col for col in df.columns if col.startswith('Stream')]
 
-    # Convert columns starting with "Stream " to numeric if needed
-    df[stream_cols] = df[stream_cols].apply(
-        pd.to_numeric, errors='coerce')
+    # # Convert columns starting with "Stream " to numeric if needed
+    # df[stream_cols] = df[stream_cols].apply(
+    #     pd.to_numeric, errors='coerce')
 
     metrics_order = ['goodput', 'hs', 'conn',
-                     'link_utilization', 'jfi'] + stream_cols
+                     'link_utilization', 'jfi'] #+ stream_cols
 
     statistics_order = ['mean',
                         'std', 'min', '25%',  '50%', '50%_tcp_ratio', '75%', 'max']
