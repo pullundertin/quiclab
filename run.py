@@ -13,7 +13,6 @@ def main():
     median_dataframe = None
 
     args = arguments()
-    print(args)
     log_config(args)
 
     test = get_test_object(args)
