@@ -5,7 +5,7 @@ from modules.commands import rsync_permanent
 from modules.logs import log_config
 from modules.prerequisites import get_test_object, arguments, check_if_folders_for_results_exist, delete_old_test_results
 from modules.program_steps import generate_new_data, extract_data, read_data, evaluate_data, visualize_data
-
+from modules.statistics import do_statistics
 
 def main():
 
@@ -22,13 +22,14 @@ def main():
     if args.test:
         logging.info(f"{os.getenv('HOST')}: full execution enabled")
         generate_new_data(test)
-    elif args.extract:
+    if args.extract:
         logging.info("Executing without running tests")
         extract_data(test)
     else:
         logging.info("Reading data from files")
         test_results_dataframe, median_dataframe = read_data()
 
+    # do_statistics(test_results_dataframe, test)
     if args.evaluate:
         evaluate_data(test_results_dataframe, test)
     if args.viz:

@@ -41,11 +41,10 @@ def get_medians(test_results_dataframe):
 
 
 def filter_columns_to_calculate_statistics_on(df, control_parameter):
-    stream_columns = [col for col in df.columns if col.startswith('Stream_')]
     quic_columns = [col for col in df.columns if col.startswith('quic_')]
     # Exclude 'mode' and control_parameter columns from statistics
     columns_to_exclude = TEST_CONFIG_COLUMNS + \
-        [control_parameter] + stream_columns + quic_columns
+        [control_parameter] + quic_columns
     columns_to_calculate_statistics_on = [
         col for col in df.columns if col not in columns_to_exclude]
 
@@ -142,6 +141,7 @@ def get_statistics(df, control_parameter):
 
     statistics = generate_statistics_on_test_results(df, control_parameter)
     merged_df = merge_columns_with_the_same_metric(statistics)
+    merged_df.to_csv('median.csv')
     relationships_df = calculate_relationships_for_each_column(merged_df)
     sorted_df = sort_statistics(relationships_df)
     results_df = sorted_df.round(4)
