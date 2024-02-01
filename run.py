@@ -25,11 +25,10 @@ def main():
         generate_new_data(test)
     if args.extract:
         logging.info("Executing without running tests")
-        extract_data(test)
+        test_results_dataframe = extract_data(test)
     if not (args.test or args.extract):
         logging.info("Reading data from files")
         test_results_dataframe = read_data()
-
     if args.evaluate:
         statistics_dataframe = evaluate_data(test_results_dataframe, test)
     if args.viz:

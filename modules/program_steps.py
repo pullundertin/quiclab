@@ -32,6 +32,7 @@ def extract_data(test):
     test_results_dataframe = create_dataframe_from_object(test)
     write_dataframes_to_csv(test_results_dataframe,
                             'test_results_dataframe')
+    return test_results_dataframe
 
 
 def evaluate_data(test_results_dataframe, test):
